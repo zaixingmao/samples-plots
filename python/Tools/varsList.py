@@ -5,8 +5,12 @@ import time
 from operator import itemgetter
 import os
 
+drawConfigs = {'script': 'drawVarsData_KS_CheckFlat.py',
+               'sampleLocation': '/scratch/zmao/relaxed_regression4',
+               'signal': 'H260'}
 
 varsRange = { 
+    #varName: (nbins, minX, maxX, yMax, signalBoostFactor, logY, predict)
 #             'fMass': (10, 200, 800, 30, 100, False, True),
 #             'pt2': (12, 30, 150, 10000, 100, True, True, 'GeV'),
 #              'tightPt': (20, 0, 400, 10000, 100, True, True),
@@ -57,9 +61,9 @@ varsRange = {
 #             'CSVJ1': (10, 0.6, 1.2, 60, 100, False, True),
 #             'CSVJ2': (10, 0.2, 1.2, 30, 100, False, True),
 #             'fMass': (20, 150, 550, 20, 100, False, True),
-#             'fMassKinFit': (20, 150, 550, 20, 100, False, True),
-            'byIsolationMVA2raw_1': (20, -1., 1., 20, 100, False, True),
-            'byIsolationMVA2raw_2': (20, -1., 1., 20, 100, False, True),
+             'fMassKinFit': (20, 150, 550, 20, 100, False, True),
+#            'byIsolationMVA2raw_1': (20, -1., 1., 20, 100, False, True),
+#            'byIsolationMVA2raw_2': (20, -1., 1., 20, 100, False, True),
             }
 
 def angleInPie(absAngle):
