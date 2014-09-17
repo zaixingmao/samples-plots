@@ -109,6 +109,8 @@ def opts():
     parser.add_option("--t1", dest="tree1", default='TauCheck', help="tree name of file 1")
     parser.add_option("--t2", dest="tree2", default='syncTree', help="tree name of file 2")
     parser.add_option("--evN", dest="eventNumber", default=-1, help="look at specific event")
+    parser.add_option("--same", dest="same", default=0, help="look at specific event with same mvaMET")
+    
     options, args = parser.parse_args()
     return options
 
@@ -159,9 +161,10 @@ def checkSyncDev(options):
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
                 diff = varsList1[i][3]/varsList2[j][3]
                 mvaMet2.Fill(diff)
-                if diff > 0 or diff < 100:
+                if diff != 1 and int(options.same)==0:
                     printInfo(varsList1[i], varsList2[j])
-
+                elif diff == 1 and int(options.same)==1:
+                    printInfo(varsList1[i], varsList2[j])
             elif varsList1[i][1] < varsList2[j][1]:
                 break
         if varsList1[i][1] > evt2Last:
@@ -174,14 +177,14 @@ def checkSyncDev(options):
         return 0
 
 
-    # psfile = 'syncTest.pdf'
-    # c = r.TCanvas("c","Test", 800, 600)
-    # mvaMet2.SetLineColor(r.kRed)
-    # mvaMet2.Draw()
-    # # mvaMet1.Draw('same')
-    # 
-    # c.Print('%s' %psfile)
-    # c.Close()
+    psfile = 'syncTest.pdf'
+    c = r.TCanvas("c","Test", 800, 600)
+    mvaMet2.SetLineColor(r.kRed)
+    mvaMet2.Draw()
+    # mvaMet1.Draw('same')
+
+    c.Print('%s' %psfile)
+    c.Close()
 
 options = opts()
 checkSyncDev(options)
