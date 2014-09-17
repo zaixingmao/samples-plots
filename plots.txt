@@ -1,0 +1,4 @@
+1. source samples-plots/env.sh
+2. Specify sample prefix (eg. TMVARegApp_) in samples-plots/python/Tools/drawVarsData_KS_CheckFlat.py lines IF NEEDED
+3. Specify variables to draw, sample location and signal mass point in samples-plots/python/Tools/varsList.py
+4. python samples-plots/python/Tools/draw.py

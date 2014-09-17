@@ -1,0 +1,32 @@
+#BDT Training
+
+cd CMSSW_5_3_15/src/TMVA-v4.2.0/test/
+source setup.sh
+
+1) mJJ regression:
+    1. specify configs in runRegression.py
+    2. python runRegression.py
+
+2) make training samples with regression:
+    1. for MC bkg
+        python samples-plots/python/Tools/makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c tightoppositebTag
+    2. for QCD bkg
+        python samples-plots/python/Tools/makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c relaxedsamebTag
+    or use wrapper for all samples, need to specify locations: samples-plots/python/Tools/makeTrainingSamples.py
+
+3) train BDT:
+    1. specify sample location in TMVA-v4.2.0/test/TMVAClassification_both.py
+    2. specify input variables in TMVA-v4.2.0/test/varsList.py
+    3. cd TMVA-v4.2.0/test/
+    3. python runBDTClassification.py
+    4. make sure that the last training is what you want to use
+
+4) apply BDT:
+    1. specify input variables in TMVA-v4.2.0/test/TMVAClassificationApplication_new.C
+    2. specify samples in TMVA-v4.2.0/test/runClassification.py
+    3. cd TMVA-v4.2.0/test/
+    3. python runClassification.py
+
+5) make Whole for limit calcuation:
+    1. specify sample location in samples-plots/python/Tools/makeWholeSample_cfg.py
+    2. python samples-plots/python/Tools/makeWholeSample.py
