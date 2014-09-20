@@ -119,6 +119,7 @@ def makeSyncNtuples(iLocation):
     run  = array('i', [0])
     lumi = array('i', [0])
     evt = array('i', [0])
+    nTauPairs  = array('i', [0])
 
     npv = array('i', [0])
     npu = array('i', [0])
@@ -224,6 +225,7 @@ def makeSyncNtuples(iLocation):
     oTree.Branch("run", run, "run/I")
     oTree.Branch("lumi", lumi, "lumi/I")
     oTree.Branch("evt", evt, "evt/I")
+    oTree.Branch("nTauPairs", nTauPairs, "nTauPairs/I")
 
     oTree.Branch("npv", npv, "npv/I")
     oTree.Branch("npu", npu, "npu/I")
@@ -349,6 +351,7 @@ def makeSyncNtuples(iLocation):
         trigweight_1[0] = eff1
         trigweight_2[0] = eff2        
         effweight[0] = eff1*eff2
+        nTauPairs[0] = len(iTree.pt1)
 
         jetsList = [(iTree.J1CSVbtag, iTree.J1Pt, iTree.J1Eta, iTree.J1Phi, iTree.J1Mass),
                     (iTree.J2CSVbtag, iTree.J2Pt, iTree.J2Eta, iTree.J2Phi, iTree.J2Mass),
@@ -362,17 +365,17 @@ def makeSyncNtuples(iLocation):
         b1.SetCoordinates(jetsList[0][1], jetsList[0][2], jetsList[0][3], jetsList[0][4])
         b2.SetCoordinates(jetsList[1][1], jetsList[1][2], jetsList[1][3], jetsList[1][4])
 
-        if jetsList[0][1] < 20 or jetsList[1][1] < 20:
-            continue
-        if abs(jetsList[0][2]) > 2.4 or abs(jetsList[1][2]) > 2.4:
-            continue
-        if iTree.pt1.at(0)<45 or iTree.pt2.at(0)<45:
-            continue
-        if iTree.iso1.at(0)>1.0 or iTree.iso2.at(0)>1.0:
-            continue
-
-        if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
-            continue
+#         if jetsList[0][1] < 20 or jetsList[1][1] < 20:
+#             continue
+#         if abs(jetsList[0][2]) > 2.4 or abs(jetsList[1][2]) > 2.4:
+#             continue
+#         if iTree.pt1.at(0)<45 or iTree.pt2.at(0)<45:
+#             continue
+#         if iTree.iso1.at(0)>1.0 or iTree.iso2.at(0)>1.0:
+#             continue
+# 
+#         if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
+#             continue
 
 
         run[0] = iTree.RUN

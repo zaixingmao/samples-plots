@@ -5,6 +5,8 @@ from operator import itemgetter
 import optparse
 
 
+printedEvN = []
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -21,9 +23,9 @@ def color(a, b):
     return lineColor
 
 
-def printInfo(varsList1, varsList2):
-    title = 'Event: %i    Difference: %0.3f' %(varsList1[1], abs(varsList1[3] - varsList2[3]))
-
+def printInfo(name1, varsList1, name2, varsList2):
+    title = 'Event: %i    Difference: %0.2f' %(varsList1[1], abs(varsList1[3] - varsList2[3]))
+    printedEvN.append(varsList1[1])
     outline0 = '       '    
     outline1 = 'Brown: '
     outline2 = 'INFN:  '
@@ -39,11 +41,11 @@ def printInfo(varsList1, varsList2):
                 lineColor = bcolors.OKGREEN
             outline1 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline1 += '%s%0.3f\033[0m\t' %(lineColor,value1)
+            outline1 += '%s%0.2f\033[0m\t' %(lineColor,value1)
         if value2 == -10000:
             outline2 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline2 += '%s%0.3f\033[0m\t' %(lineColor,value2)
+            outline2 += '%s%0.2f\033[0m\t' %(lineColor,value2)
         if varsList1[i*2] != 'mvaMet':
             foundDifferent = True
         outline0 += '%s%s\033[0m\t' %(lineColor, varsList1[i*2])
@@ -55,19 +57,40 @@ def printInfo(varsList1, varsList2):
         print outline2
         print '-------------------------------------------------------------------------------------------------------------------------------------------------------'
 
+def printSingleInfo(name, varsList):
+    if varsList[1] in printedEvN:
+        return 1
+    else:
+        printedEvN.append(varsList[1])
+
+    title = 'Event: %i' %varsList[1]
+    outline0 = '       '    
+    outline1 = name
+    for i in range(2, len(varsList)/2):
+        value = varsList[i*2+1]
+        lineColor = bcolors.FAIL     
+        outline1 += '%s%0.3f\033[0m\t' %(lineColor,value)
+        outline0 += '%s%s\033[0m\t' %(lineColor, varsList[i*2])
+    print title
+    print outline0
+    print outline1
+    print '-------------------------------------------------------------------------------------------------------------------------------------------------------'
+
+
 
 def addVars(iTree):
-    
-    return ('evtNumber', iTree.evt, 
+    a = ['evtNumber', iTree.evt, 
             'mvaMet', iTree.mvamet, 
             'mvaMet', iTree.mvamet, 
             'mvaPhi', iTree.mvametphi, 
             'pt1', iTree.pt_1, 
-            'eta1', iTree.eta_1, 
-            'phi1', iTree.phi_1, 
+#             'eta1', iTree.eta_1, 
+            'iso1', iTree.iso_1, 
+#             'phi1', iTree.phi_1, 
 #             'mass1', iTree1.m_1,
-#             'pt2', iTree.pt_2, 
+            'pt2', iTree.pt_2, 
 #             'eta2', iTree.eta_2, 
+            'iso2', iTree.iso_2, 
 #             'phi2', iTree.phi_2, 
 #             'mass2', iTree1.m_2,
 #             'jptraw1', iTree.jptraw_1,
@@ -97,19 +120,33 @@ def addVars(iTree):
             'cov00', iTree.mvacov00,
             'cov01', iTree.mvacov01,
             'cov10', iTree.mvacov10,
-            'cov11', iTree.mvacov11,
+            'cov11', iTree.mvacov11]
+    return a
 
-)
+def addVars2(iTree):
+    aList = addVars(iTree)
+    aList.append('nPairs')
+    aList.append(iTree.nTauPairs)
+    return aList
 
+def addVars3(iTree):
+    aList = addVars(iTree)
+    aList.append('nPairs')
+    aList.append(1)
+    return aList
 
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("--f1", dest="location1", default='/scratch/zmao/sync/H2hh300_newPhilHMetCalib.root', help="location of file 1")
     parser.add_option("--f2", dest="location2", default='/afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root', help="location of file 2")
+    parser.add_option("--n1", dest="name1", default='Brown: ', help="inst name of file 1")
+    parser.add_option("--n2", dest="name2", default='INFN:  ', help="inst name of file 2")
+
     parser.add_option("--t1", dest="tree1", default='TauCheck', help="tree name of file 1")
     parser.add_option("--t2", dest="tree2", default='syncTree', help="tree name of file 2")
     parser.add_option("--evN", dest="eventNumber", default=-1, help="look at specific event")
-    parser.add_option("--same", dest="same", default=0, help="look at specific event with same mvaMET")
+    parser.add_option("--style", dest="style", default='diff', help="diff, same or all")
+    parser.add_option("--nPair", dest="nTauPairs", default=0, help="Print number of tau pairs")
     
     options, args = parser.parse_args()
     return options
@@ -139,17 +176,28 @@ def checkSyncDev(options):
 
     for i in range(total1):
         iTree1.GetEntry(i)
-        varsList1.append(addVars(iTree1))
-
+        if int(options.nTauPairs):
+            varsList1.append(addVars2(iTree1))
+        else:
+            varsList1.append(addVars(iTree1))
 
     for i in range(total2):
         iTree2.GetEntry(i)
-        varsList2.append(addVars(iTree2))
+        if int(options.nTauPairs):
+            varsList2.append(addVars3(iTree2))
+        else:
+            varsList2.append(addVars(iTree2))
 
     varsList1 = sorted(varsList1, key=itemgetter(1), reverse=False)
     varsList2 = sorted(varsList2, key=itemgetter(1), reverse=False)
 
     evt2Last = varsList2[total2-1][1]
+
+    print '%s %i events' %(options.name1, total1)
+    print '%s %i events' %(options.name2, total2)
+
+    indexNotFound1 = []
+    indexFound2 = []
 
     for i in range(total1):
         for j in range(total2):
@@ -161,14 +209,25 @@ def checkSyncDev(options):
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
                 diff = varsList1[i][3]/varsList2[j][3]
                 mvaMet2.Fill(diff)
-                if diff != 1 and int(options.same)==0:
-                    printInfo(varsList1[i], varsList2[j])
-                elif diff == 1 and int(options.same)==1:
-                    printInfo(varsList1[i], varsList2[j])
+                indexFound2.append(j)
+                if diff != 1 and (options.style == 'diff' or options.style == 'all'):
+                    printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
+                elif diff == 1 and (options.style == 'same' or options.style == 'all'):
+                    printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
+                break
             elif varsList1[i][1] < varsList2[j][1]:
+                indexNotFound1.append(i)
                 break
         if varsList1[i][1] > evt2Last:
             break
+
+    if options.style == 'all':
+        for i_1 in indexNotFound1:
+            printSingleInfo(options.name1, varsList1[i_1])
+        for i_2 in range(total2):
+            if i_2 not in indexFound2:
+                printSingleInfo(options.name2, varsList1[i_2])
+
 
     if eventNumber == -1:   
         return 1
