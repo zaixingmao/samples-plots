@@ -365,17 +365,17 @@ def makeSyncNtuples(iLocation):
         b1.SetCoordinates(jetsList[0][1], jetsList[0][2], jetsList[0][3], jetsList[0][4])
         b2.SetCoordinates(jetsList[1][1], jetsList[1][2], jetsList[1][3], jetsList[1][4])
 
-#         if jetsList[0][1] < 20 or jetsList[1][1] < 20:
-#             continue
-#         if abs(jetsList[0][2]) > 2.4 or abs(jetsList[1][2]) > 2.4:
-#             continue
-#         if iTree.pt1.at(0)<45 or iTree.pt2.at(0)<45:
-#             continue
-#         if iTree.iso1.at(0)>1.0 or iTree.iso2.at(0)>1.0:
-#             continue
-# 
-#         if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
-#             continue
+        if jetsList[0][1] < 20 or jetsList[1][1] < 20:
+            continue
+        if abs(jetsList[0][2]) > 2.4 or abs(jetsList[1][2]) > 2.4:
+            continue
+        if iTree.pt1.at(0)<45 or iTree.pt2.at(0)<45:
+            continue
+        if iTree.iso1.at(0)>1.0 or iTree.iso2.at(0)>1.0:
+            continue
+
+        if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
+            continue
 
 
         run[0] = iTree.RUN
