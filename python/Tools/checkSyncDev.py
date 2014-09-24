@@ -23,12 +23,15 @@ def color(a, b):
     return lineColor
 
 
-def printInfo(name1, varsList1, name2, varsList2):
-    title = 'Event: %i    Difference: %0.2f' %(varsList1[1], abs(varsList1[3] - varsList2[3]))
+def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
+    p = "%0.2f"
+    title = 'Event: %i Difference: %s' %(varsList1[1], p)
+    title = title % abs(varsList1[3] - varsList2[3])
     printedEvN.append(varsList1[1])
-    outline0 = '       '    
-    outline1 = 'Brown: '
-    outline2 = 'INFN:  '
+    nChar = max([len(x) for x in [name1, name2]])
+    outline0 = ' ' * (nChar + 2)
+    outline1 = '%s: ' % name1.rjust(nChar)
+    outline2 = '%s: ' % name2.rjust(nChar)
     foundDifferent = False
     for i in range(2, len(varsList1)/2):
         value1 = varsList1[i*2+1]
@@ -41,11 +44,13 @@ def printInfo(name1, varsList1, name2, varsList2):
                 lineColor = bcolors.OKGREEN
             outline1 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline1 += '%s%0.2f\033[0m\t' %(lineColor,value1)
+            outline1 += '%s%s\033[0m\t' %(lineColor, p)
+            outline1 = outline1 % value1
         if value2 == -10000:
             outline2 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline2 += '%s%0.2f\033[0m\t' %(lineColor,value2)
+            outline2 += '%s%s\033[0m\t' %(lineColor, p)
+            outline2 = outline2 % value2
         if varsList1[i*2] != 'mvaMet':
             foundDifferent = True
         outline0 += '%s%s\033[0m\t' %(lineColor, varsList1[i*2])
@@ -136,7 +141,13 @@ def addVars3(iTree):
     return aList
 
 def opts():
-    parser = optparse.OptionParser()
+    desc = """This program loops over two .root files, counts the
+events, and selects the set of common events.  For each of these
+common events, it prints out the values of several variables.  If
+--subset=same is passed, then printing is done only for events in
+which the MVAMET agrees.  Likewise for --subset=diff.
+"""
+    parser = optparse.OptionParser(description=desc)
     parser.add_option("--f1", dest="location1", default='/scratch/zmao/sync/H2hh300_newPhilHMetCalib.root', help="location of file 1")
     parser.add_option("--f2", dest="location2", default='/afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root', help="location of file 2")
     parser.add_option("--n1", dest="name1", default='Brown: ', help="inst name of file 1")
@@ -233,11 +244,11 @@ def checkSyncDev(options):
 
     print '%s %i events' %(options.name1, total1)
     print '%s %i events' %(options.name2, total2)
-    if sameEvents == 0:
+    if options.style == 'diff' and not differentEvents:
         sameEvents = matchedEvents - differentEvents
-    else:
+    if options.style == 'same' and not sameEvents:
         differentEvents = matchedEvents - sameEvents
-        
+
     print "Out of %i matching events, %s%i\033[0m events with same MVAMet, %s%i\033[0m events with different MVAMet" %(matchedEvents, bcolors.OKGREEN, sameEvents, bcolors.FAIL, differentEvents)
 
     if eventNumber == -1:   
