@@ -7,12 +7,12 @@ cd samples-plots
 ```
 
 ####make samples from ntuples
-1. Specify samples location, name in samples-plots/python/Tools/enVars.py
-2. python samples-plots/python/Tools/cutSamples.py -l LOCATIONOFOUTPUTFILE
-   #to combined data, since we have A, B, C, D,
-   -1 generate A, B, C, D separately in the same location (with no other sample in that directory)
-   -2 specify that location in samples-plots/python/Tools/enVars.py
-   -3 python samples-plots/python/Tools/cutSamples.py -a True -l LOCATIONOFOUTPUTFILE #-a tells cutSample to simply add the files with mine format
+* Specify samples location, name in samples-plots/python/Tools/enVars.py
+* python samples-plots/python/Tools/cutSamples.py -l LOCATIONOFOUTPUTFILE
+######to combined data, since we have A, B, C, D,
+1. generate A, B, C, D separately in the same location (with no other sample in that directory)
+2. specify that location in samples-plots/python/Tools/enVars.py
+3. `python samples-plots/python/Tools/cutSamples.py -a True -l LOCATIONOFOUTPUTFILE`  # (the option -a tells cutSample to simply add the files with mine format)
 
 ####BDT training
 ```bash
