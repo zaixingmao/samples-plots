@@ -1,0 +1,1 @@
+./Print_SyncPlots H2hh2bbtautau H300 Brown /scratch/zmao/sync/H2hh300_newPhilHMetCalib.root TauCheck INFN /afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root syncTree 
