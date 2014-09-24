@@ -1,8 +1,3 @@
-signalEntries = 0
-ttEntries = 0
-ZZEntries = 0
-
-
 sampleLocations = [
 #                     ("H2hh260",  "/hdfs/store/user/zmao/H2hh260_newMET-SUB-TT"), 
                     ("H2hh300",  "/hdfs/store/user/zmao/H2hh300_newMET-SUB-TT"),
@@ -40,8 +35,5 @@ sampleLocations = [
 #                     ("H2hh300",  "/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT"),
 #                     ("H2hh300_newTauID", "/hdfs/store/user/zmao/H2hh300_newTauID-SUB-TT"),
                   ]
-
-
-vecVarList = ['pt1', 'pt2', 'iso1', 'iso2', 'eta1', 'eta2', 'phi1', 'phi2', 'svEta', 'svMass', 'svPhi', 'svPt']
 
 corruptedROOTfiles = []
