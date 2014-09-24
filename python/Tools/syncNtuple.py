@@ -101,12 +101,11 @@ varList = [('run', 'RUN', 'I'),
            ('jctm_2', 'J2Ntot', 'I'),
           ]
 
-def makeSyncNtuples(iLocation):
+def makeSyncNtuples(iLocation, cut):
 
     iTree = r.TChain("TauCheck/eventTree")
     print iLocation
     nEntries = tool.addFiles(ch=iTree, dirName=iLocation, knownEventNumber=0, maxFileNumber=-1, printTotalEvents = True)
-    print nEntries
     iTree.SetBranchStatus("*",1)
 
     oFileName = iLocation[iLocation.rfind("/")+1:iLocation.find("-SUB-TT")]
@@ -330,20 +329,21 @@ def makeSyncNtuples(iLocation):
     tau2 = lvClass()
     for iEntry in range(nEntries):
         iTree.GetEntry(iEntry)
-        if iTree.charge1.at(0) == iTree.charge2.at(0):
-            continue
-        if iTree.eleTauPt1.size()>0:
-            print 'eTauPairFound'
-            continue
-        if iTree.muTauPt1.size()>0:
-            print 'muTauPairFound'
-            continue
-        if iTree.jpass_1 == 0:
-#             print 'j1Pass Failed'
-            continue
-        if iTree.jpass_2 == 0:
-#             print 'j2Pass Failed'
-            continue
+        if cut:
+            if iTree.charge1.at(0) == iTree.charge2.at(0):
+                continue
+            if iTree.eleTauPt1.size()>0:
+                print 'eTauPairFound'
+                continue
+            if iTree.muTauPt1.size()>0:
+                print 'muTauPairFound'
+                continue
+            if iTree.jpass_1 == 0:
+    #             print 'j1Pass Failed'
+                continue
+            if iTree.jpass_2 == 0:
+    #             print 'j2Pass Failed'
+                continue
         eff1 = calcTrigOneTauEff(eta=iTree.eta1.at(0), pt=iTree.pt1.at(0), data = False, fitStart=25)
         eff2 = calcTrigOneTauEff(eta=iTree.eta2.at(0), pt=iTree.pt2.at(0), data = False, fitStart=25)
         trigweight_1[0] = eff1
@@ -363,17 +363,17 @@ def makeSyncNtuples(iLocation):
         b1.SetCoordinates(jetsList[0][1], jetsList[0][2], jetsList[0][3], jetsList[0][4])
         b2.SetCoordinates(jetsList[1][1], jetsList[1][2], jetsList[1][3], jetsList[1][4])
 
-        if jetsList[0][1] < 20 or jetsList[1][1] < 20:
-            continue
-        if abs(jetsList[0][2]) > 2.4 or abs(jetsList[1][2]) > 2.4:
-            continue
-        if iTree.pt1.at(0)<45 or iTree.pt2.at(0)<45:
-            continue
-        if iTree.iso1.at(0)>1.0 or iTree.iso2.at(0)>1.0:
-            continue
-
-        if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
-            continue
+        if cut:
+            if jetsList[0][1] < 20 or jetsList[1][1] < 20:
+                continue
+            if abs(jetsList[0][2]) > 2.4 or abs(jetsList[1][2]) > 2.4:
+                continue
+            if iTree.pt1.at(0)<45 or iTree.pt2.at(0)<45:
+                continue
+            if iTree.iso1.at(0)>1.0 or iTree.iso2.at(0)>1.0:
+                continue
+            if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
+                continue
 
 
         run[0] = iTree.RUN
@@ -477,7 +477,7 @@ def makeSyncNtuples(iLocation):
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file ')
     
     print ''
-    print "Events saved:", counter
+    print '%i events saved' %counter
     oFile.cd()
     oTree.Write()
     oFile.Close()
@@ -486,15 +486,16 @@ def makeSyncNtuples(iLocation):
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("-l", dest="location", default='/hdfs/store/user/zmao/H2hh300_newPhilHMetCalib-SUB-TT', help="location to be saved")
+    parser.add_option("--cut", dest="cut", default=False, action="store_true", help="apply cuts")
     options, args = parser.parse_args()
     return options
 
-options = opts()
 import ROOT as r
 import tool
 
+options = opts()
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_NoType1-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newCalibMet-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newMET-SUB-TT')
-makeSyncNtuples(options.location)
+makeSyncNtuples(options.location, options.cut)
