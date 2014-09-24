@@ -9,12 +9,13 @@ import draw_cfg
 
 #getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, rangeMin, rangeMax, location):
 region = 'LL'
-scriptLocation = os.environ['MYSCRIPTSPATH']
 
+relPath = __file__
+script = os.path.abspath(relPath).replace(relPath, "python/Tools/%s" % draw_cfg.drawConfigs['script'])
 
 for varName, varConfig in draw_cfg.varsRange.items():
 
-    output = 'python  %s/python/Tools/%s  --location %s  --signal %s' %(scriptLocation, draw_cfg.drawConfigs['script'], draw_cfg.drawConfigs['sampleLocation'], draw_cfg.drawConfigs['signal'])
+    output = 'python %s --location %s  --signal %s' %(script, draw_cfg.drawConfigs['sampleLocation'], draw_cfg.drawConfigs['signal'])
 
     output += ' --variable %s --nbins %i --setRangeMin %f --setRangeMax %f' %(varName, varConfig[0], varConfig[1], varConfig[2])
     output += ' --setMax %i' %varConfig[3]
