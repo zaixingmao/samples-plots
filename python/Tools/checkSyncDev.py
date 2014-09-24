@@ -23,15 +23,12 @@ def color(a, b):
     return lineColor
 
 
-def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
-    p = "%0.2f"
-    title = 'Event: %i    Difference: %s' %(varsList1[1], p)
-    title = title % abs(varsList1[3] - varsList2[3])
+def printInfo(name1, varsList1, name2, varsList2):
+    title = 'Event: %i    Difference: %0.2f' %(varsList1[1], abs(varsList1[3] - varsList2[3]))
     printedEvN.append(varsList1[1])
-    nChar = max([len(x) for x in [name1, name2]])
-    outline0 = ' ' * (nChar  + 2)
-    outline1 = '%s: ' % name1.rjust(nChar)
-    outline2 = '%s: ' % name2.rjust(nChar)
+    outline0 = '       '    
+    outline1 = 'Brown: '
+    outline2 = 'INFN:  '
     foundDifferent = False
     for i in range(2, len(varsList1)/2):
         value1 = varsList1[i*2+1]
@@ -44,13 +41,11 @@ def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
                 lineColor = bcolors.OKGREEN
             outline1 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline1 += '%s%s\033[0m\t' %(lineColor, p)
-            outline1 = outline1 % value1
+            outline1 += '%s%0.2f\033[0m\t' %(lineColor,value1)
         if value2 == -10000:
             outline2 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline2 += '%s%s\033[0m\t' %(lineColor, p)
-            outline2 = outline2 % value2
+            outline2 += '%s%0.2f\033[0m\t' %(lineColor,value2)
         if varsList1[i*2] != 'mvaMet':
             foundDifferent = True
         outline0 += '%s%s\033[0m\t' %(lineColor, varsList1[i*2])
@@ -85,48 +80,47 @@ def printSingleInfo(name, varsList):
 
 def addVars(iTree):
     a = ['evtNumber', iTree.evt, 
-         'mvaMet', iTree.mvamet, 
-         'mvaMet', iTree.mvamet, 
-         #            'mvaPhi', iTree.mvametphi, 
-         'pfMet', iTree.met,
-         'pt1', iTree.pt_1, 
-         'eta1', iTree.eta_1, 
-         #            'iso1', iTree.iso_1, 
-         'phi1', iTree.phi_1, 
-         'mass1', iTree.m_1,
-         'pt2', iTree.pt_2, 
-         'eta2', iTree.eta_2, 
-         #            'iso2', iTree.iso_2, 
-         'phi2', iTree.phi_2, 
-         'mass2', iTree.m_2,
-         #             'jptraw1', iTree.jptraw_1,
-         'jpt_1', iTree.jpt_1, 
+            'mvaMet', iTree.mvamet, 
+            'mvaMet', iTree.mvamet, 
+            'mvaPhi', iTree.mvametphi, 
+            'pt1', iTree.pt_1, 
+#             'eta1', iTree.eta_1, 
+            'iso1', iTree.iso_1, 
+#             'phi1', iTree.phi_1, 
+#             'mass1', iTree1.m_1,
+            'pt2', iTree.pt_2, 
+#             'eta2', iTree.eta_2, 
+            'iso2', iTree.iso_2, 
+#             'phi2', iTree.phi_2, 
+#             'mass2', iTree1.m_2,
+#             'jptraw1', iTree.jptraw_1,
+            'jpt_1', iTree.jpt_1, 
 #             'jeta_1', iTree.jeta_1, 
 #             'jphi_1', iTree.jphi_1, 
 
 #             'jptraw2', iTree.jptraw_2,
-         'jpt_2', iTree.jpt_2, 
+            'jpt_2', iTree.jpt_2, 
 #             'jeta_2', iTree.jeta_2, 
 #             'jphi_2', iTree.jphi_2,
 # 
 #             'npv', iTree.npv,
 # 
 #             'bcsv_1', iTree.bcsv_1,
-#         'bpt_1', iTree.bpt_1,
+            'bpt_1', iTree.bpt_1,
 #             'beta_1', iTree.beta_1,
 #             'bphi_1', iTree.bphi_1,
 #             'bcsv_2', iTree.bcsv_2,
-#         'bpt_2', iTree.bpt_2,
+            'bpt_2', iTree.bpt_2,
 #             'beta_2', iTree.beta_2,
 #             'bphi_2', iTree.bphi_2,
 #             'bcsv_3', iTree.bcsv_3,
 #             'bpt_3', iTree.bpt_3,
 #             'beta_3', iTree.beta_3,
 #             'bphi_3', iTree.bphi_3,
-         'cov00', iTree.mvacov00,
-         'cov01', iTree.mvacov01,
-         'cov10', iTree.mvacov10,
-         'cov11', iTree.mvacov11]
+            'cov00', iTree.mvacov00,
+            'cov01', iTree.mvacov01,
+            'cov10', iTree.mvacov10,
+            'cov11', iTree.mvacov11]
     return a
 
 def addVars2(iTree):
@@ -199,27 +193,30 @@ def checkSyncDev(options):
 
     evt2Last = varsList2[total2-1][1]
 
-    print '%s %i events' %(options.name1, total1)
-    print '%s %i events' %(options.name2, total2)
-
     indexNotFound1 = []
     indexFound2 = []
+    matchedEvents = 0
+    sameEvents = 0
+    differentEvents = 0
 
     for i in range(total1):
         for j in range(total2):
             if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
                 diff = varsList1[i][3]/varsList2[j][3]
-                printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
+                printInfo(varsList1[i], varsList2[j])
                 return 1
             elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
+                matchedEvents += 1
                 diff = varsList1[i][3]/varsList2[j][3]
                 mvaMet2.Fill(diff)
                 indexFound2.append(j)
                 if diff != 1 and (options.style == 'diff' or options.style == 'all'):
                     printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
+                    sameEvents += 1
                 elif diff == 1 and (options.style == 'same' or options.style == 'all'):
                     printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
+                    differentEvents += 1
                 break
             elif varsList1[i][1] < varsList2[j][1]:
                 indexNotFound1.append(i)
@@ -234,6 +231,14 @@ def checkSyncDev(options):
             if i_2 not in indexFound2:
                 printSingleInfo(options.name2, varsList1[i_2])
 
+    print '%s %i events' %(options.name1, total1)
+    print '%s %i events' %(options.name2, total2)
+    if sameEvents == 0:
+        sameEvents = matchedEvents - differentEvents
+    else:
+        differentEvents = matchedEvents - sameEvents
+        
+    print "Out of %i matching events, %s%i\033[0m events with same MVAMet, %s%i\033[0m events with different MVAMet" %(matchedEvents, bcolors.OKGREEN, sameEvents, bcolors.FAIL, differentEvents)
 
     if eventNumber == -1:   
         return 1
