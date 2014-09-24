@@ -43,6 +43,7 @@ combinedJJ = lvClass()
 sv4Vec = lvClass()
 
 #Setup Kinematic Fit
+print "WARNING: using zmao's area!"
 kinfit.setup(path="/afs/hep.wisc.edu/home/zmao/myScripts/H2hh2bbTauTau/python/HHKinFit",
              lib="libHHKinFit.so",)
 
