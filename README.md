@@ -23,6 +23,7 @@ cd CMSSW_5_3_15/src/TMVA-v4.2.0/test/
 source setup.sh
 ```
 
+```
 1) mJJ regression:
     1. specify configs in runRegression.py
     2. python runRegression.py
@@ -46,12 +47,16 @@ source setup.sh
     2. specify samples in TMVA-v4.2.0/test/runClassification.py
     3. cd TMVA-v4.2.0/test/
     3. python runClassification.py
-
+```
 
 ####.root file for limits
+```
 1. specify sample location in samples-plots/python/Tools/makeWholeSample_cfg.py
 2. python samples-plots/python/Tools/makeWholeSample.py
+```
 
 ####plots
+```
 1. Specify variables to draw, sample location and signal mass point in samples-plots/python/Tools/draw_cfg.py
 2. python samples-plots/python/Tools/draw.py
+```
