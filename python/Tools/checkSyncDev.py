@@ -145,7 +145,7 @@ def opts():
     parser.add_option("--t1", dest="tree1", default='TauCheck', help="tree name of file 1")
     parser.add_option("--t2", dest="tree2", default='syncTree', help="tree name of file 2")
     parser.add_option("--evN", dest="eventNumber", default=-1, help="look at specific event")
-    parser.add_option("--style", dest="style", default='diff', help="diff, same or all")
+    parser.add_option("--subset", dest="style", default='diff', help="diff, same or all")
     parser.add_option("--nPair", dest="nTauPairs", default=0, help="Print number of tau pairs")
     
     options, args = parser.parse_args()
@@ -213,10 +213,10 @@ def checkSyncDev(options):
                 indexFound2.append(j)
                 if diff != 1 and (options.style == 'diff' or options.style == 'all'):
                     printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
-                    sameEvents += 1
+                    differentEvents += 1
                 elif diff == 1 and (options.style == 'same' or options.style == 'all'):
                     printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
-                    differentEvents += 1
+                    sameEvents += 1
                 break
             elif varsList1[i][1] < varsList2[j][1]:
                 indexNotFound1.append(i)
