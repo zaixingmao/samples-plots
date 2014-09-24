@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import ROOT as r
-import tool
 from array import array
 from operator import itemgetter
 import math
@@ -491,6 +489,8 @@ def opts():
     return options
 
 options = opts()
+import ROOT as r
+import tool
 
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_NoType1-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT')
