@@ -23,12 +23,15 @@ def color(a, b):
     return lineColor
 
 
-def printInfo(name1, varsList1, name2, varsList2):
-    title = 'Event: %i    Difference: %0.2f' %(varsList1[1], abs(varsList1[3] - varsList2[3]))
+def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
+    p = "%0.2f"
+    title = 'Event: %i    Difference: %s' %(varsList1[1], p)
+    title = title % abs(varsList1[3] - varsList2[3])
     printedEvN.append(varsList1[1])
-    outline0 = '       '    
-    outline1 = 'Brown: '
-    outline2 = 'INFN:  '
+    nChar = max([len(x) for x in [name1, name2]])
+    outline0 = ' ' * (nChar  + 2)
+    outline1 = '%s: ' % name1.rjust(nChar)
+    outline2 = '%s: ' % name2.rjust(nChar)
     foundDifferent = False
     for i in range(2, len(varsList1)/2):
         value1 = varsList1[i*2+1]
@@ -41,11 +44,13 @@ def printInfo(name1, varsList1, name2, varsList2):
                 lineColor = bcolors.OKGREEN
             outline1 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline1 += '%s%0.2f\033[0m\t' %(lineColor,value1)
+            outline1 += '%s%s\033[0m\t' %(lineColor, p)
+            outline1 = outline1 % value1
         if value2 == -10000:
             outline2 += '%snull\033[0m\t' %(lineColor)
         else:
-            outline2 += '%s%0.2f\033[0m\t' %(lineColor,value2)
+            outline2 += '%s%s\033[0m\t' %(lineColor, p)
+            outline2 = outline2 % value2
         if varsList1[i*2] != 'mvaMet':
             foundDifferent = True
         outline0 += '%s%s\033[0m\t' %(lineColor, varsList1[i*2])
@@ -204,7 +209,7 @@ def checkSyncDev(options):
         for j in range(total2):
             if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
                 diff = varsList1[i][3]/varsList2[j][3]
-                printInfo(varsList1[i], varsList2[j])
+                printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
                 return 1
             elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
