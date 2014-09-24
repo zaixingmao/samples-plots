@@ -477,6 +477,7 @@ def makeSyncNtuples(iLocation):
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file ')
     
     print ''
+    print "Events saved:", counter
     oFile.cd()
     oTree.Write()
     oFile.Close()
