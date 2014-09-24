@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-
-import ROOT as r
-import os
-
 signalEntries = 0
 ttEntries = 0
 ZZEntries = 0
