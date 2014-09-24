@@ -7,14 +7,14 @@ cd samples-plots
 ```
 
 ####make samples from ntuples
-* Specify samples location, name in `python/Tools/enVars.py`
-* `python python/Tools/cutSamples.py -l LOCATIONOFOUTPUTFILE`
+* Specify samples location, name in `Tools/enVars.py`
+* `python Tools/cutSamples.py -l LOCATIONOFOUTPUTFILE`
 
 ######to combined data, since we have A, B, C, D
 1. generate A, B, C, D separately in the same location
  (with no other sample in that directory)
-2. specify that location in `python/Tools/enVars.py`
-3. `python python/Tools/cutSamples.py -a True -l LOCATIONOFOUTPUTFILE`
+2. specify that location in `Tools/enVars.py`
+3. `python Tools/cutSamples.py -a True -l LOCATIONOFOUTPUTFILE`
  (the option -a tells cutSample to simply add the files with mine format)
 
 ####BDT training
@@ -30,10 +30,10 @@ source setup.sh
 
 2) make training samples with regression:
     1. for MC bkg
-        python samples-plots/python/Tools/makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c tightoppositebTag
+        python Tools/makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c tightoppositebTag
     2. for QCD bkg
-        python samples-plots/python/Tools/makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c relaxedsamebTag
-    or use wrapper for all samples, need to specify locations: samples-plots/python/Tools/makeTrainingSamples.py
+        python Tools/makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c relaxedsamebTag
+    or use wrapper for all samples, need to specify locations: Tools/makeTrainingSamples.py
 
 3) train BDT:
     1. specify sample location in TMVA-v4.2.0/test/TMVAClassification_both.py
@@ -51,12 +51,12 @@ source setup.sh
 
 ####.root file for limits
 ```
-1. specify sample location in samples-plots/python/Tools/makeWholeSample_cfg.py
-2. python samples-plots/python/Tools/makeWholeSample.py
+1. specify sample location in Tools/makeWholeSample_cfg.py
+2. python Tools/makeWholeSample.py
 ```
 
 ####plots
 ```
-1. Specify variables to draw, sample location and signal mass point in samples-plots/python/Tools/draw_cfg.py
-2. python samples-plots/python/Tools/draw.py
+1. Specify variables to draw, sample location and signal mass point in Tools/draw_cfg.py
+2. python Tools/draw.py
 ```
