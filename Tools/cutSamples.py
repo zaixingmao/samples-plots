@@ -180,10 +180,6 @@ def calcdPhiMetValues(tau1Phi, tau2Phi, j1Phi, j2Phi, metPhi, tauTauPhi, jjPhi, 
 
 r.gStyle.SetOptStat(0)
 
-signalEntries = enVars.signalEntries
-ttEntries = enVars.ttEntries
-ZZEntries = enVars.ZZEntries
-
 
 #*******Get Sample Name and Locations******
 sampleLocations = enVars.sampleLocations
@@ -233,7 +229,7 @@ for iSample, iLocation in sampleLocations:
         iChain = r.TChain("eventTree")
     else:
         iChain = r.TChain("ttTreeBeforeChargeCut/eventTree")
-    nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=signalEntries, printTotalEvents=True, blackList=blackList)
+    nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=blackList)
     iChain.SetBranchStatus("*",0)
     for iVar in range(len(varList)):
         iChain.SetBranchStatus(varList[iVar],1)
