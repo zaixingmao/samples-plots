@@ -1,1 +1,0 @@
-export MYSCRIPTSPATH=`pwd`

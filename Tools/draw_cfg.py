@@ -1,5 +1,6 @@
-#!/usr/bin/env python
 import ROOT as r
+
+
 drawConfigs = {'script': 'drawVarsData_KS_CheckFlat.py',
                'sampleLocation': '/scratch/zmao/relaxed_regression4',
                'signal': 'H260'}

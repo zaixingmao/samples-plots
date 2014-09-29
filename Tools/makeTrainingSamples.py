@@ -18,11 +18,11 @@ QCD_Sample = "dataTotal_all.root"
 for iMCSample in MC_Samples:
     inputFile = preFix+iMCSample
     outputFile = inputFile[0:inputFile.rfind('.')]
-    command = "python /afs/hep.wisc.edu/home/zmao/myScripts/H2hh2bbTauTau/python/Tools/makeTrainingSample.py --i "
+    command = "python Tools/makeTrainingSample.py --i "
     command += "%s --o %s --c tightoppositebTag" %(inputFile, outputFile)
     os.system(command) 
 
-command = "python /afs/hep.wisc.edu/home/zmao/myScripts/H2hh2bbTauTau/python/Tools/makeTrainingSample.py --i "
+command = "python Tools/makeTrainingSample.py --i "
 inputFile = preFix+QCD_Sample
 outputFile = inputFile[0:inputFile.rfind('.')]
 command += "%s --o %s --c relaxedsamebTag" %(inputFile, outputFile)

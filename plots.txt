@@ -1,3 +1,0 @@
-1. source samples-plots/env.sh
-2. Specify variables to draw, sample location and signal mass point in samples-plots/python/Tools/draw_cfg.py
-3. python samples-plots/python/Tools/draw.py

@@ -163,10 +163,6 @@ which the MVAMET agrees.  Likewise for --subset=diff.
     return options
 
 
-# ifile1 = '/afs/hep.wisc.edu/home/zmao/Print_SyncPlots/H2hh300_syncNew.root'
-# ifile1 = '/afs/hep.wisc.edu/home/zmao/H2hh300_syncNew.root'
-
-
 def checkSyncDev(options):
     eventNumber = int(options.eventNumber)
     iFile1 = r.TFile(options.location1)

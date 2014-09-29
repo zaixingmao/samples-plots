@@ -108,7 +108,6 @@ def findMatch(iTree, isData):
 
     return genMatch
 
-preFix0 = '/scratch/zmao/relaxed_regression4/'
 fileList = []
 for massPoint in [260, 300, 350]:
     preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
