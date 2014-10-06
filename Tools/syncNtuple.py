@@ -101,9 +101,9 @@ varList = [('run', 'RUN', 'I'),
            ('jctm_2', 'J2Ntot', 'I'),
           ]
 
-def makeSyncNtuples(iLocation, cut):
+def makeSyncNtuples(iLocation, cut, treepath):
 
-    iTree = r.TChain("TauCheck/eventTree")
+    iTree = r.TChain(treepath)
     print iLocation
     nEntries = tool.addFiles(ch=iTree, dirName=iLocation, knownEventNumber=0, maxFileNumber=-1, printTotalEvents = True)
     iTree.SetBranchStatus("*",1)
@@ -484,13 +484,18 @@ def makeSyncNtuples(iLocation, cut):
     print 'Saved file: %s.root' %oFileName
 
 def opts():
-    parser = optparse.OptionParser()
-    parser.add_option("-l", dest="location", default='/hdfs/store/user/zmao/H2hh300_newPhilHMetCalib-SUB-TT', help="location to be saved")
+    parser = optparse.OptionParser("Usage: %prog /path/to/ntuples/ [options]")
     parser.add_option("--cut", dest="cut", default=False, action="store_true", help="apply cuts")
+    defTree = "ttTreeBeforeChargeCut/eventTree"
+    parser.add_option("--treepath", dest="treepath", default=defTree, help="TDirectory/name of TTree (default is %s)" % defTree)
     options, args = parser.parse_args()
-    return options
 
-options = opts()
+    if len(args) != 1:
+        parser.print_help()
+        exit()
+    return args[0], options
+
+location, options = opts()
 
 import ROOT as r
 import tool
@@ -499,4 +504,6 @@ import tool
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newCalibMet-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newMET-SUB-TT')
-makeSyncNtuples(options.location, options.cut)
+# makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newPhilHMetCalib-SUB-TT', True, "TauCheck/eventTree")
+
+makeSyncNtuples(location, options.cut, options.treepath)
