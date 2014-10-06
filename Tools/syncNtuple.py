@@ -490,10 +490,11 @@ def opts():
     options, args = parser.parse_args()
     return options
 
+options = opts()
+
 import ROOT as r
 import tool
 
-options = opts()
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_NoType1-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newCalibMet-SUB-TT')
