@@ -5,13 +5,16 @@ import os
 
 
 def trueSize(sizeofFile):
-    if sizeofFile.find('K'):
-        return int(sizeofFile[0:sizeofFile.rfind('K')])
-    elif sizeofFile.find('M'):
-        return (int(sizeofFile[0:sizeofFile.rfind('M')])*1000)
+    k = sizeofFile.find('K')
+    m = sizeofFile.find('M')
+    if 0 <= k:
+        return float(sizeofFile[:k])
+    elif 0 <= m:
+        return float(sizeofFile[:m]) * 1000
     else:
-        return "invalid size"
-    
+        print "invalid size:", sizeOfFile
+        return None
+
 
 def opts():
     parser = optparse.OptionParser()
@@ -46,7 +49,7 @@ def checkJobs(opt):
             continue
         sizeofFile = current_line.split()[0]
         TrueSize = trueSize(sizeofFile)
-        if TrueSize != "invalid size" and TrueSize < minSize:
+        if (TrueSize is not None) and TrueSize < minSize:
             minSize = TrueSize
             smallestSet = current_line
 
