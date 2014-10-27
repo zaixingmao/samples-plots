@@ -110,7 +110,8 @@ def findMatch(iTree, isData):
 
 fileList = []
 for massPoint in [260, 300, 350]:
-    preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
+    #preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
+    preFix = makeWholeSample_cfg.preFix0
     for i in range(len(makeWholeSample_cfg.sampleConfigs)):
         fileList.append((makeWholeSample_cfg.sampleConfigs[i][0], 
                          preFix + makeWholeSample_cfg.sampleConfigs[i][1], 
@@ -129,6 +130,7 @@ mJJ = array('f', [0.])
 svMass = array('f', [0.])
 fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
+chi2KinFit = array('f', [0.])
 
 
 BDT_300 = array('f', [0.])
@@ -168,6 +170,7 @@ oTree.Branch("mJJReg", mJJReg, "mJJReg/F")
 oTree.Branch("mJJ", mJJ, "mJJ/F")
 oTree.Branch("fMass", fMass, "fMass/F")
 oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
+oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
 
 oTree.Branch("svMass", svMass, "svMass/F")
 
@@ -212,27 +215,28 @@ for indexFile in range(nSamples):
         if passCut(iTree, 'OSrelaxedbTag') and (not ("H2hh" in name)):
             if isData:
                 scaleSVMass.Fill(iTree.svMass.at(0), iTree.triggerEff)
-                scaleMJJReg.Fill(iTree.mJJReg, iTree.triggerEff)
-                scaleBDT_260.Fill(iTree.BDT_both, iTree.triggerEff)
-                scaleBDT_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff)
-                scaleBDT_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff)
+                #scaleMJJReg.Fill(iTree.mJJReg, iTree.triggerEff)
+                #scaleBDT_260.Fill(iTree.BDT_both, iTree.triggerEff)
+                #scaleBDT_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff)
+                #scaleBDT_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff)
 
             else:
                 scaleSVMassMC.Fill(iTree.svMass.at(0), iTree.triggerEff*scale)
-                scaleMJJRegMC.Fill(iTree.mJJReg, iTree.triggerEff*scale)
-                scaleBDTMC_260.Fill(iTree.BDT_both, iTree.triggerEff*scale)
-                scaleBDTMC_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff*scale)
-                scaleBDTMC_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff*scale)
+                #scaleMJJRegMC.Fill(iTree.mJJReg, iTree.triggerEff*scale)
+                #scaleBDTMC_260.Fill(iTree.BDT_both, iTree.triggerEff*scale)
+                #scaleBDTMC_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff*scale)
+                #scaleBDTMC_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff*scale)
 
         if not passCut(iTree, option):
             continue
-        BDT[0] = iTree.BDT_both
-        BDT_300[0] = iTree_300.BDT_both
-        BDT_350[0] = iTree_350.BDT_both
-        mJJReg[0] = iTree.mJJReg
+        #BDT[0] = iTree.BDT_both
+        #BDT_300[0] = iTree_300.BDT_both
+        #BDT_350[0] = iTree_350.BDT_both
+        #mJJReg[0] = iTree.mJJReg
         mJJ[0] = iTree.mJJ
         fMass[0] = iTree.fMass
         fMassKinFit[0] = iTree.fMassKinFit
+        chi2KinFit[0] = iTree.chi2KinFit
         svMass[0] = iTree.svMass.at(0)
 
 #         BDT_QCD[0] = iTree.BDT_QCD
