@@ -61,7 +61,7 @@ def findVar(iTree, varName):
                 'dEtaTauTau': angleInPie(abs(iTree.eta1.at(0) - iTree.eta2.at(0))),
                 'dRJJ': iTree.dRJJ,
                 'dRhh': iTree.dRhh,
-                'mJJReg': iTree.mJJReg,
+#                'mJJReg': iTree.mJJReg,
 #                 'BDT_EWK': iTree.BDT_EWK,
 #                 'BDT_QCD': iTree.BDT_QCD,
 #                 'BDT_both': iTree.BDT_both,
