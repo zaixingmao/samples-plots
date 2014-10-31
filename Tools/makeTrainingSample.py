@@ -32,6 +32,8 @@ def opts():
     return options
 
 def passCut(iTree, cut):
+    if iTree.chi2KinFit <= -10:
+        return False
     if 'none' in cut:
         return True
     if 'tight' in cut:
