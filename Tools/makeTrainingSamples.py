@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 import os as os
 
-preFix = "TMVARegApp_"
+preFix = "/scratch/zmao/regression_fixChi2Range/TMVARegApp_"
 MC_Samples = ['ZZ_eff_all.root',
-              'WZJetsTo2L2Q_eff_all.root',
-              'W1JetsToLNu_eff2_all.root',
-              'W2JetsToLNu_eff2_all.root',
-              'W3JetsToLNu_eff2_all.root',
-              'DY1JetsToLL_eff2_all.root',
-              'DY2JetsToLL_eff2_all.root',
-              'DY3JetsToLL_eff2_all.root',
+#               'WZJetsTo2L2Q_eff_all.root',
+#               'W1JetsToLNu_eff2_all.root',
+#               'W2JetsToLNu_eff2_all.root',
+#               'W3JetsToLNu_eff2_all.root',
+#               'DY1JetsToLL_eff2_all.root',
+#               'DY2JetsToLL_eff2_all.root',
+#               'DY3JetsToLL_eff2_all.root',
               'tt_eff_all.root',
               'tt_semi_eff_all.root',
               ]
