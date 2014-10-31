@@ -101,6 +101,20 @@ varList = [('run', 'RUN', 'I'),
            ('jctm_2', 'J2Ntot', 'I'),
           ]
 
+def findBestPair(iTree):
+    nPairs = len(iTree.pt1)
+    isoCom = 999
+    bestPair = 0
+    if nPairs == 1:
+        return bestPair
+    else:
+        for iPair in range(nPairs):
+            tmpIsoCom = iTree.iso1.at(iPair) + iTree.iso2.at(iPair)
+            if tmpIsoCom < isoCom:
+                isoCom = tmpIsoCom
+                bestPair = iPair
+    return bestPair
+
 def makeSyncNtuples(iLocation, cut, treepath):
 
     iTree = r.TChain(treepath)
@@ -327,25 +341,34 @@ def makeSyncNtuples(iLocation, cut, treepath):
     b2 = lvClass()
     tau1 = lvClass()
     tau2 = lvClass()
+
+    iBestPair = 0
+
     for iEntry in range(nEntries):
         iTree.GetEntry(iEntry)
-        if cut:
-            if iTree.charge1.at(0) == iTree.charge2.at(0):
+        iBestPair = findBestPair(iTree)
+        if iTree.pt1.at(iBestPair)<45 or iTree.pt2.at(iBestPair)<45:
+            continue
+#         if iTree.J1Pt < 30 or abs(iTree.J1Eta) > 4.7:
+#             continue
+        if iTree.iso1.at(iBestPair)>1 or iTree.iso2.at(iBestPair)>1:
+            continue
+        if not (iTree.HLT_Any > 0):
+            continue
+#         if iTree.eleTauPt1.size()>0:
+#             print 'eTauPairFound'
+#             continue
+#         if iTree.muTauPt1.size()>0:
+#             print 'muTauPairFound'
+#             continue
+        if iTree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired > 0 or iTree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired > 0 or iTree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired > 0:
+            if iTree.jpass_1 == 0 and iTree.jpass_2 == 0:
                 continue
-            if iTree.eleTauPt1.size()>0:
-                print 'eTauPairFound'
-                continue
-            if iTree.muTauPt1.size()>0:
-                print 'muTauPairFound'
-                continue
-            if iTree.jpass_1 == 0:
-    #             print 'j1Pass Failed'
-                continue
-            if iTree.jpass_2 == 0:
-    #             print 'j2Pass Failed'
-                continue
-        eff1 = calcTrigOneTauEff(eta=iTree.eta1.at(0), pt=iTree.pt1.at(0), data = False, fitStart=25)
-        eff2 = calcTrigOneTauEff(eta=iTree.eta2.at(0), pt=iTree.pt2.at(0), data = False, fitStart=25)
+#         if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
+#             continue
+
+        eff1 = calcTrigOneTauEff(eta=iTree.eta1.at(iBestPair), pt=iTree.pt1.at(iBestPair), data = False, fitStart=25)
+        eff2 = calcTrigOneTauEff(eta=iTree.eta2.at(iBestPair), pt=iTree.pt2.at(iBestPair), data = False, fitStart=25)
         trigweight_1[0] = eff1
         trigweight_2[0] = eff2        
         effweight[0] = eff1*eff2
@@ -357,20 +380,13 @@ def makeSyncNtuples(iLocation, cut, treepath):
                     (iTree.J4CSVbtag, iTree.J4Pt, iTree.J4Eta, iTree.J4Phi, iTree.J4Mass)]
         jetsList = sorted(jetsList, key=itemgetter(0), reverse=True)
 
-        tau1.SetCoordinates(iTree.pt1.at(0), iTree.eta1.at(0), iTree.phi1.at(0), iTree.m1.at(0))
-        tau2.SetCoordinates(iTree.pt2.at(0), iTree.eta2.at(0), iTree.phi2.at(0), iTree.m2.at(0))
+        tau1.SetCoordinates(iTree.pt1.at(iBestPair), iTree.eta1.at(iBestPair), iTree.phi1.at(iBestPair), iTree.m1.at(iBestPair))
+        tau2.SetCoordinates(iTree.pt2.at(iBestPair), iTree.eta2.at(iBestPair), iTree.phi2.at(iBestPair), iTree.m2.at(iBestPair))
 
         b1.SetCoordinates(jetsList[0][1], jetsList[0][2], jetsList[0][3], jetsList[0][4])
         b2.SetCoordinates(jetsList[1][1], jetsList[1][2], jetsList[1][3], jetsList[1][4])
-
         if cut:
-            if jetsList[0][1] < 20 or jetsList[1][1] < 20:
-                continue
-            if abs(jetsList[0][2]) > 2.4 or abs(jetsList[1][2]) > 2.4:
-                continue
-            if iTree.pt1.at(0)<45 or iTree.pt2.at(0)<45:
-                continue
-            if iTree.iso1.at(0)>1.0 or iTree.iso2.at(0)>1.0:
+            if jetsList[0][1] < 20 or abs(jetsList[0][2]) > 2.4:
                 continue
             if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
                 continue
@@ -383,46 +399,46 @@ def makeSyncNtuples(iLocation, cut, treepath):
         lumi[0] = iTree.LUMI
         rho[0] = iTree.Rho
         mvis[0] = (tau1+tau2).mass()
-        m_sv[0] = iTree.svMass.at(0)
-        pt_sv[0] = iTree.svPt.at(0)
-        eta_sv[0] = iTree.svEta.at(0)
-        phi_sv[0] = iTree.svPhi.at(0)
+        m_sv[0] = iTree.svMass.at(iBestPair)
+        pt_sv[0] = iTree.svPt.at(iBestPair)
+        eta_sv[0] = iTree.svEta.at(iBestPair)
+        phi_sv[0] = iTree.svPhi.at(iBestPair)
 
-        pt_1[0] = iTree.pt1.at(0)
-        eta_1[0] = iTree.eta1.at(0)
-        phi_1[0] = iTree.phi1.at(0)
-        m_1[0] = iTree.m1.at(0)
-        q_1[0] = int(iTree.charge1.at(0))
+        pt_1[0] = iTree.pt1.at(iBestPair)
+        eta_1[0] = iTree.eta1.at(iBestPair)
+        phi_1[0] = iTree.phi1.at(iBestPair)
+        m_1[0] = iTree.m1.at(iBestPair)
+        q_1[0] = int(iTree.charge1.at(iBestPair))
         iso_1[0] = iTree.tau1MVAIso
         mva_1[0] = 0
-        byCombinedIsolationDeltaBetaCorrRaw3Hits_1[0] = iTree.iso1.at(0)
+        byCombinedIsolationDeltaBetaCorrRaw3Hits_1[0] = iTree.iso1.at(iBestPair)
         d0_1[0] = iTree.d0_1
         dZ_1[0] = iTree.l1dz
         mt_1[0] = iTree.mt1
 
-        pt_2[0] = iTree.pt2.at(0)
-        eta_2[0] = iTree.eta2.at(0)
-        phi_2[0] = iTree.phi2.at(0)
-        m_2[0] = iTree.m2.at(0)
-        q_2[0] = int(iTree.charge2.at(0))
+        pt_2[0] = iTree.pt2.at(iBestPair)
+        eta_2[0] = iTree.eta2.at(iBestPair)
+        phi_2[0] = iTree.phi2.at(iBestPair)
+        m_2[0] = iTree.m2.at(iBestPair)
+        q_2[0] = int(iTree.charge2.at(iBestPair))
         iso_2[0] = iTree.tau2MVAIso
         mva_2[0] = 0
-        byCombinedIsolationDeltaBetaCorrRaw3Hits_2[0] = iTree.iso2.at(0)
+        byCombinedIsolationDeltaBetaCorrRaw3Hits_2[0] = iTree.iso2.at(iBestPair)
         d0_2[0] = iTree.d0_2
         dZ_2[0] = iTree.l2dz
         mt_2[0] = iTree.mt2
 
         againstElectronMVA3raw_1[0] = iTree.againstElectronMVA3raw_1
         againstElectronMVA3raw_2[0] = iTree.againstElectronMVA3raw_2
-        againstMuonLoose2_1[0] = iTree.againstMuonLoose1.at(0)
-        againstMuonLoose2_2[0] = iTree.againstMuonLoose2.at(0)
+        againstMuonLoose2_1[0] = iTree.againstMuonLoose1.at(iBestPair)
+        againstMuonLoose2_2[0] = iTree.againstMuonLoose2.at(iBestPair)
         againstMuonMedium2_1[0] = iTree.againstMuonMedium2_1
         againstMuonMedium2_2[0] = iTree.againstMuonMedium2_2
         againstMuonTight2_1[0] = iTree.againstMuonTight2_1
         againstMuonTight2_2[0] = iTree.againstMuonTight2_2
 
         met[0] = iTree.metUnc
-        mvamet[0] = iTree.met.at(0)
+        mvamet[0] = iTree.met.at(iBestPair)
         mvametphi[0] = iTree.metOldphi
         mvacov00[0] = iTree.mvacov00
         mvacov01[0] = iTree.mvacov01

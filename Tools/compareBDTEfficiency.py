@@ -10,28 +10,19 @@ from array import array
 r.gROOT.SetBatch(True)
 massPoints = ['260','300','350']
 Vars = 'svMass dRTauTau dRJJ mJJReg'
-
 psfile = 'BDT_Eff_diff_combined.pdf'
 c = r.TCanvas("c","Test", 800, 600)
 c.SetGrid()
 
-fileList = [# ('16 Variables',r.kGreen), 
-    #             ('TMVA%s_10.root' %massPoint,'10 Variables (Highest rank)',r.kGreen),
-    #             ('TMVA%s_9.root' %massPoint,'9 Variables (10 Variables drop MEt)',r.kBlue),
-    #             ('TMVA%s_8.root' %massPoint,'8 Variables (Highest rank)',r.kRed-7),
-    #             ('TMVA%s_6.root' %massPoint,'6 Variables (Highest rank)',r.kBlack),
-            ('16 Variables + fullMass', r.kRed),
-            ('16 Variables + fullMassKinFit',r.kGreen), 
-            ('svMass svPt dRJJ mJJReg met CSVJ2 fMassKinFit metSvTauPairDPhi',r.kMagenta-9),
-            ('svMass svPt dRJJ mJJReg met CSVJ2 fMass metSvTauPairDPhi',r.kOrange),
+fileList = [('_18.root','16 Variables + fullMassKinFit + chi2',r.kRed),
+            ('_17.root','16 Variables + chi2',r.kOrange),  
+#             ('_8.root', '%s met fMassKinFit metTauPairDPhi metJ2DPhi' %Vars,r.kOrange),
+#             ('_9.root', '%s met chi2KinFit fullMassKinFit metJ2DPhi svPt' %Vars, r.kOrange),
+            ('_8.root', '%s met chi2KinFit fullMassKinFit metJ2DPhi' %Vars,r.kGreen+7),
+            ('_7.root', '%s met chi2KinFit metJ2DPhi' %Vars,r.kBlack),
 
-#             ('16 Variables + tau1MVA + tau2MVA',r.kBlue),
-#             ('16 Variables + fullMassKinFit + tau1MVA + tau2MVA',r.kOrange),
-#             ('svMass svPt dRJJ mJJReg met tau1MVA tau2MVA CSVJ2 fMassKinFit',r.kMagenta-9),
-#             ('svMass svPt dRJJ mJJReg met tau1MVA tau2MVA CSVJ2 fMassKinFit metSvTauPairDPhi',r.kBlack),
-            ('svMass mJJReg MassKinFit',r.kBlue-7),
-
-#             ('%s met tau1MVA tau2MVA' %Vars,r.kGreen+7),
+            ('_3.root','svMass mJJReg chi2KinFit',r.kBlue-7),
+            ('_2.root', 'svMass mJJ' ,r.kMagenta-9),
 
 #             ('%s JJPt' %Vars,r.kOrange),
 #             ('%s svPt' %Vars,r.kBlue-7),
@@ -45,7 +36,7 @@ bkgEffs = []
 lHistList3 = []
 l = []
 i = 0
-for iName, iColor in fileList:
+for iFileName, iName, iColor in fileList:
     bkgEffs.append(r.TGraph(3))
     bkgEffs[i].SetLineColor(iColor)
 #     bkgEffs[i].SetMarkerSize(2)
@@ -53,27 +44,9 @@ for iName, iColor in fileList:
     i+=1
 iMassPoint = 0
 for massPoint in massPoints:
-    iFileList = [# ('TMVA%s_16.root' %massPoint, fileList[0][0], fileList[0][1]), 
-                ('TMVA%s_17.root' %massPoint, fileList[0][0], fileList[0][1]),
-                ('TMVA%s_17_kinFit.root' %massPoint, fileList[1][0], fileList[1][1]),
-                ('TMVA%s_8_kinFit2.root' %massPoint, fileList[2][0], fileList[2][1]),
-                ('TMVA%s_8.root' %massPoint, fileList[3][0], fileList[3][1]),
-
-#                 ('TMVA%s_18_kinFit.root' %massPoint, fileList[2][0], fileList[2][1]),
-#                 ('TMVA%s_19_kinFit.root' %massPoint, fileList[3][0], fileList[3][1]),
-#                 ('TMVA%s_9_kinFit.root' %massPoint, fileList[4][0], fileList[4][1]),
-#                 ('TMVA%s_10_kinFit2.root' %massPoint, fileList[5][0], fileList[5][1]),
-                ('TMVA%s_3_kinFit2.root' %massPoint, fileList[4][0], fileList[4][1]),
-
-#                 ('TMVA%s_7_kinFit.root' %massPoint, fileList[5][0], fileList[5][1]),
-
-# 
-#                 ('TMVA%s_5.root' %massPoint, fileList[2][0], fileList[2][1]),
-#                 ('TMVA%s_5_1.root' %massPoint, fileList[3][0], fileList[3][1]),
-#                 ('TMVA%s_5_2.root' %massPoint, fileList[4][0], fileList[4][1]),
-#                 ('TMVA%s_6.root' %massPoint, fileList[5][0], fileList[5][1]),
-#                 ('TMVA%s_2.root' %massPoint, fileList[6][0], fileList[6][1]),
-                ]
+    iFileList = []
+    for indexFile in range(len(fileList)):
+        iFileList.append(('TMVA%s%s' %(massPoint, fileList[indexFile][0]), fileList[indexFile][1], fileList[indexFile][2]))    
 
     lHistList1=[]
     lHistList2=[]
@@ -98,7 +71,7 @@ for massPoint in massPoints:
         lHistList2.append((effList_both[i], '%s (sigEff@0.8, bkgEff = %.3f)' %(iFileList[i][1], 1-effList_both[i].GetBinContent(xBin))))
         bkgEffs[i].SetPoint(iMassPoint, intMassPoint, 1-effList_both[i].GetBinContent(xBin))
         if massPoint == '350':
-            lHistList3.append((effList_both[i], fileList[i][0]))
+            lHistList3.append((effList_both[i], fileList[i][1]))
 
     legendPosition = (0.1, 0.2, 0.85, 0.5)
     f.close()
@@ -130,7 +103,7 @@ for massPoint in massPoints:
 
         bkgEffs[0].Draw('APL')
         bkgEffs[0].SetMinimum(0.00)
-        bkgEffs[0].SetMaximum(0.15)
+        bkgEffs[0].SetMaximum(0.2)
         for j in range(1, len(iFileList)):
             bkgEffs[j].Draw('PLsame')
         l.append(tool.setMyLegend((0.3, 0.6, 0.9, 0.9), lHistList3))
