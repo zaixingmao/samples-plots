@@ -7,7 +7,7 @@
 
 
 #preFix0 = '/scratch/zmao/relaxed_regression4/'
-preFix0 = '/nfs_scratch/elaird/zm-old/'
+preFix0 = '/scratch/zmao/regression_fixChi2Range/18/'
 
 sampleConfigs =[('H2hh260', 'H2hh260_all.root', 'OStightbTag', 14.76),
                 ("H2hh300", "H2hh300_all.root", 'OStightbTag', 15.9),
@@ -24,4 +24,5 @@ sampleConfigs =[('H2hh260', 'H2hh260_all.root', 'OStightbTag', 14.76),
                 #('W3JetsToLNu','W3JetsToLNu_eff2_all.root', 'OStightbTag', 519000),
                 ('dataOSRelax','dataTotal_all.root', 'OSrelaxedbTag', 0.051)]
 
-oFileName = 'combined.root'
+oFileName = 'combined_18_test.root'
+trainedMassPoints = [260, 300]
