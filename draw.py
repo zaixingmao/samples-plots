@@ -3,7 +3,7 @@
 import varsList
 import os
 import ROOT as r
-import draw_cfg
+from cfg import draw as draw_cfg
 
 # import drawVarsData_new2
 
