@@ -11,7 +11,7 @@ from cfg import draw as draw_cfg
 region = 'LL'
 
 relPath = __file__
-script = os.path.abspath(relPath).replace(relPath, "Tools/%s" % draw_cfg.drawConfigs['script'])
+script = os.path.abspath(relPath).replace(relPath, "%s" % draw_cfg.drawConfigs['script'])
 
 for varName, varConfig in draw_cfg.varsRange.items():
 
