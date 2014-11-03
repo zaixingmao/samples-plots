@@ -42,10 +42,7 @@ tau2 = lvClass()
 combinedJJ = lvClass()
 sv4Vec = lvClass()
 
-#Setup Kinematic Fit
-print "WARNING: using zmao's area!"
-kinfit.setup(path="/afs/hep.wisc.edu/home/zmao/myScripts/H2hh2bbTauTau/python/HHKinFit",
-             lib="libHHKinFit.so",)
+kinfit.setup()
 
 def calcTrigOneTauEff(eta, pt, data = True, fitStart=25):
         le14_da = {20: (0.898, 44.3, 1.02),
