@@ -113,10 +113,9 @@ def loop(fileName="", nEventsMax=None, suffix=""):
 
 
 def pdf(fileName="", histos={}):
-    out = "check.pdf"
     can = r.TCanvas("can", "", 2)
     
-    can.Print(out+"[")
+    can.Print(fileName+"[")
 
     leg = r.TLegend(0.65, 0.65, 0.85, 0.85)
     leg.SetFillStyle(0)
@@ -159,8 +158,8 @@ def pdf(fileName="", histos={}):
         r.gPad.SetTicky()
         leg.Draw()
         fillLeg = False
-        can.Print(out)
-    can.Print(out+"]")
+        can.Print(fileName)
+    can.Print(fileName+"]")
 
 
 if __name__ == "__main__":
