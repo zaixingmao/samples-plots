@@ -174,8 +174,7 @@ if __name__ == "__main__":
     hypo_mh1.push_back(125)
     hypo_mh2.push_back(125)
 
-    user = os.environ["USER"]
-    setup(path="/afs/cern.ch/user/%s/%s/HHKinFit" % (user[0], user),
+    setup(path="/".join(__file__.split("/")[:-1] + ["..", "HHKinFit"]),
           lib="libHHKinFit.so",
           )
     histos = loopMulti(fileNames=[("v2/H2hh260_all.root",     "H260"),
