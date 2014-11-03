@@ -3,7 +3,7 @@
 import varsList
 import os
 import ROOT as r
-import draw_cfg
+from cfg import draw as draw_cfg
 
 # import drawVarsData_new2
 
@@ -11,7 +11,7 @@ import draw_cfg
 region = 'LL'
 
 relPath = __file__
-script = os.path.abspath(relPath).replace(relPath, "Tools/%s" % draw_cfg.drawConfigs['script'])
+script = os.path.abspath(relPath).replace(relPath, "%s" % draw_cfg.drawConfigs['script'])
 
 for varName, varConfig in draw_cfg.varsRange.items():
 

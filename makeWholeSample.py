@@ -6,7 +6,7 @@ import math
 import optparse
 import os
 from array import array
-import makeWholeSample_cfg
+from cfg import makeWholeSample as makeWholeSample_cfg
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
