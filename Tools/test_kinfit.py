@@ -174,9 +174,8 @@ if __name__ == "__main__":
     hypo_mh1.push_back(125)
     hypo_mh2.push_back(125)
 
-    setup(path="/".join(__file__.split("/")[:-1] + ["..", "HHKinFit"]),
-          lib="libHHKinFit.so",
-          )
+    setup(path="HHKinFit", lib="libHHKinFit.so")
+
     histos = loopMulti(fileNames=[("v2/H2hh260_all.root",     "H260"),
                                   ("v2/H2hh300_all.root",     "H300"),
                                   ("v2/H2hh350_all.root",     "H350"),
@@ -186,4 +185,4 @@ if __name__ == "__main__":
                                   ],
                        #nEventsMax=200,
                        )
-    pdf(fileName="check.pdf", histos=histos)
+    pdf(fileName="kinfit_v1.0.pdf", histos=histos)
