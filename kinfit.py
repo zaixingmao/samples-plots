@@ -10,6 +10,7 @@ hypo_mh2 = r.std.vector('Int_t')()
 hypo_mh1.push_back(125)
 hypo_mh2.push_back(125)
 
+
 def setup(path="HHKinFit", lib="libHHKinFit.so"):
     # https://twiki.cern.ch/twiki/bin/viewauth/CMS/HHKinFit
     full = "%s/%s" % (path, lib)
@@ -20,6 +21,8 @@ def setup(path="HHKinFit", lib="libHHKinFit.so"):
 
 
 def fit(tree, j1, j2):
+    # NOTE! j1 and j2 are expected to be r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
+
     b1 = r.TLorentzVector()
     b2 = r.TLorentzVector()
     tauvis1 = r.TLorentzVector()
