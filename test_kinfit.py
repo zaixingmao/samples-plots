@@ -2,53 +2,7 @@
 
 import os
 import ROOT as r
-
-
-def setup(path="", lib=""):
-    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/HHKinFit
-    full = "%s/%s" % (path, lib)
-    if not os.path.exists(full):
-        os.system("cd %s && ./compile.sh" % path)
-    r.gSystem.Load(full)
-    r.gROOT.LoadMacro("%s/include/HHKinFitMaster.h+" % path)
-
-
-def fit(tree):
-    b1 = r.TLorentzVector()
-    b2 = r.TLorentzVector()
-    tauvis1 = r.TLorentzVector()
-    tauvis2 = r.TLorentzVector()
-
-    b1.SetPtEtaPhiM(tree.CSVJ1Pt, tree.CSVJ1Eta, tree.CSVJ1Phi, tree.CSVJ1Mass)
-    b2.SetPtEtaPhiM(tree.CSVJ2Pt, tree.CSVJ2Eta, tree.CSVJ2Phi, tree.CSVJ2Mass)
-
-    tauvis1.SetPtEtaPhiM(tree.pt1.at(0), tree.eta1.at(0), tree.phi1.at(0), tree.m1.at(0))
-    tauvis2.SetPtEtaPhiM(tree.pt2.at(0), tree.eta2.at(0), tree.phi2.at(0), tree.m2.at(0))
-
-    kinFits = r.HHKinFitMaster(b1, b2, tauvis1, tauvis2)
-
-    ptmiss = r.TLorentzVector()
-    ptmiss.SetPtEtaPhiM(tree.met.at(0), 0.0, tree.metphi.at(0), 0.0)
-
-    metcov = r.TMatrixD(2, 2)
-    metcov[0][0] = tree.mvacov00
-    metcov[1][0] = tree.mvacov10
-    metcov[0][1] = tree.mvacov01
-    metcov[1][1] = tree.mvacov11
-    #metcov.Print()
-
-    kinFits.setAdvancedBalance(ptmiss, metcov)
-
-    kinFits.addMh1Hypothesis(hypo_mh1)
-    kinFits.addMh2Hypothesis(hypo_mh2)
-    
-    kinFits.doFullFit()
-    chi2 = kinFits.getBestChi2FullFit()
-    mh = kinFits.getBestMHFullFit()
-    #prob = kinFits.getFitProbFullFit()
-    #print prob
-    #print iEvent, chi2, prob, mh
-    return chi2, mh
+from kinfit import setup, fit
 
 
 def loopMulti(fileNames=[], nEventsMax=None):
@@ -102,7 +56,13 @@ def loop(fileName="", nEventsMax=None, suffix=""):
         if tree.CSVJ2 < 0.244:
             continue
 
-        chi2, mh = fit(tree)
+        j1 = lvClass()
+        j2 = lvClass()
+
+        j1.SetCoordinates(tree.CSVJ1Pt, tree.CSVJ1Eta, tree.CSVJ1Phi, tree.CSVJ1Mass)
+        j2.SetCoordinates(tree.CSVJ2Pt, tree.CSVJ2Eta, tree.CSVJ2Phi, tree.CSVJ2Mass)
+
+        chi2, mh = fit(tree, j1, j2)
         h_chi2.Fill(chi2)
         h_m.Fill(mh)
         h_fMass.Fill(tree.fMass)
@@ -168,13 +128,8 @@ if __name__ == "__main__":
     #r.gStyle.SetOptStat("e")
     r.TH1.SetDefaultSumw2(True)
 
-    hypo_mh1 = r.std.vector('Int_t')()
-    hypo_mh2 = r.std.vector('Int_t')()
-    hypo_mh1.push_back(125)
-    hypo_mh2.push_back(125)
-
-    setup(path="HHKinFit", lib="libHHKinFit.so")
-
+    setup()
+    lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
     histos = loopMulti(fileNames=[("v2/H2hh260_all.root",     "H260"),
                                   ("v2/H2hh300_all.root",     "H300"),
                                   ("v2/H2hh350_all.root",     "H350"),
