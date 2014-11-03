@@ -2,15 +2,7 @@
 
 import os
 import ROOT as r
-
-
-def setup(path="", lib=""):
-    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/HHKinFit
-    full = "%s/%s" % (path, lib)
-    if not os.path.exists(full):
-        os.system("cd %s && ./compile.sh" % path)
-    r.gSystem.Load(full)
-    r.gROOT.LoadMacro("%s/include/HHKinFitMaster.h+" % path)
+from kinfit import setup, hypo_mh1, hypo_mh2
 
 
 def fit(tree):
@@ -168,13 +160,7 @@ if __name__ == "__main__":
     #r.gStyle.SetOptStat("e")
     r.TH1.SetDefaultSumw2(True)
 
-    hypo_mh1 = r.std.vector('Int_t')()
-    hypo_mh2 = r.std.vector('Int_t')()
-    hypo_mh1.push_back(125)
-    hypo_mh2.push_back(125)
-
-    setup(path="HHKinFit", lib="libHHKinFit.so")
-
+    setup()
     histos = loopMulti(fileNames=[("v2/H2hh260_all.root",     "H260"),
                                   ("v2/H2hh300_all.root",     "H300"),
                                   ("v2/H2hh350_all.root",     "H350"),
