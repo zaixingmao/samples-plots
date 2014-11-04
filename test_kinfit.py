@@ -5,6 +5,24 @@ import ROOT as r
 from kinfit import setup, fit
 
 
+def combineBinContentAndError(h, binToContainCombo, binToBeKilled):
+    c = h.GetBinContent(binToContainCombo) + h.GetBinContent(binToBeKilled)
+    e = h.GetBinError(binToContainCombo)**2 + h.GetBinError(binToBeKilled)**2
+    e = e**0.5
+
+    h.SetBinContent(binToBeKilled, 0.0)
+    h.SetBinContent(binToContainCombo, c)
+
+    h.SetBinError(binToBeKilled, 0.0)
+    h.SetBinError(binToContainCombo, e)
+
+
+def shift(h):
+    n = h.GetNbinsX()
+    combineBinContentAndError(h, n, n+1)  # overflows
+    combineBinContentAndError(h, 1, 0)  # underflows
+
+
 def loopMulti(fileNames=[], nEventsMax=None):
     out = {"chi2": [],
            "m_fit": [],
@@ -22,7 +40,7 @@ def loopMulti(fileNames=[], nEventsMax=None):
 
 
 def loop(fileName="", nEventsMax=None, suffix=""):
-    h_chi2 = r.TH1D("h_chi2%s" % suffix, ";chi2;events / bin", 120, -10.0, 390.0)
+    h_chi2 = r.TH1D("h_chi2%s" % suffix, ";chi2;events / bin", 100, -10.0, 190.0)
     #bins = [120, -10.0, 590.0]
     bins = [60, -10.0, 590.0]
     h_m = r.TH1D("h_m%s" % suffix, ";m_{fit} (GeV);events / bin", *bins)
@@ -55,6 +73,12 @@ def loop(fileName="", nEventsMax=None, suffix=""):
             
         if tree.CSVJ2 < 0.244:
             continue
+
+        #if not (70.0 < tree.svMass.at(0) < 160.0):
+        #    continue
+        #
+        #if not (70.0 < tree.mJJ < 160.0):
+        #    continue
 
         j1 = lvClass()
         j2 = lvClass()
@@ -92,6 +116,7 @@ def pdf(fileName="", histos={}):
                     h.Scale(1.0 / integral)
                     h.GetYaxis().SetTitle("fraction of events / bin")
                     h.GetYaxis().SetTitleOffset(1.3)
+                    shift(h)
                 else:
                     continue
 
@@ -103,6 +128,8 @@ def pdf(fileName="", histos={}):
             h.SetStats(False)
             h.SetLineColor(color)
             h.SetMarkerColor(color)
+            h.SetMinimum(0.0)
+            h.SetMaximum(1.0)
 
             color += 1
             if color == 5:
@@ -133,7 +160,7 @@ if __name__ == "__main__":
     histos = loopMulti(fileNames=[("v2/H2hh260_all.root",     "H260"),
                                   ("v2/H2hh300_all.root",     "H300"),
                                   ("v2/H2hh350_all.root",     "H350"),
-                                  #("v2/tt_eff_all.root",      "tt-dilep"),
+                                  ("v2/tt_eff_all.root",      "tt-dilep"),
                                   #("v2/tt_semi_eff_all.root", "tt-semilep"),
                                   #("v2/ZZ_eff_all.root",      "ZZ"),
                                   ],
