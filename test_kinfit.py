@@ -39,8 +39,33 @@ def loopMulti(fileNames=[], nEventsMax=None):
     return out
 
 
+def select(tree):
+    if tree.charge1.at(0) == tree.charge2.at(0):
+        return
+
+    if 1.5 < tree.iso1.at(0):
+        return
+
+    if 1.5 < tree.iso2.at(0):
+        return
+
+    if tree.CSVJ1 < 0.679:
+        return
+
+    if tree.CSVJ2 < 0.244:
+        return
+
+    #if not (90.0 < tree.svMass.at(0) < 150.0):
+    #    continue
+    #if not (90.0 < tree.mJJ < 150.0):
+    #    continue
+
+    return True
+
+
 def loop(fileName="", nEventsMax=None, suffix=""):
     h_chi2 = r.TH1D("h_chi2%s" % suffix, ";chi2;events / bin", 100, -10.0, 190.0)
+    #h_chi2 = r.TH1D("h_chi2%s" % suffix, ";chi2;events / bin", 240, -100.0, 1100.0)
     #bins = [120, -10.0, 590.0]
     bins = [60, -10.0, 590.0]
     h_m = r.TH1D("h_m%s" % suffix, ";m_{fit} (GeV);events / bin", *bins)
@@ -58,27 +83,9 @@ def loop(fileName="", nEventsMax=None, suffix=""):
 
     for iEvent in range(nEvents):
         tree.GetEntry(iEvent)
-        
-        if tree.charge1.at(0) == tree.charge2.at(0):
-            continue
 
-        if 1.5 < tree.iso1.at(0):
+        if not select(tree):
             continue
-            
-        if 1.5 < tree.iso2.at(0):
-            continue
-            
-        if tree.CSVJ1 < 0.679:
-            continue
-            
-        if tree.CSVJ2 < 0.244:
-            continue
-
-        #if not (70.0 < tree.svMass.at(0) < 160.0):
-        #    continue
-        #
-        #if not (70.0 < tree.mJJ < 160.0):
-        #    continue
 
         j1 = lvClass()
         j2 = lvClass()
@@ -128,7 +135,7 @@ def pdf(fileName="", histos={}):
             h.SetStats(False)
             h.SetLineColor(color)
             h.SetMarkerColor(color)
-            h.SetMinimum(0.0)
+            h.SetMinimum(1.0e-6*logY)
             h.SetMaximum(1.0)
 
             color += 1
@@ -143,6 +150,8 @@ def pdf(fileName="", histos={}):
 
         r.gPad.SetTickx()
         r.gPad.SetTicky()
+        if logY:
+            r.gPad.SetLogy()
         leg.Draw()
         fillLeg = False
         can.Print(fileName)
@@ -155,6 +164,7 @@ if __name__ == "__main__":
     #r.gStyle.SetOptStat("e")
     r.TH1.SetDefaultSumw2(True)
 
+    logY = False
     setup()
     lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
     histos = loopMulti(fileNames=[("v2/H2hh260_all.root",     "H260"),
