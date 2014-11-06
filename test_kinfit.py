@@ -28,8 +28,15 @@ def loopMulti(fileNames=[], nEventsMax=None):
     out = defaultdict(list)
 
     for fileName, leg in fileNames:
-        for key, h in loop(fileName, nEventsMax, suffix="_%s" % leg).iteritems():
-            out[key].append(h)
+        histos = loop(fileName, nEventsMax, suffix="_%s" % leg)
+        for key, h in histos.iteritems():
+            if "_pass" in key:
+                total = histos[key.replace("_pass", "")]
+                rate = r.TEfficiency(h, total)
+                rate.SetTitle(";%s;fraction of events with  \chi^{2} < 200" % h.GetXaxis().GetTitle())
+                out[key.replace("_pass", "_rate")].append(rate)
+            else:
+                out[key].append(h)
     return out
 
 
@@ -57,21 +64,24 @@ def select(tree):
     return True
 
 
-def loop(fileName="", nEventsMax=None, suffix="", chi2Fail=200):
+def loop(fileName="", nEventsMax=None, suffix="", chi2Fail=900):
     #mbins = [120, -10.0, 590.0]
     mbins = [60, -10.0, 590.0]
 
     out = {}
-    for var, title, bins in [("chi2", ";chi2;events / bin", (100, -10.0, 190.0)),
+    for var, title, bins in [("chi2", ";#chi^{2};events / bin", (40, -10.0, 190.0)),
                              #("chi2", ";chi2;events / bin", (240, -100.0, 1100.0)),
                              ("m", ";m_{fit} (GeV);events / bin", mbins),
                              ("fMass", ";m_{no fit} (GeV);events / bin", mbins),
+                             ("svMass", ";svMass (GeV);events / bin", (40, 0.0, 200.0)),
+                             ("mbb", ";m_{bb} (GeV);events / bin", (40, 0.0, 200.0)),
+                             ("dRTauTau", ";#DeltaR_{#tau#tau};events / bin", (30, 0.0, 6.0)),
                              ]:
         out[var] = r.TH1D("%s_%s" % (var, suffix), title, *bins)
         out[var+"_pass"] = r.TH1D("%s_pass_%s" % (var, suffix), title, *bins)
 
-    out["m_vs_m"] = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
-    out["m_vs_m_pass"] = r.TH2D("h_m_vs_m_pass_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
+    #out["m_vs_m"] = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
+    #out["m_vs_m_pass"] = r.TH2D("h_m_vs_m_pass_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
 
     f = r.TFile(fileName)
     tree = f.Get("eventTree")
@@ -97,13 +107,19 @@ def loop(fileName="", nEventsMax=None, suffix="", chi2Fail=200):
         out["chi2"].Fill(chi2)
         out["m"].Fill(mh)
         out["fMass"].Fill(tree.fMass)
-        out["m_vs_m"].Fill(mh, tree.fMass)
+        #out["m_vs_m"].Fill(mh, tree.fMass)
+        out["svMass"].Fill(tree.svMass.at(0))
+        out["mbb"].Fill(tree.mJJ)
+        out["dRTauTau"].Fill(tree.dRTauTau)
 
         if chi2 < chi2Fail:
             out["chi2_pass"].Fill(chi2)
             out["m_pass"].Fill(mh)
             out["fMass_pass"].Fill(tree.fMass)
-            out["m_vs_m_pass"].Fill(mh, tree.fMass)
+            #out["m_vs_m_pass"].Fill(mh, tree.fMass)
+            out["svMass_pass"].Fill(tree.svMass.at(0))
+            out["mbb_pass"].Fill(tree.mJJ)
+            out["dRTauTau_pass"].Fill(tree.dRTauTau)
 
     f.Close()
     return out
@@ -120,10 +136,11 @@ def pdf(fileName="", histos={}):
     fillLeg = True
 
     for key, lst in sorted(histos.iteritems()):
-        if "_pass" in key:
-            continue
         color = 1
         for i, h in enumerate(lst):
+            if h.ClassName().startswith("TH2"):
+                continue
+
             th1 = h.ClassName().startswith("TH1")
             if th1:
                 integral = h.Integral(0, 1 + h.GetNbinsX())
@@ -139,22 +156,38 @@ def pdf(fileName="", histos={}):
                 name = h.GetName().split("_")[-1]
                 #text = "%s (%d)" % (name, integral)
                 text = name
-                leg.AddEntry(h, text, "le")
-            h.SetStats(False)
+                leg.AddEntry(h, text, "lpe")
+
+            if th1:
+                h.SetMinimum(1.0e-6*logY)
+                h.SetMaximum(1.0)
+            if hasattr(h, "SetStats"):
+                h.SetStats(False)
+
             h.SetLineColor(color)
             h.SetMarkerColor(color)
-            h.SetMinimum(1.0e-6*logY)
-            h.SetMaximum(1.0)
 
             color += 1
             if color == 5:
                 color += 1
 
-            gopts = "ehist" if th1 else ""
-            if i:
-                h.Draw("%ssame" % gopts)
+            if th1:
+                gopts = "ehist"
             else:
-                h.Draw(gopts)
+                gopts = "zp"
+                h.SetMarkerStyle(20)
+                h.SetMarkerSize(0.4 * h.GetMarkerSize())
+
+            if i:
+                gopts += "same"
+            elif not th1:
+                gopts += "a"
+
+            h.Draw(gopts)
+            if not th1:
+                r.gPad.Update()
+                pg = h.GetPaintedGraph()
+                pg.GetHistogram().GetYaxis().SetRangeUser(0.0, 1.5)
 
         r.gPad.SetTickx()
         r.gPad.SetTicky()
