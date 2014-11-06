@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
 import os
 import ROOT as r
 from kinfit import setup, fit
@@ -24,18 +25,11 @@ def shift(h):
 
 
 def loopMulti(fileNames=[], nEventsMax=None):
-    out = {"chi2": [],
-           "m_fit": [],
-           "m_no_fit": [],
-           "m_vs_m": [],
-           }
+    out = defaultdict(list)
 
     for fileName, leg in fileNames:
-        chi2, m, mNo, mm = loop(fileName, nEventsMax, suffix="_%s" % leg)
-        out["chi2"].append(chi2)
-        out["m_fit"].append(m)
-        out["m_no_fit"].append(mNo)
-        out["m_vs_m"].append(mm)
+        for key, h in loop(fileName, nEventsMax, suffix="_%s" % leg).iteritems():
+            out[key].append(h)
     return out
 
 
@@ -63,16 +57,21 @@ def select(tree):
     return True
 
 
-def loop(fileName="", nEventsMax=None, suffix=""):
-    h_chi2 = r.TH1D("h_chi2%s" % suffix, ";chi2;events / bin", 100, -10.0, 190.0)
-    #h_chi2 = r.TH1D("h_chi2%s" % suffix, ";chi2;events / bin", 240, -100.0, 1100.0)
-    #bins = [120, -10.0, 590.0]
-    bins = [60, -10.0, 590.0]
-    h_m = r.TH1D("h_m%s" % suffix, ";m_{fit} (GeV);events / bin", *bins)
-    h_fMass = r.TH1D("h_fMass%s" % suffix, ";m_{no fit} (GeV);events / bin", *bins)
+def loop(fileName="", nEventsMax=None, suffix="", chi2Fail=200):
+    #mbins = [120, -10.0, 590.0]
+    mbins = [60, -10.0, 590.0]
 
-    bins2 = bins + bins
-    h_m_vs_m = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *bins2)
+    out = {}
+    for var, title, bins in [("chi2", ";chi2;events / bin", (100, -10.0, 190.0)),
+                             #("chi2", ";chi2;events / bin", (240, -100.0, 1100.0)),
+                             ("m", ";m_{fit} (GeV);events / bin", mbins),
+                             ("fMass", ";m_{no fit} (GeV);events / bin", mbins),
+                             ]:
+        out[var] = r.TH1D("%s_%s" % (var, suffix), title, *bins)
+        out[var+"_pass"] = r.TH1D("%s_pass_%s" % (var, suffix), title, *bins)
+
+    out["m_vs_m"] = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
+    out["m_vs_m_pass"] = r.TH2D("h_m_vs_m_pass_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
 
     f = r.TFile(fileName)
     tree = f.Get("eventTree")
@@ -94,13 +93,20 @@ def loop(fileName="", nEventsMax=None, suffix=""):
         j2.SetCoordinates(tree.CSVJ2Pt, tree.CSVJ2Eta, tree.CSVJ2Phi, tree.CSVJ2Mass)
 
         chi2, mh = fit(tree, j1, j2)
-        h_chi2.Fill(chi2)
-        h_m.Fill(mh)
-        h_fMass.Fill(tree.fMass)
-        h_m_vs_m.Fill(mh, tree.fMass)
+
+        out["chi2"].Fill(chi2)
+        out["m"].Fill(mh)
+        out["fMass"].Fill(tree.fMass)
+        out["m_vs_m"].Fill(mh, tree.fMass)
+
+        if chi2 < chi2Fail:
+            out["chi2_pass"].Fill(chi2)
+            out["m_pass"].Fill(mh)
+            out["fMass_pass"].Fill(tree.fMass)
+            out["m_vs_m_pass"].Fill(mh, tree.fMass)
 
     f.Close()
-    return [h_chi2, h_m, h_fMass, h_m_vs_m]
+    return out
 
 
 def pdf(fileName="", histos={}):
@@ -114,6 +120,8 @@ def pdf(fileName="", histos={}):
     fillLeg = True
 
     for key, lst in sorted(histos.iteritems()):
+        if "_pass" in key:
+            continue
         color = 1
         for i, h in enumerate(lst):
             th1 = h.ClassName().startswith("TH1")
