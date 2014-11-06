@@ -58,6 +58,26 @@ def select(tree):
     return True
 
 
+def labelStatusBins(h):
+    """https://indico.cern.ch/event/343176/session/8/contribution/21"""
+    labels = {-3: "underflow",
+              -2: "-2 (no sol. b)",
+              -1: "-1 (no sol. t)",
+               0: "0 (no conv.)",
+               1: "1 (conv.)",
+               2: "2 (conv.)",
+               3: "3 (c. at b lim.)",
+               4: "4 (c. at t lim.)",
+               5: "5 (3 & 4)",
+               6: "overflow",
+               }
+    for iBin in range(1, 1 + h.GetNbinsX()):
+        x = h.GetBinCenter(iBin)
+        label = labels[int(x)]
+        #print iBin, x, label
+        h.GetXaxis().SetBinLabel(iBin, label)
+
+
 def loop(fileName="", nEventsMax=None, suffix=""):
     #mbins = [120, -10.0, 590.0]
     mbins = [60, -10.0, 590.0]
@@ -71,13 +91,13 @@ def loop(fileName="", nEventsMax=None, suffix=""):
                              ("mbb", ";m_{bb} (GeV);events / bin", (40, 0.0, 200.0)),
                              ("dRTauTau", ";#DeltaR_{#tau#tau};events / bin", (30, 0.0, 6.0)),
                              ("dRJJ", ";#DeltaR_{bb};events / bin", (30, 0.0, 6.0)),
-                             ("status", ";status;events / bin", (10, -0.5, 9.5)),
+                             ("status", ";status;events / bin", (10, -3.5, 6.5)),
                              ]:
         out[var] = r.TH1D("%s_%s" % (var, suffix), title, *bins)
         rateTitle = title.replace("events / bin", "fraction of events with  \chi^{2} < %d" % chi2Fail)
         out[var+"_rate"] = r.TEfficiency("%s_rate_%s" % (var, suffix), rateTitle, *bins)
 
-
+    labelStatusBins(out["status"])
     #out["m_vs_m"] = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
     #out["m_vs_m_rate"] = r.TEfficiency("h_m_vs_m_rate_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
 
