@@ -33,7 +33,7 @@ def loopMulti(fileNames=[], nEventsMax=None):
             if "_pass" in key:
                 total = histos[key.replace("_pass", "")]
                 rate = r.TEfficiency(h, total)
-                rate.SetTitle(";%s;fraction of events with  \chi^{2} < 200" % h.GetXaxis().GetTitle())
+                rate.SetTitle(";%s;fraction of events with  \chi^{2} < %d" % (h.GetXaxis().GetTitle(), chi2Fail))
                 out[key.replace("_pass", "_rate")].append(rate)
             else:
                 out[key].append(h)
@@ -64,7 +64,7 @@ def select(tree):
     return True
 
 
-def loop(fileName="", nEventsMax=None, suffix="", chi2Fail=900):
+def loop(fileName="", nEventsMax=None, suffix=""):
     #mbins = [120, -10.0, 590.0]
     mbins = [60, -10.0, 590.0]
 
@@ -205,6 +205,7 @@ if __name__ == "__main__":
     #r.gStyle.SetOptStat("e")
     r.TH1.SetDefaultSumw2(True)
 
+    chi2Fail = 900
     logY = False
     setup()
     lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
