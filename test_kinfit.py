@@ -30,13 +30,7 @@ def loopMulti(fileNames=[], nEventsMax=None):
     for fileName, leg in fileNames:
         histos = loop(fileName, nEventsMax, suffix="_%s" % leg)
         for key, h in histos.iteritems():
-            if "_pass" in key:
-                total = histos[key.replace("_pass", "")]
-                rate = r.TEfficiency(h, total)
-                rate.SetTitle(";%s;fraction of events with  \chi^{2} < %d" % (h.GetXaxis().GetTitle(), chi2Fail))
-                out[key.replace("_pass", "_rate")].append(rate)
-            else:
-                out[key].append(h)
+            out[key].append(h)
     return out
 
 
@@ -76,12 +70,16 @@ def loop(fileName="", nEventsMax=None, suffix=""):
                              ("svMass", ";svMass (GeV);events / bin", (40, 0.0, 200.0)),
                              ("mbb", ";m_{bb} (GeV);events / bin", (40, 0.0, 200.0)),
                              ("dRTauTau", ";#DeltaR_{#tau#tau};events / bin", (30, 0.0, 6.0)),
+                             ("dRJJ", ";#DeltaR_{bb};events / bin", (30, 0.0, 6.0)),
+                             ("status", ";status;events / bin", (10, -0.5, 9.5)),
                              ]:
         out[var] = r.TH1D("%s_%s" % (var, suffix), title, *bins)
-        out[var+"_pass"] = r.TH1D("%s_pass_%s" % (var, suffix), title, *bins)
+        rateTitle = title.replace("events / bin", "fraction of events with  \chi^{2} < %d" % chi2Fail)
+        out[var+"_rate"] = r.TEfficiency("%s_rate_%s" % (var, suffix), rateTitle, *bins)
+
 
     #out["m_vs_m"] = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
-    #out["m_vs_m_pass"] = r.TH2D("h_m_vs_m_pass_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
+    #out["m_vs_m_rate"] = r.TEfficiency("h_m_vs_m_rate_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
 
     f = r.TFile(fileName)
     tree = f.Get("eventTree")
@@ -102,24 +100,29 @@ def loop(fileName="", nEventsMax=None, suffix=""):
         j1.SetCoordinates(tree.CSVJ1Pt, tree.CSVJ1Eta, tree.CSVJ1Phi, tree.CSVJ1Mass)
         j2.SetCoordinates(tree.CSVJ2Pt, tree.CSVJ2Eta, tree.CSVJ2Phi, tree.CSVJ2Mass)
 
-        chi2, mh = fit(tree, j1, j2)
+        chi2, mh, status = fit(tree, j1, j2)
 
         out["chi2"].Fill(chi2)
         out["m"].Fill(mh)
+        out["status"].Fill(status)
+
         out["fMass"].Fill(tree.fMass)
         #out["m_vs_m"].Fill(mh, tree.fMass)
         out["svMass"].Fill(tree.svMass.at(0))
         out["mbb"].Fill(tree.mJJ)
         out["dRTauTau"].Fill(tree.dRTauTau)
+        out["dRJJ"].Fill(tree.dRJJ)
 
-        if chi2 < chi2Fail:
-            out["chi2_pass"].Fill(chi2)
-            out["m_pass"].Fill(mh)
-            out["fMass_pass"].Fill(tree.fMass)
-            #out["m_vs_m_pass"].Fill(mh, tree.fMass)
-            out["svMass_pass"].Fill(tree.svMass.at(0))
-            out["mbb_pass"].Fill(tree.mJJ)
-            out["dRTauTau_pass"].Fill(tree.dRTauTau)
+        passed = chi2 < chi2Fail
+        out["chi2_rate"].Fill(passed, chi2)
+        out["m_rate"].Fill(passed, mh)
+        out["status_rate"].Fill(passed, status)
+        out["fMass_rate"].Fill(passed, tree.fMass)
+        #out["m_vs_m_rate"].Fill(passed, mh, tree.fMass)
+        out["svMass_rate"].Fill(passed, tree.svMass.at(0))
+        out["mbb_rate"].Fill(passed, tree.mJJ)
+        out["dRTauTau_rate"].Fill(passed, tree.dRTauTau)
+        out["dRJJ_rate"].Fill(passed, tree.dRJJ)
 
     f.Close()
     return out
