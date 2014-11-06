@@ -54,7 +54,20 @@ def fit(tree, j1, j2):
     kinFits.doFullFit()
     chi2 = kinFits.getBestChi2FullFit()
     mh = kinFits.getBestMHFullFit()
-    #prob = kinFits.getFitProbFullFit()
-    #print prob
-    #print iEvent, chi2, prob, mh
-    return chi2, mh
+    if hasattr(kinFits, "getBestConvFullFit"):
+        status = kinFits.getBestConvFullFit()
+    else:
+        status = None
+
+    #pair = kinFits.getBestHypoFullFit()
+    #a = kinFits.getChi2FullFit()
+    #print a.find(pair)
+    #a = kinFits.getFitProbFullFit()
+    #a = kinFits.getMHFullFit()
+    #a = kinFits.getPullB1FullFit()
+    #a = kinFits.getPullB2FullFit()
+    #a = kinFits.getPullBalanceFullFit()
+    #a = kinFits.getPullBalanceFullFitX()
+    #a = kinFits.getPullBalanceFullFitY()
+    #a = kinFits.getConvergenceFullFit()
+    return chi2, mh, status
