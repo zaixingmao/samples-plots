@@ -6,7 +6,7 @@ import math
 import optparse
 import os
 from array import array
-from cfg import makeWholeSample as makeWholeSample_cfg
+import makeWholeSample_cfg
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
@@ -109,9 +109,9 @@ def findMatch(iTree, isData):
     return genMatch
 
 fileList = []
-for massPoint in [260, 300, 350]:
-    #preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
-    preFix = makeWholeSample_cfg.preFix0
+for massPoint in makeWholeSample_cfg.trainedMassPoints:
+    preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
+#     preFix = makeWholeSample_cfg.preFix0
     for i in range(len(makeWholeSample_cfg.sampleConfigs)):
         fileList.append((makeWholeSample_cfg.sampleConfigs[i][0], 
                          preFix + makeWholeSample_cfg.sampleConfigs[i][1], 
@@ -131,13 +131,12 @@ svMass = array('f', [0.])
 fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
-
+CSVJ2 = array('f', [0.])
+BDT_QCD = array('f', [0.])
+BDT_EWK = array('f', [0.])
 
 BDT_300 = array('f', [0.])
 BDT_350 = array('f', [0.])
-
-BDT_QCD = array('f', [0.])
-BDT_EWK = array('f', [0.])
 
 triggerEff = array('f', [0.])
 sampleName = bytearray(20)
@@ -146,15 +145,17 @@ initEvents = r.TH1F('initEvents', '', nSamples, 0, nSamples)
 xs = r.TH1F('xs', '', nSamples, 0, nSamples)
 finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
 
-svMassRange = [1, 0, 400] #[20, 0, 400]
-mJJRegRange = [1, 0, 400] #[15, 50, 200]
-BDTRange = [1, -1.0, 1.0]#[20, -1.0, 1.0]
+svMassRange = [20, 0, 400]
+mJJRegRange = [15, 50, 200]
+BDTRange = [20, -1.0, 1.0]
 
+counter = 0
 
 scaleSVMass = r.TH1F("scaleSVMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
 scaleSVMassMC = r.TH1F("MC_Data_svMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
 scaleMJJReg = r.TH1F("scaleMJJReg", "", mJJRegRange[0], mJJRegRange[1], mJJRegRange[2])
 scaleMJJRegMC = r.TH1F("MC_Data_mJJReg", "", mJJRegRange[0], mJJRegRange[1], mJJRegRange[2])
+
 scaleBDT_260 = r.TH1F("scaleBDT_260", "", BDTRange[0], BDTRange[1], BDTRange[2])
 scaleBDTMC_260 = r.TH1F("MC_Data_BDT_260", "", BDTRange[0], BDTRange[1], BDTRange[2])
 scaleBDT_300 = r.TH1F("scaleBDT_300", "", BDTRange[0], BDTRange[1], BDTRange[2])
@@ -171,8 +172,8 @@ oTree.Branch("mJJ", mJJ, "mJJ/F")
 oTree.Branch("fMass", fMass, "fMass/F")
 oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
 oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
-
 oTree.Branch("svMass", svMass, "svMass/F")
+oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 
 # oTree.Branch("BDT_QCD", BDT_QCD, "BDT_QCD/F")
 # oTree.Branch("BDT_EWK", BDT_EWK, "BDT_EWK/F")
@@ -216,29 +217,29 @@ for indexFile in range(nSamples):
             if isData:
                 scaleSVMass.Fill(iTree.svMass.at(0), iTree.triggerEff)
                 #scaleMJJReg.Fill(iTree.mJJReg, iTree.triggerEff)
-                #scaleBDT_260.Fill(iTree.BDT_both, iTree.triggerEff)
-                #scaleBDT_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff)
-                #scaleBDT_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff)
+                scaleBDT_260.Fill(iTree.BDT_both, iTree.triggerEff)
+                scaleBDT_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff)
+                scaleBDT_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff)
 
             else:
                 scaleSVMassMC.Fill(iTree.svMass.at(0), iTree.triggerEff*scale)
                 #scaleMJJRegMC.Fill(iTree.mJJReg, iTree.triggerEff*scale)
-                #scaleBDTMC_260.Fill(iTree.BDT_both, iTree.triggerEff*scale)
-                #scaleBDTMC_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff*scale)
-                #scaleBDTMC_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff*scale)
+                scaleBDTMC_260.Fill(iTree.BDT_both, iTree.triggerEff*scale)
+                scaleBDTMC_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff*scale)
+                scaleBDTMC_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff*scale)
 
         if not passCut(iTree, option):
             continue
-        #BDT[0] = iTree.BDT_both
-        #BDT_300[0] = iTree_300.BDT_both
-        #BDT_350[0] = iTree_350.BDT_both
-        #mJJReg[0] = iTree.mJJReg
+        BDT[0] = iTree.BDT_both
+        BDT_300[0] = iTree_300.BDT_both
+        BDT_350[0] = iTree_350.BDT_both
+        mJJReg[0] = iTree.mJJReg
         mJJ[0] = iTree.mJJ
         fMass[0] = iTree.fMass
         fMassKinFit[0] = iTree.fMassKinFit
         chi2KinFit[0] = iTree.chi2KinFit
         svMass[0] = iTree.svMass.at(0)
-
+        CSVJ2[0] = iTree.CSVJ2
 #         BDT_QCD[0] = iTree.BDT_QCD
 #         BDT_EWK[0] = iTree.BDT_EWK
         triggerEff[0] = iTree.triggerEff

@@ -49,6 +49,8 @@ def findVar(iTree, varName):
                 'CSVJ2': iTree.CSVJ2,
                 'fMass': iTree.fMass,
                 'fMassKinFit': iTree.fMassKinFit,
+                'chi2KinFit': iTree.chi2KinFit,
+                'chi2KinFit2': iTree.chi2KinFit2,
                 'dPhiMetTau1': iTree.metTau1DPhi,
                 'dPhiMetTau2': iTree.metTau2DPhi,
                 'dPhiMetJet1': iTree.metJ1DPhi,

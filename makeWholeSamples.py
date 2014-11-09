@@ -10,16 +10,30 @@ import makeWholeSample_cfg
 
 def getCorrectBDT(iTree, massPoint):
     bdts = {'260': iTree.BDT_260,
+            '270': iTree.BDT_270,
+            '280': iTree.BDT_280,
+            '290': iTree.BDT_290,
             '300': iTree.BDT_300,
-            '350': iTree.BDT_350}
+            '310': iTree.BDT_310,
+            '320': iTree.BDT_320,
+            '330': iTree.BDT_330,
+            '340': iTree.BDT_340,
+            '350': iTree.BDT_350,
+#             '500': iTree.BDT_500,
+#             '700': iTree.BDT_700
+            }
     return bdts[massPoint]
 
-inputFiles = [('2Vars', 'combined_2_new.root'),
-              ('3Vars', 'combined_3_new.root'),
-              ('18Vars', 'combined_18_new.root')]
+inputFiles = [# ('2Vars', 'combined_2_new.root'),
+#               ('3Vars', 'combined_3_new.root'),
+#               ('8Vars_newCut', 'combined_8_all_kinFitGreater200_newkinFit.root'),
+              ('8Vars', 'combined_8_all.root'),
+              ('8Vars_cut', 'combined_8_all_kinFitGreater200.root'),
+              ('18Vars', 'combined_18_all.root'),
+]
 
 
-oFileName = 'combined_all_fixChi2.root'
+oFileName = 'combined_all_fix.root'
 oFile = r.TFile(oFileName, 'RECREATE')
 oTree = r.TTree('eventTree', '')
 
@@ -41,6 +55,7 @@ nMassPoints = len(makeWholeSample_cfg.trainedMassPoints)
 for indexFiles in range(len(inputFiles)):
     for iMassPoint in makeWholeSample_cfg.trainedMassPoints:
         BDTs.append(array('f', [0.]))
+        oTree.Branch("BDT_%s_%s" %(str(iMassPoint), inputFiles[indexFiles][0]), BDTs[len(BDTs)-1], "BDT_%s_%s/F" %(str(iMassPoint), inputFiles[indexFiles][0]))
 
 oTree.Branch("mJJReg", mJJReg, "mJJReg/F")
 oTree.Branch("mJJ", mJJ, "mJJ/F")
