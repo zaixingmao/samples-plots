@@ -75,7 +75,7 @@ def passCut(tree, option):
         return 0
     if '2M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.679):
         return 0
-    if '1M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.244 or tree.CSVJ2 > 0.679):
+    if '1M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 > 0.679):
         return 0
 #     if  tree.mJJ<90  or tree.mJJ>140:
 #         return 0
