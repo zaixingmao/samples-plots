@@ -4,7 +4,7 @@ import ROOT as r
 import tool
 from operator import itemgetter
 import os
-from cfg import enVars
+from cfg import enVars2
 from array import array
 import optparse
 import math
@@ -180,7 +180,7 @@ r.gStyle.SetOptStat(0)
 
 
 #*******Get Sample Name and Locations******
-sampleLocations = enVars.sampleLocations
+sampleLocations = enVars2.sampleLocations
 
 preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
@@ -206,7 +206,7 @@ for iVar in preVarList:
 for iVar in genVarList:
     fullVarList.append(iVar)
 
-blackList = enVars.corruptedROOTfiles
+blackList = enVars2.corruptedROOTfiles
 
 for iSample, iLocation in sampleLocations:
     if 'data' in iSample:
@@ -308,6 +308,7 @@ for iSample, iLocation in sampleLocations:
     CSVJ2SoftLeptdR = array('f', [0.])
 
     chi2KinFit = array('f', [0.])
+    chi2KinFit2 = array('f', [0.])
     fMassKinFit = array('f', [0.])
 
 
@@ -350,6 +351,8 @@ for iSample, iLocation in sampleLocations:
     iTree.Branch("metJetPairDPhi", metJetPairDPhi, "metJetPairDPhi/F")
     iTree.Branch("metSvTauPairDPhi", metSvTauPairDPhi, "metSvTauPairDPhi/F")
     iTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
+    iTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
+
     iTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
 
     if not isData:
@@ -520,6 +523,10 @@ for iSample, iLocation in sampleLocations:
 
         #For Kinematic Fit
         chi2KinFit[0], fMassKinFit[0] = kinfit.fit(iChain, CSVJet1, CSVJet2)
+
+        chi2KinFit2[0] = chi2KinFit[0]
+        if chi2KinFit2[0] > 200:
+            chi2KinFit2[0] = 200
 
         iTree.Fill()
         counter += 1
