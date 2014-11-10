@@ -7,12 +7,16 @@
 
 
 #preFix0 = '/scratch/zmao/relaxed_regression4/'
-preFix0 = '/scratch/zmao/newKinFit/8/'
+# preFix0 = '/scratch/zmao/newKinFit/8_2/'
+# preFix0 = '/scratch/zmao/jetPt20/'
+preFix0 = '/scratch/zmao/BDTStudy/7_noDPhiMetJ2_mJJ/'
+
+
 postFix = '_addNewChi2'
 bTag = 'bTag'
 
 scaleFactors = {'bTag': 0.051,
-                '2M': 0.071,
+                '2M': 0.069,
                 '1M': 0.053}  
 
 sampleConfigs =[('H2hh260', 'H2hh260_all%s.root' %postFix, 'OStight%s' %bTag, 14.76),
@@ -45,5 +49,5 @@ sampleConfigs =[('H2hh260', 'H2hh260_all%s.root' %postFix, 'OStight%s' %bTag, 14
                 ('W3JetsToLNu','W3JetsToLNu_all.root', 'OStight%s' %bTag, 519000),
                 ('dataOSRelax','dataTotal_all%s.root' %postFix, 'OSrelaxed%s' %bTag, scaleFactors[bTag])]
 
-oFileName = 'combined_8_all%s_%s.root' %(postFix, bTag)
+oFileName = 'combined_7_noDPhiMetJ2_mJJ_all%s_%s.root' %(postFix, bTag)
 trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
