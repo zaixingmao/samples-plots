@@ -12,7 +12,7 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
 dR_tauEleMu_max = 0.2
 dR_b_max = 0.5
-lumi = 19.0
+lumi = 19.7
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi):
 
@@ -113,7 +113,7 @@ def findMatch(iTree, isData):
     return genMatch
 
 fileList = []
-preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
+preFix = '%s' %makeWholeSample_cfg.preFix0
 for i in range(len(makeWholeSample_cfg.sampleConfigs)):
     fileList.append((makeWholeSample_cfg.sampleConfigs[i][0], 
                     preFix + makeWholeSample_cfg.sampleConfigs[i][1], 
@@ -126,37 +126,38 @@ oTree = r.TTree('eventTree', '')
 
 nSamples = len(fileList)
 
-mJJReg = array('f', [0.])
 mJJ = array('f', [0.])
 svMass = array('f', [0.])
 fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
+chi2KinFit2 = array('f', [0.])
+
 CSVJ2 = array('f', [0.])
 
 triggerEff = array('f', [0.])
 sampleName = bytearray(20)
 genMatchName = bytearray(3)
 initEvents = r.TH1F('initEvents', '', nSamples, 0, nSamples)
-xs = r.TH1F('xs', '', nSamples, 0, nSamples)
+xs = r.TH1F('xs', '', nSamples-1, 0, nSamples-1)
+L2T = r.TH1F('L2T', '', 1, 0, 1)
+
 finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
 
 svMassRange = [20, 0, 400]
-mJJRegRange = [15, 50, 200]
 
 counter = 0
 
 
 scaleSVMass = r.TH1F("scaleSVMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
 scaleSVMassMC = r.TH1F("MC_Data_svMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
-scaleMJJReg = r.TH1F("scaleMJJReg", "", mJJRegRange[0], mJJRegRange[1], mJJRegRange[2])
-scaleMJJRegMC = r.TH1F("MC_Data_mJJReg", "", mJJRegRange[0], mJJRegRange[1], mJJRegRange[2])
 
-oTree.Branch("mJJReg", mJJReg, "mJJReg/F")
 oTree.Branch("mJJ", mJJ, "mJJ/F")
 oTree.Branch("fMass", fMass, "fMass/F")
 oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
 oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
+oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
+
 oTree.Branch("svMass", svMass, "svMass/F")
 oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 
@@ -170,7 +171,8 @@ for indexFile in range(nSamples):
     name = fileList[indexFile][0]
     xsValue = fileList[indexFile][3]
     option = fileList[indexFile][2]
-    iTree = r.TFile(fileList[indexFile]).Get('eventTree')
+    iFile =  r.TFile(fileList[indexFile][1])
+    iTree = iFile.Get('eventTree')
 
     total = iTree.GetEntries()
     tmpHist = iFile.Get('preselection')
@@ -183,11 +185,12 @@ for indexFile in range(nSamples):
     scale = xsValue/tmpHist.GetBinContent(1)*lumi
 
     if isData:
-        xsValue = xsValue*tmpHist.GetBinContent(1)
+        xsValue = xsValue
 
     for i in range(0, total):
         tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
         #Fill Histograms
+        iTree.GetEntry(i)
         if passCut(iTree, 'OSrelaxedbTag') and (not ("H2hh" in name)):
             if isData:
                 scaleSVMass.Fill(iTree.svMass.at(0), iTree.triggerEff)
@@ -198,11 +201,11 @@ for indexFile in range(nSamples):
 
         if not passCut(iTree, option):
             continue
-        mJJReg[0] = iTree.mJJReg
         mJJ[0] = iTree.mJJ
         fMass[0] = iTree.fMass
         fMassKinFit[0] = iTree.fMassKinFit
         chi2KinFit[0] = iTree.chi2KinFit
+        chi2KinFit2[0] = iTree.chi2KinFit2
         svMass[0] = iTree.svMass.at(0)
         CSVJ2[0] = iTree.CSVJ2
         triggerEff[0] = iTree.triggerEff
@@ -212,7 +215,10 @@ for indexFile in range(nSamples):
         oTree.Fill()
         eventsSaved += triggerEff[0]
 
-    xs.Fill(name, xsValue)
+    if isData:
+        L2T.Fill(0.5, xsValue)
+    else:
+        xs.Fill(name, xsValue)
     finalEventsWithXS.Fill(name, eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
     print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi) #eventsSaved
 
@@ -220,16 +226,13 @@ scaleSVMass.Sumw2()
 scaleSVMassMC.Sumw2()
 scaleSVMassMC.Divide(scaleSVMass)
 
-scaleMJJReg.Sumw2()
-scaleMJJRegMC.Sumw2()
-scaleMJJRegMC.Divide(scaleMJJReg)
 
 oFile.cd()
 
 scaleSVMassMC.Write()
-scaleMJJRegMC.Write()
 initEvents.Write()
 xs.Write()
+L2T.Write()
 finalEventsWithXS.Write()
 oTree.Write()
 oFile.Close()

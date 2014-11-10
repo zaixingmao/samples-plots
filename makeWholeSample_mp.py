@@ -136,6 +136,8 @@ svMass = array('f', [0.])
 fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
+chi2KinFit2 = array('f', [0.])
+
 CSVJ2 = array('f', [0.])
 BDT_QCD = array('f', [0.])
 BDT_EWK = array('f', [0.])
@@ -146,6 +148,8 @@ genMatchName = bytearray(3)
 initEvents = r.TH1F('initEvents', '', nSamples, 0, nSamples)
 xs = r.TH1F('xs', '', nSamples, 0, nSamples)
 finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
+L2T = r.TH1F('L_to_T_%s' %makeWholeSample_cfg.bTag, '', 1, 0, 1)
+
 
 svMassRange = [20, 0, 400]
 mJJRegRange = [15, 50, 200]
@@ -173,6 +177,7 @@ oTree.Branch("mJJ", mJJ, "mJJ/F")
 oTree.Branch("fMass", fMass, "fMass/F")
 oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
 oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
+oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
 oTree.Branch("svMass", svMass, "svMass/F")
 oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 
@@ -207,7 +212,7 @@ for indexFile in range(nSamples):
     scale = xsValue/tmpHist.GetBinContent(1)*lumi
 
     if isData:
-        xsValue = xsValue*tmpHist.GetBinContent(1)
+        xsValue = xsValue#*tmpHist.GetBinContent(1)
 
     for i in range(0, total):
         tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
@@ -234,6 +239,8 @@ for indexFile in range(nSamples):
         fMass[0] = iTrees[0].fMass
         fMassKinFit[0] = iTrees[0].fMassKinFit
         chi2KinFit[0] = iTrees[0].chi2KinFit
+        chi2KinFit2[0] = iTrees[0].chi2KinFit2
+
         svMass[0] = iTrees[0].svMass.at(0)
         CSVJ2[0] = iTrees[0].CSVJ2
         triggerEff[0] = iTrees[0].triggerEff
@@ -243,7 +250,8 @@ for indexFile in range(nSamples):
             BDTs[iMP][0] = iTrees[iMP].BDT_both
         oTree.Fill()
         eventsSaved += triggerEff[0]
-
+    if isData:
+        L2T.Fill(0.5, xsValue)
     xs.Fill(name, xsValue)
     finalEventsWithXS.Fill(name, eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
     print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi) #eventsSaved
@@ -266,6 +274,7 @@ scaleSVMassMC.Write()
 scaleMJJRegMC.Write()
 initEvents.Write()
 xs.Write()
+L2T.Write()
 finalEventsWithXS.Write()
 oTree.Write()
 oFile.Close()
