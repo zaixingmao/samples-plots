@@ -71,7 +71,11 @@ def findGenMatch(dR1_tau, dR2_tau, dR1_b, dR2_b, dR1_ele, dR2_ele, dR1_mu, dR2_m
     return '%s%s' %(stringList[0], stringList[1])
 
 def passCut(tree, option):
-    if 'bTag' in option and (tree.CSVJ1 < 0.68 or tree.CSVJ2 < 0.24):
+    if 'bTag' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.244):
+        return 0
+    if '2M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.679):
+        return 0
+    if '1M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 > 0.679):
         return 0
 #     if  tree.mJJ<90  or tree.mJJ>140:
 #         return 0
