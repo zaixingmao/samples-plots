@@ -12,6 +12,8 @@ r.gROOT.SetBatch(True)
 massPoints = ['260','300','350']
 
 Vars = 'svMass dRTauTau dRJJ mJJReg'
+Vars2 = 'svMass dRTauTau dRJJ mJJ'
+
 psfile = 'BDT_Eff_diff_combined.pdf'
 c = r.TCanvas("c","Test", 800, 600)
 c.SetGrid()
@@ -21,8 +23,8 @@ fileList = [('_18.root','16 Variables + fullMassKinFit + chi2',r.kRed),
 #             ('_18_kinFitGreater200.root','16 Variables + fullMassKinFit>200 + chi2 ',r.kOrange),  
 #             ('_8.root', '%s met fMassKinFit metTauPairDPhi metJ2DPhi' %Vars,r.kOrange),
 #             ('_9.root', '%s met chi2KinFit fullMassKinFit metJ2DPhi svPt' %Vars, r.kOrange),
-            ('_8.root', '%s met chi2KinFit fullMassKinFit metJ2DPhi' %Vars,r.kGreen+7),
-            ('_8_newKinFit.root', '%s met chi2KinFit2 fullMassKinFit metJ2DPhi' %Vars, r.kMagenta-9),
+            ('_8_newKinFit2.root', '%s met chi2KinFit2 fullMassKinFit metJ2DPhi' %Vars2,r.kGreen+7),
+#             ('_8_newKinFit.root', '%s met chi2KinFit2 fullMassKinFit metJ2DPhi' %Vars, r.kMagenta-9),
 
 #             ('_7_newKinFit.root', '%s met chi2KinFit2 metJ2DPhi' %Vars, r.kMagenta-9),
 #             ('_8_kinFitGreater200.root', '%s met chi2KinFit fullMassKinFit>200 metJ2DPhi' %Vars,r.kBlack),
@@ -90,7 +92,7 @@ for massPoint in massPoints:
         bkgEffs[i].SetPoint(iMassPoint, intMassPoint, 1-effList_both[i].GetBinContent(xBin))
         if massPoint == massPoints[len(massPoints)-1]:
             lHistList3.append((effList_both[i], fileList[i][1]))
-        if '_7_newKinFit' in iFileList[i][0]:
+        if '_8_newKinFit' in iFileList[i][0]:
             newName = '2'
             sigHist = ifiles[i].Get("InputVariables_Id/chi2KinFit%s__Signal_Id" %newName)
             bkgHist = ifiles[i].Get("InputVariables_Id/chi2KinFit%s__Background_Id" %newName)
