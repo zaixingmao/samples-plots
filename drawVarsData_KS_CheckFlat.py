@@ -11,7 +11,7 @@ import math
 from array import array
 import numpy
 import random
-import draw_cfg
+from cfg import draw as draw_cfg
 
 def opts():
     parser = optparse.OptionParser()
@@ -63,13 +63,13 @@ def getCombinedError(x, x_e, y, y_e):
 
 def bTagSelection(tree, bTag):
     passCut = 0        
-    if bTag == 'True' and tree.CSVJ1 >= 0.68 and tree.CSVJ2 >= 0.24:
+    if bTag == 'True' and tree.CSVJ1 >= 0.679 and tree.CSVJ2 >= 0.244:
         passCut = 1
     if bTag == 'False':
         passCut = 1
-    if bTag == 'Revert' and (tree.CSVJ1 < 0.68 and tree.CSVJ2 < 0.24):
+    if bTag == '2M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 >= 0.679):
         passCut = 1
-    if bTag == 'Loose' and (tree.CSVJ1 >= 0.24 and tree.CSVJ2 >= 0.24):
+    if bTag == '1M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 < 0.679):
         passCut = 1
     return passCut
 
@@ -131,7 +131,9 @@ def findBin(x, nBins, xMin, xMax):
         return bin
 
 def findPtScale(pt1, pt2, direction, region):
-    scaleDictUp = {'LL': 0.051, #0.352, #1.690, #0.051, #0.038, #  
+    scaleDictUp = {'LLTrue': 0.051, #0.352, #1.690, #0.051, #0.038, #  
+                   'LL2M': 0.071, #0.352, #1.690, #0.051, #0.038, #  
+                   'LL1M': 0.053, #0.352, #1.690, #0.051, #0.038, #  
                    'LT': 0.248, #0.221,
                    'TL': 0.229, #0.201
                   }  
@@ -141,7 +143,9 @@ def findPtScale(pt1, pt2, direction, region):
     scale1 = 1.0
     scale2 = 1.0
     ptRange = [70, 120]
-    scaleDictLeft = {'LL': [1.0, 1.0, 1.0],#[1.06, 0.97, 0.97],#[1.08, 0.93, 0.93], 
+    scaleDictLeft = {'LLTrue': [1.0, 1.0, 1.0],#[1.06, 0.97, 0.97],#[1.08, 0.93, 0.93], 
+                     'LL2M': [1.0, 1.0, 1.0],#[1.06, 0.97, 0.97],#[1.08, 0.93, 0.93], 
+                     'LL1M': [1.0, 1.0, 1.0],#[1.06, 0.97, 0.97],#[1.08, 0.93, 0.93], 
                      'LT': [1.0, 1.0, 1.0],#[1.29, 0.92, 1.30], #[1.3, 1.04, 1.0],
                      'TL': [1.0, 1.0, 1.0],#[1.24, 0.63, 2.15],#[1.21, 0.78, 2.05]
                     }
@@ -161,11 +165,11 @@ def findPtScale(pt1, pt2, direction, region):
     elif ptRange[1] < pt2:
         scale2 = scale[2]
 
-    if region == 'LL':
+    if 'LL' in region:
         return scale1*scale2
-    elif region == 'LT':
+    elif 'LT' in region:
         return scale1
-    elif region == 'TL':
+    elif 'TL' in region:
         return scale2
 
 def getAccuDist(hist, xMin, xMax, name):
@@ -219,12 +223,12 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         var_data[select-2].Fill(varsList.findVar(treeData, varName))
         var_data_4KS[select-2].Fill(varsList.findVar(treeData, varName))
         if select == 2:
-            var_data_4QCD[0].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'left', region))
+            var_data_4QCD[0].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'left', '%s%s' %(region, bTag)))
         elif select == 3:
-            var_data_4QCD[1].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'up', region))
+            var_data_4QCD[1].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'up', '%s%s' %(region, bTag)))
         elif select == 4:
-            var_data_4QCD[2].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'left', region))
-            var_data_4QCD[3].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'up', region))
+            var_data_4QCD[2].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'left', '%s%s' %(region, bTag)))
+            var_data_4QCD[3].Fill(varsList.findVar(treeData, varName), findPtScale(treeData.pt1.at(0),treeData.pt2.at(0), 'up', '%s%s' %(region, bTag)))
 
     legendHistos.append([])
     for j in range(5):
@@ -249,12 +253,12 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
             histList[6*i+select-1].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff)
             histList_4KS[6*i+select-1].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff)
             if select == 2:
-                histList_4QCD[6*i].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'left', region))
+                histList_4QCD[6*i].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'left', '%s%s' %(region, bTag)))
             elif select == 3:
-                histList_4QCD[6*i+1].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'up', region))
+                histList_4QCD[6*i+1].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'up', '%s%s' %(region, bTag)))
             elif select == 4:             
-                histList_4QCD[6*i+2].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'left', region))
-                histList_4QCD[6*i+3].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'up', region))
+                histList_4QCD[6*i+2].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'left', '%s%s' %(region, bTag)))
+                histList_4QCD[6*i+3].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff*findPtScale(tmpTree[i].pt1.at(0), tmpTree[i].pt2.at(0), 'up', '%s%s' %(region, bTag)))
 
         initNEventsList.append(tmpFile[i].Get('preselection'))
         for j in range(6):
@@ -429,12 +433,12 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     elif bTag == 'False':
         titleName = ''
         fileName = 'all'
-    elif bTag == 'Revert':
-        titleName = 'Revert b-tag'
-        fileName = 'revert_bTag'
-    elif bTag == 'Loose':
-        titleName = 'Loose b-tag'
-        fileName = 'loose_bTag'
+    elif bTag == '2M':
+        titleName = '2 Medium b-tags'
+        fileName = '2MbTag'
+    elif bTag == '1M':
+        titleName = '1 Medium b-tag'
+        fileName = '1MbTag'
 
     KS1 = QCDHistList_4KS[0].KolmogorovTest(QCDHistList_4KS[2])
     KS2 = QCDHistList_4KS[1].KolmogorovTest(QCDHistList_4KS[2])
