@@ -71,7 +71,11 @@ def findGenMatch(dR1_tau, dR2_tau, dR1_b, dR2_b, dR1_ele, dR2_ele, dR1_mu, dR2_m
     return '%s%s' %(stringList[0], stringList[1])
 
 def passCut(tree, option):
-    if 'bTag' in option and (tree.CSVJ1 < 0.68 or tree.CSVJ2 < 0.24):
+    if 'bTag' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.244):
+        return 0
+    if '2M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.679):
+        return 0
+    if '1M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.244 or tree.CSVJ2 > 0.679):
         return 0
 #     if  tree.mJJ<90  or tree.mJJ>140:
 #         return 0
@@ -109,22 +113,19 @@ def findMatch(iTree, isData):
     return genMatch
 
 fileList = []
-for massPoint in makeWholeSample_cfg.trainedMassPoints:
-    preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
-#     preFix = makeWholeSample_cfg.preFix0
-    for i in range(len(makeWholeSample_cfg.sampleConfigs)):
-        fileList.append((makeWholeSample_cfg.sampleConfigs[i][0], 
-                         preFix + makeWholeSample_cfg.sampleConfigs[i][1], 
-                         makeWholeSample_cfg.sampleConfigs[i][2], 
-                         makeWholeSample_cfg.sampleConfigs[i][3]))    
+preFix = '%s%s/ClassApp_both_TMVARegApp_' %(makeWholeSample_cfg.preFix0, massPoint)
+for i in range(len(makeWholeSample_cfg.sampleConfigs)):
+    fileList.append((makeWholeSample_cfg.sampleConfigs[i][0], 
+                    preFix + makeWholeSample_cfg.sampleConfigs[i][1], 
+                    makeWholeSample_cfg.sampleConfigs[i][2], 
+                    makeWholeSample_cfg.sampleConfigs[i][3]))    
 
 oFileName = makeWholeSample_cfg.oFileName
 oFile = r.TFile(oFileName, 'RECREATE')
 oTree = r.TTree('eventTree', '')
 
-nSamples = len(fileList)/3
+nSamples = len(fileList)
 
-BDT = array('f', [0.])
 mJJReg = array('f', [0.])
 mJJ = array('f', [0.])
 svMass = array('f', [0.])
@@ -132,11 +133,6 @@ fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
 CSVJ2 = array('f', [0.])
-BDT_QCD = array('f', [0.])
-BDT_EWK = array('f', [0.])
-
-BDT_300 = array('f', [0.])
-BDT_350 = array('f', [0.])
 
 triggerEff = array('f', [0.])
 sampleName = bytearray(20)
@@ -147,25 +143,14 @@ finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
 
 svMassRange = [20, 0, 400]
 mJJRegRange = [15, 50, 200]
-BDTRange = [20, -1.0, 1.0]
 
 counter = 0
+
 
 scaleSVMass = r.TH1F("scaleSVMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
 scaleSVMassMC = r.TH1F("MC_Data_svMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
 scaleMJJReg = r.TH1F("scaleMJJReg", "", mJJRegRange[0], mJJRegRange[1], mJJRegRange[2])
 scaleMJJRegMC = r.TH1F("MC_Data_mJJReg", "", mJJRegRange[0], mJJRegRange[1], mJJRegRange[2])
-
-scaleBDT_260 = r.TH1F("scaleBDT_260", "", BDTRange[0], BDTRange[1], BDTRange[2])
-scaleBDTMC_260 = r.TH1F("MC_Data_BDT_260", "", BDTRange[0], BDTRange[1], BDTRange[2])
-scaleBDT_300 = r.TH1F("scaleBDT_300", "", BDTRange[0], BDTRange[1], BDTRange[2])
-scaleBDTMC_300 = r.TH1F("MC_Data_BDT_300", "", BDTRange[0], BDTRange[1], BDTRange[2])
-scaleBDT_350 = r.TH1F("scaleBDT_350", "", BDTRange[0], BDTRange[1], BDTRange[2])
-scaleBDTMC_350 = r.TH1F("MC_Data_BDT_350", "", BDTRange[0], BDTRange[1], BDTRange[2])
-
-oTree.Branch("BDT_260", BDT, "BDT/F")
-oTree.Branch("BDT_300", BDT_300, "BDT_300/F")
-oTree.Branch("BDT_350", BDT_350, "BDT_350/F")
 
 oTree.Branch("mJJReg", mJJReg, "mJJReg/F")
 oTree.Branch("mJJ", mJJ, "mJJ/F")
@@ -175,25 +160,18 @@ oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
 oTree.Branch("svMass", svMass, "svMass/F")
 oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 
-# oTree.Branch("BDT_QCD", BDT_QCD, "BDT_QCD/F")
-# oTree.Branch("BDT_EWK", BDT_EWK, "BDT_EWK/F")
 
 oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
 oTree.Branch("sampleName", sampleName, "sampleName[21]/C")
 oTree.Branch("genMatchName", genMatchName, "genMatchName[21]/C")
 
 for indexFile in range(nSamples):
-    name, ifile, option, xsValue = fileList[indexFile]
-    name_300, ifile_300, option_300, xsValue_300 = fileList[indexFile + nSamples]
-    name_350, ifile_350, option_350, xsValue_350 = fileList[indexFile + 2*nSamples]
 
-    iFile_300 = r.TFile(ifile_300)
-    iTree_300 = iFile_300.Get('eventTree')
-    iFile_350 = r.TFile(ifile_350)
-    iTree_350 = iFile_350.Get('eventTree')
+    name = fileList[indexFile][0]
+    xsValue = fileList[indexFile][3]
+    option = fileList[indexFile][2]
+    iTree = r.TFile(fileList[indexFile]).Get('eventTree')
 
-    iFile = r.TFile(ifile)
-    iTree = iFile.Get('eventTree')
     total = iTree.GetEntries()
     tmpHist = iFile.Get('preselection')
     initEvents.Fill(name, tmpHist.GetBinContent(1))
@@ -209,30 +187,17 @@ for indexFile in range(nSamples):
 
     for i in range(0, total):
         tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
-        iTree.GetEntry(i)
-        iTree_300.GetEntry(i)
-        iTree_350.GetEntry(i)
         #Fill Histograms
         if passCut(iTree, 'OSrelaxedbTag') and (not ("H2hh" in name)):
             if isData:
                 scaleSVMass.Fill(iTree.svMass.at(0), iTree.triggerEff)
                 #scaleMJJReg.Fill(iTree.mJJReg, iTree.triggerEff)
-                scaleBDT_260.Fill(iTree.BDT_both, iTree.triggerEff)
-                scaleBDT_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff)
-                scaleBDT_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff)
-
             else:
                 scaleSVMassMC.Fill(iTree.svMass.at(0), iTree.triggerEff*scale)
                 #scaleMJJRegMC.Fill(iTree.mJJReg, iTree.triggerEff*scale)
-                scaleBDTMC_260.Fill(iTree.BDT_both, iTree.triggerEff*scale)
-                scaleBDTMC_300.Fill(iTree_300.BDT_both, iTree_300.triggerEff*scale)
-                scaleBDTMC_350.Fill(iTree_350.BDT_both, iTree_350.triggerEff*scale)
 
         if not passCut(iTree, option):
             continue
-        BDT[0] = iTree.BDT_both
-        BDT_300[0] = iTree_300.BDT_both
-        BDT_350[0] = iTree_350.BDT_both
         mJJReg[0] = iTree.mJJReg
         mJJ[0] = iTree.mJJ
         fMass[0] = iTree.fMass
@@ -240,11 +205,10 @@ for indexFile in range(nSamples):
         chi2KinFit[0] = iTree.chi2KinFit
         svMass[0] = iTree.svMass.at(0)
         CSVJ2[0] = iTree.CSVJ2
-#         BDT_QCD[0] = iTree.BDT_QCD
-#         BDT_EWK[0] = iTree.BDT_EWK
         triggerEff[0] = iTree.triggerEff
         sampleName[:21] = name
         genMatchName[:3] = findMatch(iTree, isData)
+
         oTree.Fill()
         eventsSaved += triggerEff[0]
 
@@ -260,23 +224,10 @@ scaleMJJReg.Sumw2()
 scaleMJJRegMC.Sumw2()
 scaleMJJRegMC.Divide(scaleMJJReg)
 
-scaleBDT_260.Sumw2()
-scaleBDTMC_260.Sumw2()
-scaleBDTMC_260.Divide(scaleBDT_260)
-scaleBDT_300.Sumw2()
-scaleBDTMC_300.Sumw2()
-scaleBDTMC_300.Divide(scaleBDT_300)
-scaleBDT_350.Sumw2()
-scaleBDTMC_350.Sumw2()
-scaleBDTMC_350.Divide(scaleBDT_350)
-
-
 oFile.cd()
+
 scaleSVMassMC.Write()
 scaleMJJRegMC.Write()
-scaleBDTMC_260.Write()
-scaleBDTMC_300.Write()
-scaleBDTMC_350.Write()
 initEvents.Write()
 xs.Write()
 finalEventsWithXS.Write()
