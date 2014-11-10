@@ -1,10 +1,10 @@
-sampleLocations = [#("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-TT"),
-                   #("H2hh300",     "/hdfs/store/user/elaird/nt_H2hh300_v1-SUB-TT"),
-                   #("H2hh350",     "/hdfs/store/user/elaird/nt_H2hh350_v1-SUB-TT"),
-                   #("tt_eff",      "/hdfs/store/user/elaird/nt_ttfull_v1-SUB-TT"),
-                   #("tt_semi_eff", "/hdfs/store/user/elaird/nt_ttsemi_v1-SUB-TT"),
-                   #("ZZ_eff",      "/hdfs/store/user/elaird/nt_zz_v1-SUB-TT"),
-
+sampleLocations = [# ("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-TT"),
+#                    ("H2hh300",     "/hdfs/store/user/elaird/nt_H2hh300_v1-SUB-TT"),
+#                    ("H2hh350",     "/hdfs/store/user/elaird/nt_H2hh350_v1-SUB-TT"),
+#                    ("tt_eff",      "/hdfs/store/user/elaird/nt_ttfull_v1-SUB-TT"),
+#                    ("tt_semi_eff", "/hdfs/store/user/elaird/nt_ttsemi_v1-SUB-TT"),
+#                    ("ZZ_eff",      "/hdfs/store/user/elaird/nt_zz_v1-SUB-TT"),
+# 
 #                    ("H2hh270",      "/hdfs/store/user/zmao/H2hh270_newTrigger-SUB-TT"),
 #                    ("H2hh280",      "/hdfs/store/user/zmao/H2hh280_newTrigger-SUB-TT"),
 #                    ("H2hh290",      "/hdfs/store/user/zmao/H2hh290_newTrigger-SUB-TT"),
@@ -12,17 +12,17 @@ sampleLocations = [#("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-T
 #                    ("H2hh320",      "/hdfs/store/user/zmao/H2hh320_newTrigger-SUB-TT"),
 #                    ("H2hh330",      "/hdfs/store/user/zmao/H2hh330_newTrigger-SUB-TT"),
 #                    ("H2hh340",      "/hdfs/store/user/zmao/H2hh340_newTrigger-SUB-TT"),
-
-                   ("H2hh500",      "/hdfs/store/user/zmao/H2hh340_newTrigger-SUB-TT"),
-                   ("H2hh700",      "/hdfs/store/user/zmao/H2hh340_newTrigger-SUB-TT"),
-                   ("H2hh1000",      "/hdfs/store/user/zmao/H2hh340_newTrigger-SUB-TT"),
-
-                   
+# 
+#                    ("H2hh500",      "/hdfs/store/user/zmao/H2hh500_rad-SUB-TT"),
+#                    ("H2hh700",      "/hdfs/store/user/zmao/H2hh700_rad-SUB-TT"),
+#                    ("H2hh1000",      "/hdfs/store/user/zmao/H2hh1000_rad-SUB-TT"),
+# 
+#                    
 #                   ('dataA', '/hdfs/store/user/elaird/nt_tau_A_v1-SUB-TT-data/'),
 #                   ('dataB', '/hdfs/store/user/elaird/nt_tauP_B_v1-SUB-TT-data/'),
 #                   ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v1-SUB-TT-data/'),
 #                   ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v1-SUB-TT-data/'),
-#                    ('dataTotal', '/scratch/zmao/triggerMatch/data' ),
+                   ('dataTotal', '/scratch/zmao/jetPt20/data' ),
 
 #                     ('QCD_Pt-30to50', '/hdfs/store/user/zmao/QCD_Pt-30to50_newMET-SUB-TT'),
 #                     ('QCD_Pt-50to80', '/hdfs/store/user/zmao/QCD_Pt-50to80_newMET-SUB-TT'),
@@ -34,12 +34,12 @@ sampleLocations = [#("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-T
 #                     ('QCDtotal', '/scratch/zmao/QCD/qcd' ),
 #                     ('QCDtotal_bEnriched', '/scratch/zmao/QCD/bEnriched' ),
 #                     ('DYJetsToLL_eff', '/hdfs/store/user/zmao/DYJetsToLL_newMET-SUB-TT'),
-#                     ('DY1JetsToLL_eff2', '/hdfs/store/user/zmao/DY1JetsToLL_newMET2-SUB-TT'),
-#                     ('DY2JetsToLL_eff2', '/hdfs/store/user/zmao/DY2JetsToLL_newMET2-SUB-TT'),
-#                     ('DY3JetsToLL_eff2', '/hdfs/store/user/zmao/DY3JetsToLL_newMET2-SUB-TT'),
-#                     ('W1JetsToLNu_eff2', '/hdfs/store/user/zmao/W1JetsToLNu_newMET2-SUB-TT'),
-#                     ('W2JetsToLNu_eff2', '/hdfs/store/user/zmao/W2JetsToLNu_newMET-SUB-TT'),
-#                     ('W3JetsToLNu_eff2', '/hdfs/store/user/zmao/W3JetsToLNu_newMET-SUB-TT'),
+#                     ('DY1JetsToLL', '/hdfs/store/user/zmao/DY1JetsToLL_newTrigger-SUB-TT'),
+#                     ('DY2JetsToLL', '/hdfs/store/user/zmao/DY2JetsToLL_newTrigger-SUB-TT'),
+#                     ('DY3JetsToLL', '/hdfs/store/user/zmao/DY3JetsToLL_newTrigger-SUB-TT'),
+#                     ('W1JetsToLNu', '/hdfs/store/user/zmao/W1JetsToLNu_newTrigger-SUB-TT'),
+#                     ('W2JetsToLNu', '/hdfs/store/user/zmao/W2JetsToLNu_newTrigger-SUB-TT'),
+#                     ('W3JetsToLNu', '/hdfs/store/user/zmao/W3JetsToLNu_newTrigger-SUB-TT'),
 #                     ('WZJetsTo2L2Q_eff', '/hdfs/store/user/zmao/WZJetsTo2L2Q_newMET-SUB-TT'),
 #                     ('H2hh300', '/hdfs/store/user/zmao/H2hh300_pt20WithInit-SUB-TT'),
 #                       ('VBF_HToTauTau', '/hdfs/store/user/zmao/VBF_HToTauTau-SUB-TT'),

@@ -3,12 +3,12 @@ import ROOT as r
 
 drawConfigs = {'script': 'drawVarsData_KS_CheckFlat.py',
                #'sampleLocation': '/scratch/zmao/relaxed_regression4/TMVARegApp_',
-               'sampleLocation': '/scratch/zmao/regression_mvaMet/300/ClassApp_both_TMVARegApp_',
-               'signal': 'H300'}
+               'sampleLocation': '/scratch/zmao/newKinFit/8/350/ClassApp_both_TMVARegApp_',
+               'signal': 'H350'}
 
 SamplePreFix = drawConfigs['sampleLocation']
 
-MCFileList = [('ZZ', SamplePreFix + 'ZZ_eff_all.root', 2500, 5),
+MCFileList = [('ZZ', SamplePreFix + 'ZZ_eff_all_addNewChi2.root', 2500, 5),
               #('WZJetsTo2L2Q', SamplePreFix + 'WZJetsTo2L2Q_eff_all.root', 2207, 5),
               #('W1JetsToLNu', SamplePreFix + 'W1JetsToLNu_eff2_all.root', 5400000, r.kMagenta-9),
               #('W2JetsToLNu', SamplePreFix + 'W2JetsToLNu_eff2_all.root', 1750000, r.kMagenta-9),
@@ -17,15 +17,15 @@ MCFileList = [('ZZ', SamplePreFix + 'ZZ_eff_all.root', 2500, 5),
               #('DY1JetsToLL', SamplePreFix + 'DY1JetsToLL_eff2_all.root', 561000, r.kGreen-7),
               #('DY2JetsToLL', SamplePreFix + 'DY2JetsToLL_eff2_all.root', 181000, r.kGreen-7),
               #('DY3JetsToLL', SamplePreFix + 'DY3JetsToLL_eff2_all.root', 51100, r.kGreen-7),
-              ('tt_full_lep',SamplePreFix + 'tt_eff_all.root', 26197.5, r.kRed-7),
-              ('tt_semi_lep',SamplePreFix + 'tt_semi_eff_all.root', 109281, r.kAzure+7),]
+              ('tt_full_lep',SamplePreFix + 'tt_eff_all_addNewChi2.root', 26197.5, r.kRed-7),
+              ('tt_semi_lep',SamplePreFix + 'tt_semi_eff_all_addNewChi2.root', 109281, r.kAzure+7),]
 
 singalPreFix = SamplePreFix
-signalDict = {'H260': (singalPreFix + 'H2hh260_all.root', 14.76),
-              'H300': (singalPreFix + 'H2hh300_all.root', 15.9),
-              'H350': (singalPreFix + 'H2hh350_all.root', 8.57)}
+signalDict = {'H260': (singalPreFix + 'H2hh260_all_addNewChi2.root', 14.76),
+              'H300': (singalPreFix + 'H2hh300_all_addNewChi2.root', 15.9),
+              'H350': (singalPreFix + 'H2hh350_all_addNewChi2.root', 8.57)}
 
-dataFile = SamplePreFix + 'dataTotal_all.root'
+dataFile = SamplePreFix + 'dataTotal_all_addNewChi2.root'
 
 varsRange = { 
     #varName: (nbins, minX, maxX, yMax, signalBoostFactor, logY, predict)
@@ -53,33 +53,35 @@ varsRange = {
 #             'J4CSVbtag':(12, 0, 1.2, 50000, 100, True, True),
 #             'J4Eta': (20, -3.14, 3.14, 10000, 100, True, True),
 #             'J4Pt': (15, 0, 250, 5000, 100, True, True),
-            'svMass': (10, 0, 400, 40, 100, False, True),
+#             'svMass': (20, 0, 400, 25, 100, False, True),
 #             'svPt': (10, 0, 600, 50, 100, False, True),
 #              'mJJ': (15, 80, 150, 30000, 100, True, True),
-             'mJJReg': (10, 50, 200, 20, 100, False, True),
-             'met': (10, 0, 150, 30, 100, False, True),
+#              'mJJReg': (10, 50, 200, 20, 100, False, True),
+#              'met': (10, 0, 150, 50, 100, False, True),
 #             'ptJJ': (15, 0, 600, 5000, 100, True, True),
 #             'etaJJ': (20, -3.14, 3.14, 50000, 100, True, True),
 #             'dPhiMetTau1': (8, 0, 3.14, 60, 100, False, True),
 #             'dPhiMetTau2': (8, 0, 3.14, 20, 100, False, True),
 #             'dPhiMetJet1': (8, 0, 3.14, 60, 100, False, True),
-            'dPhiMetJet2': (8, 0, 3.14, 60, 100, False, True),
-            'dPhiMetTauPair': (8, 0, 3.14, 60, 100, False, True),
+#             'dPhiMetJet2': (8, 0, 3.14, 30, 100, False, True),
+#             'dPhiMetTauPair': (8, 0, 3.14, 60, 100, False, True),
 #             'dPhiMetJetPair': (8, 0, 3.14, 60, 100, False, True),
 #             'dPhiMetSVTauPair': (8, 0, 3.14, 60, 100, False, True),
-            'dRTauTau': (10, 0, r.TMath.Pi(), 60, 100, False, True), 
+#             'dRTauTau': (10, 0, r.TMath.Pi(), 35, 100, False, True), 
 #             'dPhiTauTau': (20, 0, r.TMath.Pi(), 5000, 500, True, True), 
 #             'dEtaTauTau': (20, 0, r.TMath.Pi(), 5000, 500, True, True), 
-            'dRJJ': (10, 0, 2*r.TMath.Pi(), 60, 100, False, True),
+            'dRJJ': (10, 0, 2*r.TMath.Pi(), 10000, 100, True, True),
 #             'dRhh': (10, 0, 6.28, 60, 100, False, True),
 #             'BDT_EWK': (20, -1., 1., 10000, 100, True, True),
 #             'BDT_QCD': (20, -1., 1., 10000, 100, True, True),
-#             'BDT_both': (20, -1., 1., 30, 100, False, True, 'binWidth'),
+#             'BDT_both': (10, -1., 1., 70, 100, False, True, 'binWidth'),
 #             'nTauPairs': (5, 0, 5, 10000, 100, True, True),
 #             'CSVJ1': (10, 0.6, 1.2, 60, 100, False, True),
 #             'CSVJ2': (10, 0.2, 1.2, 30, 100, False, True),
-#             'fMass': (20, 150, 550, 20, 100, False, True),
-             'fMassKinFit': (20, 150, 550, 5000, 100, True, True),
+#             'fMass': (15, 100, 1000, 20000, 100, True, True),
+#              'fMassKinFit': (21, -30, 600, 50, 100, False, True),
+#              'chi2KinFit2': (11, 0, 220, 50, 100, False, True),
+
 #            'byIsolationMVA2raw_1': (20, -1., 1., 20, 100, False, True),
 #            'byIsolationMVA2raw_2': (20, -1., 1., 20, 100, False, True),
             }
