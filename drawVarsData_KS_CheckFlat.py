@@ -132,7 +132,7 @@ def findBin(x, nBins, xMin, xMax):
 
 def findPtScale(pt1, pt2, direction, region):
     scaleDictUp = {'LLTrue': 0.051, #0.352, #1.690, #0.051, #0.038, #  
-                   'LL2M': 0.071, #0.352, #1.690, #0.051, #0.038, #  
+                   'LL2M': 0.069, #0.352, #1.690, #0.051, #0.038, #  
                    'LL1M': 0.053, #0.352, #1.690, #0.051, #0.038, #  
                    'LT': 0.248, #0.221,
                    'TL': 0.229, #0.201
@@ -191,7 +191,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     QCDHistList_withScale = []
     varRange = [nbins, rangeMin, rangeMax]
     nBins = 10000
-    Lumi = 19.0
+    Lumi = 19.7
     initNEventsList = []
     legendHistos = []
     var_background = []
