@@ -328,9 +328,6 @@ def makeSyncNtuples(iLocation, cut, treepath):
 #         if iTree.muTauPt1.size()>0:
 #             print 'muTauPairFound'
 #             continue
-        if iTree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired > 0 or iTree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired > 0 or iTree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired > 0:
-            if iTree.jpass_1 == 0 and iTree.jpass_2 == 0:
-                continue
 #         if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
 #             continue
 
