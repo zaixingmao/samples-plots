@@ -33,3 +33,7 @@ def calcTrigOneTauEff(eta, pt, data = True, fitStart=25):
         return (1+y)*e/2.0
 
 r.gROOT.LoadMacro("Htautau_TriggerEfficiency.h+")
+namespace = r.analysis.Htautau_Summer13.trigger.Run2012ABCD.TauTau
+DiTauWeight = namespace.DiTau.CalculateWeight
+DiTauJetWeight = namespace.DiTauJet.CalculateWeight
+print DiTauWeight, DiTauJetWeight
