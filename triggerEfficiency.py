@@ -1,3 +1,5 @@
+import ROOT as r
+
 def calcTrigOneTauEff(eta, pt, data = True, fitStart=25):
         le14_da = {20: (0.898, 44.3, 1.02),
                   25: (0.866, 43.1, 0.86),
@@ -29,3 +31,5 @@ def calcTrigOneTauEff(eta, pt, data = True, fitStart=25):
         y = r.TMath.Erf((pt-x0)/2.0/sigma/math.sqrt(pt))  # https://github.com/rmanzoni/HTT/blob/master/CMGTools/H2TauTau/interface/TriggerEfficiency.h
         #y = r.TMath.Erf((pt-x0)/sigma/math.sqrt(2.0))
         return (1+y)*e/2.0
+
+r.gROOT.LoadMacro("Htautau_TriggerEfficiency.h+")
