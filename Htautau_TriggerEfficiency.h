@@ -54,6 +54,19 @@ inline double efficiency(double m, double m0, double sigma, double alpha, double
 }
 
 template<typename EffFunction>
+double CalculateWeight(double pt1, double eta1, double pt2, double eta2,
+		       const EffFunction& eff_leg1_data_fn, const EffFunction& eff_leg2_data_fn,
+		       const EffFunction& eff_leg1_mc_fn, const EffFunction& eff_leg2_mc_fn)
+{
+    const double eff_leg1_data = eff_leg1_data_fn(pt1, eta1);
+    const double eff_leg2_data = eff_leg2_data_fn(pt2, eta2);
+    const double eff_leg1_mc = eff_leg1_mc_fn(pt1, eta1);
+    const double eff_leg2_mc = eff_leg2_mc_fn(pt2, eta2);
+
+    return (eff_leg1_data/eff_leg1_mc) * (eff_leg2_data/eff_leg2_mc);
+}
+
+template<typename EffFunction>
 std::vector<double> CalculateWeights(const TLorentzVector& momentum_leg1, const TLorentzVector& momentum_leg2,
                                      const EffFunction& eff_leg1_data_fn, const EffFunction& eff_leg2_data_fn,
                                      const EffFunction& eff_leg1_mc_fn, const EffFunction& eff_leg2_mc_fn)
@@ -199,13 +212,20 @@ namespace DiTau {
                                         &MC::tauEfficiency, &MC::tauEfficiency);
     }
 
+    inline double CalculateWeight(double pt1, double eta1, double pt2, double eta2)
+    {
+      return detail::CalculateWeight(pt1, eta1, pt2, eta2,
+				     &Data::tauEfficiency, &Data::tauEfficiency,
+				     &MC::tauEfficiency, &MC::tauEfficiency);
+    }
+
     inline std::vector<double> CalculateTurnOnCurveData(const TLorentzVector& lead_tau_momentum,
                                                 const TLorentzVector& sublead_tau_momentum)
     {
         return detail::CalculateTurnOnCurveData(lead_tau_momentum, sublead_tau_momentum,
                                         &Data::tauEfficiency, &Data::tauEfficiency);
     }
-}
+} // namspace DiTau
 
 namespace DiTauJet {
 namespace Data {
@@ -266,7 +286,14 @@ inline std::vector<double> CalculateWeights(const TLorentzVector& lead_tau_momen
                                     &MC::tauEfficiency, &MC::tauEfficiency);
 }
 
+  inline double CalculateWeight(double pt1, double eta1, double pt2, double eta2)
+{
+  return detail::CalculateWeight(pt1, eta1, pt2, eta2,
+				 &Data::tauEfficiency, &Data::tauEfficiency,
+				 &MC::tauEfficiency, &MC::tauEfficiency);
 }
+
+} // namspace DiTauJet
 
 } // namespace TauTau
 
