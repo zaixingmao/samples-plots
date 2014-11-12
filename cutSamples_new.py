@@ -8,6 +8,7 @@ from array import array
 import optparse
 import kinfit
 from cutSampleTools import *
+import trigger
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
@@ -305,7 +306,7 @@ for iSample, iLocation in sampleLocations:
                     (iChain.J4CSVbtag, J4.SetCoordinates(iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass), 'J4')]
         sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
         bb = lvClass()
-        bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec) 
+        bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
         if bb == -1:
             continue
 
@@ -394,8 +395,8 @@ for iSample, iLocation in sampleLocations:
         metTau1DPhi[0], metTau2DPhi[0], metJ1DPhi[0], metJ2DPhi[0], metTauPairDPhi[0], metJetPairDPhi[0], metSvTauPairDPhi[0] = calcdPhiMetValues(iChain.phi1.at(0), iChain.phi2.at(0), CSVJet1.phi(), CSVJet2.phi(), iChain.metphi.at(0), (tau1+tau2).phi(), bb.phi(), iChain.svPhi.at(0))
 
         #Trigger Eff
-        eff1 = calcTrigOneTauEff(eta=iChain.eta1.at(0), pt=iChain.pt1.at(0), data = True, fitStart=25)
-        eff2 = calcTrigOneTauEff(eta=iChain.eta2.at(0), pt=iChain.pt2.at(0), data = True, fitStart=25)
+        eff1 = trigger.efficiency1(iChain, 0)
+        eff2 = trigger.efficiency2(iChain, 0)
 
         triggerEff1[0] = eff1
         triggerEff2[0] = eff2        

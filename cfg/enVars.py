@@ -50,4 +50,5 @@ sampleLocations = [# ("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-
 #                     ("H2hh300_newTauID", "/hdfs/store/user/zmao/H2hh300_newTauID-SUB-TT"),
                   ]
 
+jetPtThreshold = 20
 corruptedROOTfiles = []
