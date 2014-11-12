@@ -2,13 +2,15 @@
 
 import ROOT as r
 import tool
+from operator import itemgetter
 import os
-from cfg import enVars
+from cfg import enVars2
 from array import array
 import optparse
+import math
+import varsList
 import kinfit
-from cutSampleTools import *
-import trigger
+import triggerEfficiency
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
@@ -43,8 +45,6 @@ sv4Vec = lvClass()
 
 kinfit.setup()
 
-
-
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("-l", dest="location", default="/scratch/zmao", help="location to be saved")
@@ -58,11 +58,98 @@ def opts():
 
 options = opts()
 
+def findFullMass(jetsList = [], sv4Vec = ''):
+    jetsList = sorted(jetsList, key=itemgetter(0), reverse=True)
+    combinedJJ = jetsList[0][1]+jetsList[1][1]
+    if jetsList[1][0] > 0 and jetsList[0][1].pt() > 30 and jetsList[1][1].pt() > 30 and abs(jetsList[0][1].eta()) < 2.4 and abs(jetsList[1][1].eta()) < 2.4:
+        return combinedJJ, jetsList[0][0], jetsList[1][0], jetsList[0][1], jetsList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(jetsList[0][1], jetsList[1][1]), jetsList[0][2], jetsList[1][2]
+    else:
+        return -1, -1, -1, -1, -1, -1, -1, -1, -1
+
+def findGenJet(j1Name, jet1, j2Name, jet2, tChain):
+    genJet1 = lvClass()
+    genJet2 = lvClass()
+    genJet1.SetCoordinates(0,0,0,0)
+    genJet2.SetCoordinates(0,0,0,0)
+    if varsList.findVarInChain(tChain, '%sGenPt' %j1Name) > 0 and varsList.findVarInChain(tChain, '%sGenMass' %j1Name) > 0:
+        genJet1.SetCoordinates(varsList.findVarInChain(tChain, '%sGenPt' %j1Name),
+                                varsList.findVarInChain(tChain, '%sGenEta' %j1Name),
+                                varsList.findVarInChain(tChain, '%sGenPhi' %j1Name),
+                                varsList.findVarInChain(tChain, '%sGenMass' %j2Name))
+    if varsList.findVarInChain(tChain, '%sGenPt' %j2Name) > 0 and varsList.findVarInChain(tChain, '%sGenMass' %j2Name) > 0:
+        genJet2.SetCoordinates(varsList.findVarInChain(tChain, '%sGenPt' %j2Name),
+                                varsList.findVarInChain(tChain, '%sGenEta' %j2Name),
+                                varsList.findVarInChain(tChain, '%sGenPhi' %j2Name),
+                                varsList.findVarInChain(tChain, '%sGenMass' %j2Name))
+
+    dR1 = r.Math.VectorUtil.DeltaR(genJet1, jet1)
+    dR2 = r.Math.VectorUtil.DeltaR(genJet2, jet2)
+    return dR1, genJet1, dR2, genJet2
+
+def findGenBJet(jet1, jet2, tChain):
+    genJet1 = lvClass()
+    genJet2 = lvClass()
+    genJet1.SetCoordinates(0,0,0,0)
+    genJet2.SetCoordinates(0,0,0,0)
+    tmpJet = lvClass()
+    tmpJet.SetCoordinates(0,0,0,0)
+    dR1 = 0.5
+    dR2 = 0.5
+    for i in range(tChain.genBPt.size()):
+        tmpJet.SetCoordinates(tChain.genBPt.at(i), tChain.genBEta.at(i), tChain.genBPhi.at(i), tChain.genBMass.at(i))
+        tmpDR1 = r.Math.VectorUtil.DeltaR(tmpJet, jet1)
+        if dR1 > tmpDR1:
+            dR1 = tmpDR1
+            genJet1.SetCoordinates(tChain.genBPt.at(i), tChain.genBEta.at(i), tChain.genBPhi.at(i), tChain.genBMass.at(i))
+
+    for i in range(tChain.genBPt.size()):
+        tmpJet.SetCoordinates(tChain.genBPt.at(i), tChain.genBEta.at(i), tChain.genBPhi.at(i), tChain.genBMass.at(i))
+        tmpDR2 = r.Math.VectorUtil.DeltaR(tmpJet, jet2)
+        if dR2 > tmpDR2 and genJet1 != tmpJet:
+            dR2 = tmpDR2
+            genJet2.SetCoordinates(tChain.genBPt.at(i), tChain.genBEta.at(i), tChain.genBPhi.at(i), tChain.genBMass.at(i))
+
+    if genJet1 == genJet2:
+        print '  WARNING:: Matched to the same b quark (b mass = %.3f)' %genJet2.mass() 
+    return dR1, genJet1, dR2, genJet2
+
+def getRegVars(jName, tChain):
+    
+    jet = lvClass()
+    SoftLeptPt = 0
+    jet.SetCoordinates(varsList.findVarInChain_Data(tChain, '%sPt' %jName), varsList.findVarInChain_Data(tChain,'%sEta' %jName),
+                       varsList.findVarInChain_Data(tChain, '%sPhi' %jName), 0)
+    if varsList.findVarInChain_Data(tChain,'%sSoftLeptPID' %jName) == 0:
+        SoftLeptPtRel = 0
+        SoftLeptdR = 0
+    else:
+        SoftLeptPtRel = varsList.findVarInChain_Data(tChain,'%sPt' %jName) - varsList.findVarInChain_Data(tChain,'%sSoftLeptPt' %jName)
+        softLept = lvClass()
+        softLept.SetCoordinates(varsList.findVarInChain_Data(tChain, '%sSoftLeptPt' %jName), varsList.findVarInChain_Data(tChain,'%sSoftLeptEta' %jName),
+                                varsList.findVarInChain_Data(tChain, '%sSoftLeptPhi' %jName), 0)
+        SoftLeptdR = r.Math.VectorUtil.DeltaR(softLept, jet)
+        SoftLeptPt = varsList.findVarInChain_Data(tChain, '%sSoftLeptPt' %jName)
+
+    if SoftLeptPt < 0:
+        SoftLeptPt = 0
+
+    return varsList.findVarInChain_Data(tChain, '%sPtUncorr' %jName), varsList.findVarInChain_Data(tChain, '%sEt' %jName), varsList.findVarInChain_Data(tChain, '%sMt' %jName), varsList.findVarInChain_Data(tChain, '%sptLeadTrk' %jName), varsList.findVarInChain_Data(tChain, '%sVtx3dL' %jName),varsList.findVarInChain_Data(tChain, '%sVtx3deL' %jName), varsList.findVarInChain_Data(tChain, '%svtxMass' %jName), varsList.findVarInChain_Data(tChain, '%sVtxPt' %jName), varsList.findVarInChain_Data(tChain, '%sJECUnc' %jName), float(varsList.findVarInChain_Data(tChain, '%sNtot' %jName)), SoftLeptPtRel, SoftLeptPt, SoftLeptdR
+
+
+def setDPhiInRange(dPhi):
+    if dPhi > 3.14:
+        return 6.283-dPhi
+    else:
+        return dPhi
+
+def calcdPhiMetValues(tau1Phi, tau2Phi, j1Phi, j2Phi, metPhi, tauTauPhi, jjPhi, svPhi):
+    return setDPhiInRange(abs(tau1Phi - metPhi)), setDPhiInRange(abs(tau2Phi - metPhi)), setDPhiInRange(abs(j1Phi - metPhi)), setDPhiInRange(abs(j2Phi - metPhi)), setDPhiInRange(abs(tauTauPhi - metPhi)), setDPhiInRange(abs(jjPhi - metPhi)),  setDPhiInRange(abs(svPhi - metPhi)) 
+
 r.gStyle.SetOptStat(0)
 
 
 #*******Get Sample Name and Locations******
-sampleLocations = enVars.sampleLocations
+sampleLocations = enVars2.sampleLocations
 
 preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
@@ -88,7 +175,7 @@ for iVar in preVarList:
 for iVar in genVarList:
     fullVarList.append(iVar)
 
-blackList = enVars.corruptedROOTfiles
+blackList = enVars2.corruptedROOTfiles
 
 for iSample, iLocation in sampleLocations:
     if 'data' in iSample:
@@ -195,93 +282,94 @@ for iSample, iLocation in sampleLocations:
 
 
     iChain.LoadTree(0)
-    oTree = iChain.GetTree().CloneTree(0)
+    iTree = iChain.GetTree().CloneTree(0)
     iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
     iFile = r.TFile("%s/%s.root" %(options.location,iSample),"recreate")
-    oTree.Branch("fMass", fullMass, "fMass/F")
-    oTree.Branch("mJJ", mJJ, "mJJ/F")
-    oTree.Branch("etaJJ", etaJJ, "etaJJ/F")
-    oTree.Branch("phiJJ", phiJJ, "phiJJ/F")
-    oTree.Branch("ptJJ", ptJJ, "ptJJ/F")
-    oTree.Branch("CSVJ1", CSVJ1, "CSVJ1/F")
-    oTree.Branch("CSVJ1Pt", CSVJ1Pt, "CSVJ1Pt/F")
-    oTree.Branch("CSVJ1Eta", CSVJ1Eta, "CSVJ1Eta/F")
-    oTree.Branch("CSVJ1Phi", CSVJ1Phi, "CSVJ1Phi/F")
-    oTree.Branch("CSVJ1Mass", CSVJ1Mass, "CSVJ1Mass/F")
-    oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
-    oTree.Branch("CSVJ2Pt", CSVJ2Pt, "CSVJ2Pt/F")
-    oTree.Branch("CSVJ2Eta", CSVJ2Eta, "CSVJ2Eta/F")
-    oTree.Branch("CSVJ2Phi", CSVJ2Phi, "CSVJ2Phi/F")
-    oTree.Branch("CSVJ2Mass", CSVJ2Mass, "CSVJ2Mass/F")
-    oTree.Branch("dRTauTau", dRTauTau, "dRTauTau/F")
-    oTree.Branch("dRJJ", dRJJ, "dRJJ/F")
-    oTree.Branch("dRhh", dRhh, "dRhh/F")
-    oTree.Branch("mTop1", mTop1, "mTop1/F")
-    oTree.Branch("mTop2", mTop2, "mTop2/F")
-    oTree.Branch("pZ_new", pZ_new, "pZ_new/F")
-    oTree.Branch("pZV_new", pZV_new, "pZV_new/F")
-    oTree.Branch("pZ_new2", pZ_new2, "pZ_new2/F")
-    oTree.Branch("pZV_new2", pZV_new2, "pZV_new2/F")
-    oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
-    oTree.Branch("triggerEff1", triggerEff1, "triggerEff1/F")
-    oTree.Branch("triggerEff2", triggerEff2, "triggerEff2/F")
-    oTree.Branch("metTau1DPhi", metTau1DPhi, "metTau1DPhi/F")
-    oTree.Branch("metTau2DPhi", metTau2DPhi, "metTau2DPhi/F")
-    oTree.Branch("metJ1DPhi", metJ1DPhi, "metJ1DPhi/F")
-    oTree.Branch("metJ2DPhi", metJ2DPhi, "metJ2DPhi/F")
-    oTree.Branch("metTauPairDPhi", metTauPairDPhi, "metTauPairDPhi/F")
-    oTree.Branch("metJetPairDPhi", metJetPairDPhi, "metJetPairDPhi/F")
-    oTree.Branch("metSvTauPairDPhi", metSvTauPairDPhi, "metSvTauPairDPhi/F")
-    oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
-    oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
+    iTree.Branch("fMass", fullMass, "fMass/F")
+    iTree.Branch("mJJ", mJJ, "mJJ/F")
+    iTree.Branch("etaJJ", etaJJ, "etaJJ/F")
+    iTree.Branch("phiJJ", phiJJ, "phiJJ/F")
+    iTree.Branch("ptJJ", ptJJ, "ptJJ/F")
+    iTree.Branch("CSVJ1", CSVJ1, "CSVJ1/F")
+    iTree.Branch("CSVJ1Pt", CSVJ1Pt, "CSVJ1Pt/F")
+    iTree.Branch("CSVJ1Eta", CSVJ1Eta, "CSVJ1Eta/F")
+    iTree.Branch("CSVJ1Phi", CSVJ1Phi, "CSVJ1Phi/F")
+    iTree.Branch("CSVJ1Mass", CSVJ1Mass, "CSVJ1Mass/F")
+    iTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
+    iTree.Branch("CSVJ2Pt", CSVJ2Pt, "CSVJ2Pt/F")
+    iTree.Branch("CSVJ2Eta", CSVJ2Eta, "CSVJ2Eta/F")
+    iTree.Branch("CSVJ2Phi", CSVJ2Phi, "CSVJ2Phi/F")
+    iTree.Branch("CSVJ2Mass", CSVJ2Mass, "CSVJ2Mass/F")
+    iTree.Branch("dRTauTau", dRTauTau, "dRTauTau/F")
+    iTree.Branch("dRJJ", dRJJ, "dRJJ/F")
+    iTree.Branch("dRhh", dRhh, "dRhh/F")
+    iTree.Branch("mTop1", mTop1, "mTop1/F")
+    iTree.Branch("mTop2", mTop2, "mTop2/F")
+    iTree.Branch("pZ_new", pZ_new, "pZ_new/F")
+    iTree.Branch("pZV_new", pZV_new, "pZV_new/F")
+    iTree.Branch("pZ_new2", pZ_new2, "pZ_new2/F")
+    iTree.Branch("pZV_new2", pZV_new2, "pZV_new2/F")
+    iTree.Branch("triggerEff", triggerEff, "triggerEff/F")
+    iTree.Branch("triggerEff1", triggerEff1, "triggerEff1/F")
+    iTree.Branch("triggerEff2", triggerEff2, "triggerEff2/F")
+    iTree.Branch("metTau1DPhi", metTau1DPhi, "metTau1DPhi/F")
+    iTree.Branch("metTau2DPhi", metTau2DPhi, "metTau2DPhi/F")
+    iTree.Branch("metJ1DPhi", metJ1DPhi, "metJ1DPhi/F")
+    iTree.Branch("metJ2DPhi", metJ2DPhi, "metJ2DPhi/F")
+    iTree.Branch("metTauPairDPhi", metTauPairDPhi, "metTauPairDPhi/F")
+    iTree.Branch("metJetPairDPhi", metJetPairDPhi, "metJetPairDPhi/F")
+    iTree.Branch("metSvTauPairDPhi", metSvTauPairDPhi, "metSvTauPairDPhi/F")
+    iTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
+    iTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
 
-    oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
+    iTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
 
     if not isData:
-        oTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
-        oTree.Branch("dRGenJet2Match", dRGenJet2Match, "dRGenJet2Match/F")
-        oTree.Branch("matchGenJet1Pt", matchGenJet1Pt, "matchGenJet1Pt/F")
-        oTree.Branch("matchGenJet1Eta", matchGenJet1Eta, "matchGenJet1Eta/F")
-        oTree.Branch("matchGenJet1Phi", matchGenJet1Phi, "matchGenJet1Phi/F")
-        oTree.Branch("matchGenJet1Mass", matchGenJet1Mass, "matchGenJet1Mass/F")
-        oTree.Branch("matchGenJet2Pt", matchGenJet2Pt, "matchGenJet2Pt/F")
-        oTree.Branch("matchGenJet2Eta", matchGenJet2Eta, "matchGenJet2Eta/F")
-        oTree.Branch("matchGenJet2Phi", matchGenJet2Phi, "matchGenJet2Phi/F")
-        oTree.Branch("matchGenJet2Mass", matchGenJet2Mass, "matchGenJet2Mass/F")
-        oTree.Branch("matchGenMJJ", matchGenMJJ, "matchGenMJJ/F")
-        oTree.Branch("matchGenPtJJ", matchGenPtJJ, "matchGenPtJJ/F")
-        oTree.Branch("matchGendRJJ", matchGendRJJ, "matchGendRJJ/F")
+        iTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
+        iTree.Branch("dRGenJet2Match", dRGenJet2Match, "dRGenJet2Match/F")
+        iTree.Branch("matchGenJet1Pt", matchGenJet1Pt, "matchGenJet1Pt/F")
+        iTree.Branch("matchGenJet1Eta", matchGenJet1Eta, "matchGenJet1Eta/F")
+        iTree.Branch("matchGenJet1Phi", matchGenJet1Phi, "matchGenJet1Phi/F")
+        iTree.Branch("matchGenJet1Mass", matchGenJet1Mass, "matchGenJet1Mass/F")
+        iTree.Branch("matchGenJet2Pt", matchGenJet2Pt, "matchGenJet2Pt/F")
+        iTree.Branch("matchGenJet2Eta", matchGenJet2Eta, "matchGenJet2Eta/F")
+        iTree.Branch("matchGenJet2Phi", matchGenJet2Phi, "matchGenJet2Phi/F")
+        iTree.Branch("matchGenJet2Mass", matchGenJet2Mass, "matchGenJet2Mass/F")
+        iTree.Branch("matchGenMJJ", matchGenMJJ, "matchGenMJJ/F")
+        iTree.Branch("matchGenPtJJ", matchGenPtJJ, "matchGenPtJJ/F")
+        iTree.Branch("matchGendRJJ", matchGendRJJ, "matchGendRJJ/F")
 
 
-    oTree.Branch("CSVJ1PtUncorr",CSVJ1PtUncorr,"CSVJ1PtUncorr/F")
-    oTree.Branch("CSVJ1Et",CSVJ1Et,"CSVJ1Et/F")
-    oTree.Branch("CSVJ1Mt",CSVJ1Mt,"CSVJ1Mt/F")
-    oTree.Branch("CSVJ1ptLeadTrk",CSVJ1ptLeadTrk,"CSVJ1ptLeadTrk/F")
-    oTree.Branch("CSVJ1Vtx3dL",CSVJ1Vtx3dL,"CSVJ1Vtx3dL/F")
-    oTree.Branch("CSVJ1Vtx3deL",CSVJ1Vtx3deL,"CSVJ1Vtx3deL/F")
-    oTree.Branch("CSVJ1vtxMass",CSVJ1vtxMass,"CSVJ1vtxMass/F")
-    oTree.Branch("CSVJ1VtxPt",CSVJ1VtxPt,"CSVJ1VtxPt/F")
-    oTree.Branch("CSVJ1JECUnc",CSVJ1JECUnc,"CSVJ1JECUnc/F")
-    oTree.Branch("CSVJ1Ntot",CSVJ1Ntot,"CSVJ1Ntot/F")
-    oTree.Branch("CSVJ1SoftLeptPtRel",CSVJ1SoftLeptPtRel,"CSVJ1SoftLeptPtRel/F")
-    oTree.Branch("CSVJ1SoftLeptPt",CSVJ1SoftLeptPt,"CSVJ1SoftLeptPt/F")
-    oTree.Branch("CSVJ1SoftLeptdR",CSVJ1SoftLeptdR,"CSVJ1SoftLeptdR/F")
+    iTree.Branch("CSVJ1PtUncorr",CSVJ1PtUncorr,"CSVJ1PtUncorr/F")
+    iTree.Branch("CSVJ1Et",CSVJ1Et,"CSVJ1Et/F")
+    iTree.Branch("CSVJ1Mt",CSVJ1Mt,"CSVJ1Mt/F")
+    iTree.Branch("CSVJ1ptLeadTrk",CSVJ1ptLeadTrk,"CSVJ1ptLeadTrk/F")
+    iTree.Branch("CSVJ1Vtx3dL",CSVJ1Vtx3dL,"CSVJ1Vtx3dL/F")
+    iTree.Branch("CSVJ1Vtx3deL",CSVJ1Vtx3deL,"CSVJ1Vtx3deL/F")
+    iTree.Branch("CSVJ1vtxMass",CSVJ1vtxMass,"CSVJ1vtxMass/F")
+    iTree.Branch("CSVJ1VtxPt",CSVJ1VtxPt,"CSVJ1VtxPt/F")
+    iTree.Branch("CSVJ1JECUnc",CSVJ1JECUnc,"CSVJ1JECUnc/F")
+    iTree.Branch("CSVJ1Ntot",CSVJ1Ntot,"CSVJ1Ntot/F")
+    iTree.Branch("CSVJ1SoftLeptPtRel",CSVJ1SoftLeptPtRel,"CSVJ1SoftLeptPtRel/F")
+    iTree.Branch("CSVJ1SoftLeptPt",CSVJ1SoftLeptPt,"CSVJ1SoftLeptPt/F")
+    iTree.Branch("CSVJ1SoftLeptdR",CSVJ1SoftLeptdR,"CSVJ1SoftLeptdR/F")
 
-    oTree.Branch("CSVJ2PtUncorr",CSVJ2PtUncorr,"CSVJ2PtUncorr/F")
-    oTree.Branch("CSVJ2Et",CSVJ2Et,"CSVJ2Et/F")
-    oTree.Branch("CSVJ2Mt",CSVJ2Mt,"CSVJ2Mt/F")
-    oTree.Branch("CSVJ2ptLeadTrk",CSVJ2ptLeadTrk,"CSVJ2ptLeadTrk/F")
-    oTree.Branch("CSVJ2Vtx3dL",CSVJ2Vtx3dL,"CSVJ2Vtx3dL/F")
-    oTree.Branch("CSVJ2Vtx3deL",CSVJ2Vtx3deL,"CSVJ2Vtx3deL/F")
-    oTree.Branch("CSVJ2vtxMass",CSVJ2vtxMass,"CSVJ2vtxMass/F")
-    oTree.Branch("CSVJ2VtxPt",CSVJ2VtxPt,"CSVJ2VtxPt/F")
-    oTree.Branch("CSVJ2JECUnc",CSVJ2JECUnc,"CSVJ2JECUnc/F")
-    oTree.Branch("CSVJ2Ntot",CSVJ2Ntot,"CSVJ2Ntot/F")
-    oTree.Branch("CSVJ2SoftLeptPtRel",CSVJ2SoftLeptPtRel,"CSVJ2SoftLeptPtRel/F")
-    oTree.Branch("CSVJ2SoftLeptPt",CSVJ2SoftLeptPt,"CSVJ2SoftLeptPt/F")
-    oTree.Branch("CSVJ2SoftLeptdR",CSVJ2SoftLeptdR,"CSVJ2SoftLeptdR/F")
+    iTree.Branch("CSVJ2PtUncorr",CSVJ2PtUncorr,"CSVJ2PtUncorr/F")
+    iTree.Branch("CSVJ2Et",CSVJ2Et,"CSVJ2Et/F")
+    iTree.Branch("CSVJ2Mt",CSVJ2Mt,"CSVJ2Mt/F")
+    iTree.Branch("CSVJ2ptLeadTrk",CSVJ2ptLeadTrk,"CSVJ2ptLeadTrk/F")
+    iTree.Branch("CSVJ2Vtx3dL",CSVJ2Vtx3dL,"CSVJ2Vtx3dL/F")
+    iTree.Branch("CSVJ2Vtx3deL",CSVJ2Vtx3deL,"CSVJ2Vtx3deL/F")
+    iTree.Branch("CSVJ2vtxMass",CSVJ2vtxMass,"CSVJ2vtxMass/F")
+    iTree.Branch("CSVJ2VtxPt",CSVJ2VtxPt,"CSVJ2VtxPt/F")
+    iTree.Branch("CSVJ2JECUnc",CSVJ2JECUnc,"CSVJ2JECUnc/F")
+    iTree.Branch("CSVJ2Ntot",CSVJ2Ntot,"CSVJ2Ntot/F")
+    iTree.Branch("CSVJ2SoftLeptPtRel",CSVJ2SoftLeptPtRel,"CSVJ2SoftLeptPtRel/F")
+    iTree.Branch("CSVJ2SoftLeptPt",CSVJ2SoftLeptPt,"CSVJ2SoftLeptPt/F")
+    iTree.Branch("CSVJ2SoftLeptdR",CSVJ2SoftLeptdR,"CSVJ2SoftLeptdR/F")
 
     counter = 0
+
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
@@ -289,14 +377,14 @@ for iSample, iLocation in sampleLocations:
             break
         if iChain.svMass.size() == 0:
             continue
-#         if not tool.calc(iChain):
-#             continue
+        if not tool.calc(iChain):
+            continue
 #         if iChain.charge1.at(0) - iChain.charge2.at(0) == 0: #sign requirement
 #             continue
-#         if iChain.pt1.at(0)<45 or iChain.pt2.at(0)<45: #pt cut
-#             continue        
-#         if abs(iChain.eta1.at(0))>2.1 or abs(iChain.eta2.at(0))>2.1: #pt cut
-#             continue
+        if iChain.pt1.at(0)<45 or iChain.pt2.at(0)<45: #pt cut
+            continue        
+        if abs(iChain.eta1.at(0))>2.1 or abs(iChain.eta2.at(0))>2.1: #pt cut
+            continue
 #         if iChain.iso1.at(0)<1.5 or iChain.iso2.at(0)<1.5: #iso cut
 #             continue 
 
@@ -306,13 +394,12 @@ for iSample, iLocation in sampleLocations:
                     (iChain.J4CSVbtag, J4.SetCoordinates(iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass), 'J4')]
         sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
         bb = lvClass()
-        bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
+        bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec) 
         if bb == -1:
             continue
-
-        #Gen Matching
         matchGenJet1Pt[0] = 0
         matchGenJet2Pt[0] = 0
+
         if not isData:
             if options.genMatch == 'jet':
                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenJet(j1Name, CSVJet1, j2Name, CSVJet2, iChain)
@@ -338,7 +425,6 @@ for iSample, iLocation in sampleLocations:
                 matchGenMJJ[0] = 0
                 matchGenPtJJ[0] = 0
 
-        #Store values
         CSVJ1Pt[0] = CSVJet1.pt()
         CSVJ1Eta[0] = CSVJet1.eta()
         CSVJ1Phi[0] = CSVJet1.phi()
@@ -391,12 +477,10 @@ for iSample, iLocation in sampleLocations:
         dRTauTau[0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
 
-        #Trigger Calc MetDPhiValues
         metTau1DPhi[0], metTau2DPhi[0], metJ1DPhi[0], metJ2DPhi[0], metTauPairDPhi[0], metJetPairDPhi[0], metSvTauPairDPhi[0] = calcdPhiMetValues(iChain.phi1.at(0), iChain.phi2.at(0), CSVJet1.phi(), CSVJet2.phi(), iChain.metphi.at(0), (tau1+tau2).phi(), bb.phi(), iChain.svPhi.at(0))
 
-        #Trigger Eff
-        eff1 = trigger.efficiency1(iChain, 0)
-        eff2 = trigger.efficiency2(iChain, 0)
+        eff1 = triggerEfficiency.calcTrigOneTauEff(eta=iChain.eta1.at(0), pt=iChain.pt1.at(0), data = True, fitStart=25)
+        eff2 = triggerEfficiency.calcTrigOneTauEff(eta=iChain.eta2.at(0), pt=iChain.pt2.at(0), data = True, fitStart=25)
 
         triggerEff1[0] = eff1
         triggerEff2[0] = eff2        
@@ -406,19 +490,19 @@ for iSample, iLocation in sampleLocations:
             triggerEff1[0] = 1
             triggerEff2[0] = 1
 
-        #Kinematic Fit
-        chi2KinFit[0], fMassKinFit[0], status = kinfit.fit(iChain, CSVJet1, CSVJet2)
+        #For Kinematic Fit
+        chi2KinFit[0], fMassKinFit[0] = kinfit.fit(iChain, CSVJet1, CSVJet2)
+
         chi2KinFit2[0] = chi2KinFit[0]
         if chi2KinFit2[0] > 200:
             chi2KinFit2[0] = 200
 
-
-        oTree.Fill()
+        iTree.Fill()
         counter += 1
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' %(iSample))
     print '  -- saved %d events' %(counter)
     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
     cutFlow.Write()
-    oTree.Write()
+    iTree.Write()
     iFile.Close()

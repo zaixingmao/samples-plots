@@ -5,7 +5,7 @@ sampleLocations = [# ("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-
 #                    ("tt_semi_eff", "/hdfs/store/user/elaird/nt_ttsemi_v1-SUB-TT"),
 #                    ("ZZ_eff",      "/hdfs/store/user/elaird/nt_zz_v1-SUB-TT"),
 # 
-#                    ("H2hh270",      "/hdfs/store/user/zmao/H2hh270_newTrigger-SUB-TT"),
+                   ("H2hh270",      "/hdfs/store/user/zmao/H2hh270_newTrigger-SUB-TT"),
 #                    ("H2hh280",      "/hdfs/store/user/zmao/H2hh280_newTrigger-SUB-TT"),
 #                    ("H2hh290",      "/hdfs/store/user/zmao/H2hh290_newTrigger-SUB-TT"),
 #                    ("H2hh310",      "/hdfs/store/user/zmao/H2hh310_newTrigger-SUB-TT"),
@@ -22,7 +22,7 @@ sampleLocations = [# ("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-
 #                   ('dataB', '/hdfs/store/user/elaird/nt_tauP_B_v1-SUB-TT-data/'),
 #                   ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v1-SUB-TT-data/'),
 #                   ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v1-SUB-TT-data/'),
-                   ('dataTotal', '/scratch/zmao/jetPt20/data' ),
+#                    ('dataTotal', '/scratch/zmao/jetPt20/data' ),
 
 #                     ('QCD_Pt-30to50', '/hdfs/store/user/zmao/QCD_Pt-30to50_newMET-SUB-TT'),
 #                     ('QCD_Pt-50to80', '/hdfs/store/user/zmao/QCD_Pt-50to80_newMET-SUB-TT'),
@@ -50,4 +50,5 @@ sampleLocations = [# ("H2hh260",     "/hdfs/store/user/elaird/nt_H2hh260_v1-SUB-
 #                     ("H2hh300_newTauID", "/hdfs/store/user/zmao/H2hh300_newTauID-SUB-TT"),
                   ]
 
+jetPtThreshold = 20
 corruptedROOTfiles = []

@@ -296,3 +296,41 @@ def findVarInChain_Data(iChain, varName):
     else:
         print 'Variable: %s not defined in varList.py' %varName
         return 'Null'
+
+def findVarInChain_Data_speed(iChain, varName):
+    varsDict = {
+                'J1': (iChain.J1PtUncorr, iChain.J1VtxPt, iChain.J1Vtx3dL, iChain.J1Vtx3deL,
+                        iChain.J1ptLeadTrk, iChain.J1vtxMass, iChain.J1vtxPt, iChain.J1Ntot,
+                        iChain.J1SoftLepPt, iChain.J1SoftLepEta, iChain.J1SoftLepPhi, iChain.J1SoftLepPID,
+                        iChain.J1JECUnc, iChain.J1Et, iChain.J1Mt, iChain.J1Pt, iChain.J1Eta, iChain.J1Phi, iChain.J1Mass),
+                'J2': (iChain.J2PtUncorr, iChain.J2VtxPt, iChain.J2Vtx3dL, iChain.J2Vtx3deL,
+                        iChain.J2ptLeadTrk, iChain.J2vtxMass, iChain.J2vtxPt, iChain.J2Ntot,
+                        iChain.J2SoftLepPt, iChain.J2SoftLepEta, iChain.J2SoftLepPhi, iChain.J2SoftLepPID,
+                        iChain.J2JECUnc, iChain.J2Et, iChain.J2Mt, iChain.J2Pt, iChain.J2Eta, iChain.J2Phi, iChain.J2Mass),
+                'J3': (iChain.J3PtUncorr, iChain.J3VtxPt, iChain.J3Vtx3dL, iChain.J3Vtx3deL,
+                        iChain.J3ptLeadTrk, iChain.J3vtxMass, iChain.J3vtxPt, iChain.J3Ntot,
+                        iChain.J3SoftLepPt, iChain.J3SoftLepEta, iChain.J3SoftLepPhi, iChain.J3SoftLepPID,
+                        iChain.J3JECUnc, iChain.J3Et, iChain.J3Mt, iChain.J3Pt, iChain.J3Eta, iChain.J3Phi, iChain.J3Mass),
+                'J4': (iChain.J4PtUncorr, iChain.J4VtxPt, iChain.J4Vtx3dL, iChain.J4Vtx3deL,
+                        iChain.J4ptLeadTrk, iChain.J4vtxMass, iChain.J4vtxPt, iChain.J4Ntot,
+                        iChain.J4SoftLepPt, iChain.J4SoftLepEta, iChain.J4SoftLepPhi, iChain.J4SoftLepPID,
+                        iChain.J4JECUnc, iChain.J4Et, iChain.J4Mt, iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass),
+    }
+    if varName in varsDict:
+        return varsDict[varName]
+    else:
+        print 'Variable: %s not defined in varList.py' %varName
+        return 'Null'
+
+def findVarInChain_GenJet_speed(iChain, varName):
+    varsDict = {
+                'J1': (iChain.J1GenPt, iChain.J1GenEta, iChain.J1GenPhi, iChain.J1GenMass),
+                'J2': (iChain.J2GenPt, iChain.J2GenEta, iChain.J2GenPhi, iChain.J2GenMass),
+                'J3': (iChain.J3GenPt, iChain.J3GenEta, iChain.J3GenPhi, iChain.J3GenMass),
+                'J4': (iChain.J4GenPt, iChain.J4GenEta, iChain.J4GenPhi, iChain.J4GenMass),
+    }    
+    if varName in varsDict:
+        return varsDict[varName]
+    else:
+        print 'Variable: %s not defined in varList.py' %varName
+        return 'Null'

@@ -12,7 +12,17 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
 dR_tauEleMu_max = 0.2
 dR_b_max = 0.5
-lumi = 19.0
+lumi = 19.7
+
+def findCat(option):
+    if 'bTag' in option:
+        return 'MM_LM'
+    elif '2M' in option:
+        return '2M'
+    elif '1M' in option:
+        return '1M'
+    else:
+        return 'none'
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi):
 
@@ -137,7 +147,7 @@ fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
 chi2KinFit2 = array('f', [0.])
-
+Category = bytearray(5)
 CSVJ2 = array('f', [0.])
 BDT_QCD = array('f', [0.])
 BDT_EWK = array('f', [0.])
@@ -148,9 +158,8 @@ genMatchName = bytearray(3)
 initEvents = r.TH1F('initEvents', '', nSamples, 0, nSamples)
 xs = r.TH1F('xs', '', nSamples, 0, nSamples)
 finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
-L2T = r.TH1F('L_to_T_%s' %makeWholeSample_cfg.bTag, '', 1, 0, 1)
-
-
+L2T = r.TH1F('L_to_T_%s' %findCat(makeWholeSample_cfg.bTag), '', 1, 0, 1)
+L2T_value = 0
 svMassRange = [20, 0, 400]
 mJJRegRange = [15, 50, 200]
 BDTRange = [20, -1.0, 1.0]
@@ -187,6 +196,7 @@ oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
 oTree.Branch("sampleName", sampleName, "sampleName[21]/C")
 oTree.Branch("genMatchName", genMatchName, "genMatchName[21]/C")
+oTree.Branch("Category", Category, "Category[21]/C")
 
 for indexFile in range(nSamples):
     ifiles = []
@@ -246,15 +256,21 @@ for indexFile in range(nSamples):
         triggerEff[0] = iTrees[0].triggerEff
         sampleName[:21] = name
         genMatchName[:3] = findMatch(iTrees[0], isData)
+        Category[:5] = findCat(option)
+
         for iMP in range(nMassPoints):
             BDTs[iMP][0] = iTrees[iMP].BDT_both
         oTree.Fill()
         eventsSaved += triggerEff[0]
     if isData:
-        L2T.Fill(0.5, xsValue)
+        L2T_value = xsValue
     xs.Fill(name, xsValue)
     finalEventsWithXS.Fill(name, eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
     print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi) #eventsSaved
+
+total_Data = scaleSVMass.Integral(0, svMassRange[0]+1)
+total_MC = scaleSVMassMC.Integral(0, svMassRange[0]+1)
+L2T.Fill(0.5, L2T_value*(1-(total_MC/total_Data)))
 
 scaleSVMass.Sumw2()
 scaleSVMassMC.Sumw2()
@@ -265,6 +281,7 @@ scaleMJJRegMC.Sumw2()
 scaleMJJRegMC.Divide(scaleMJJReg)
 
 oFile.cd()
+
 for iMP in range(nMassPoints):
     scaleBDTs[iMP].Sumw2()
     scaleBDTMCs[iMP].Sumw2()

@@ -145,9 +145,7 @@ L2T = r.TH1F('L2T', '', 1, 0, 1)
 finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
 
 svMassRange = [20, 0, 400]
-
-counter = 0
-
+L2T_value = 0
 
 scaleSVMass = r.TH1F("scaleSVMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
 scaleSVMassMC = r.TH1F("MC_Data_svMass", "", svMassRange[0], svMassRange[1], svMassRange[2])
@@ -216,11 +214,16 @@ for indexFile in range(nSamples):
         eventsSaved += triggerEff[0]
 
     if isData:
-        L2T.Fill(0.5, xsValue)
+        L2T_value = xsValue
     else:
         xs.Fill(name, xsValue)
     finalEventsWithXS.Fill(name, eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
     print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi) #eventsSaved
+
+
+total_Data = scaleSVMass.Integral(0, svMassRange[0]+1)
+total_MC = scaleSVMassMC.Integral(0, svMassRange[0]+1)
+L2T.Fill(0.5, L2T_value*(1-(total_MC/total_Data)))
 
 scaleSVMass.Sumw2()
 scaleSVMassMC.Sumw2()
