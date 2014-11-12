@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
 import os
 import ROOT as r
 from kinfit import setup, fit
@@ -24,30 +25,84 @@ def shift(h):
 
 
 def loopMulti(fileNames=[], nEventsMax=None):
-    out = {"chi2": [],
-           "m_fit": [],
-           "m_no_fit": [],
-           "m_vs_m": [],
-           }
+    out = defaultdict(list)
 
     for fileName, leg in fileNames:
-        chi2, m, mNo, mm = loop(fileName, nEventsMax, suffix="_%s" % leg)
-        out["chi2"].append(chi2)
-        out["m_fit"].append(m)
-        out["m_no_fit"].append(mNo)
-        out["m_vs_m"].append(mm)
+        histos = loop(fileName, nEventsMax, suffix="_%s" % leg)
+        for key, h in histos.iteritems():
+            out[key].append(h)
     return out
 
 
-def loop(fileName="", nEventsMax=None, suffix=""):
-    h_chi2 = r.TH1D("h_chi2%s" % suffix, ";chi2;events / bin", 100, -10.0, 190.0)
-    #bins = [120, -10.0, 590.0]
-    bins = [60, -10.0, 590.0]
-    h_m = r.TH1D("h_m%s" % suffix, ";m_{fit} (GeV);events / bin", *bins)
-    h_fMass = r.TH1D("h_fMass%s" % suffix, ";m_{no fit} (GeV);events / bin", *bins)
+def select(tree):
+    if tree.charge1.at(0) == tree.charge2.at(0):
+        return
 
-    bins2 = bins + bins
-    h_m_vs_m = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *bins2)
+    if 1.5 < tree.iso1.at(0):
+        return
+
+    if 1.5 < tree.iso2.at(0):
+        return
+
+    if tree.CSVJ1 < 0.679:
+        return
+
+    if tree.CSVJ2 < 0.244:
+        return
+
+    #if not (90.0 < tree.svMass.at(0) < 150.0):
+    #    continue
+    #if not (90.0 < tree.mJJ < 150.0):
+    #    continue
+
+    return True
+
+
+def labelStatusBins(h):
+    """https://indico.cern.ch/event/343176/session/8/contribution/21"""
+    labels = {-3: "underflow",
+              -2: "-2 (no sol. b)",
+              -1: "-1 (no sol. t)",
+               0: "0 (no conv.)",
+               1: "1 (conv.)",
+               2: "2 (conv.)",
+               3: "3 (c. at b lim.)",
+               4: "4 (c. at t lim.)",
+               5: "5 (3 & 4)",
+               6: "overflow",
+               }
+    for iBin in range(1, 1 + h.GetNbinsX()):
+        x = h.GetBinCenter(iBin)
+        label = labels[int(x)]
+        #print iBin, x, label
+        h.GetXaxis().SetBinLabel(iBin, label)
+
+
+def loop(fileName="", nEventsMax=None, suffix=""):
+    #mbins = [120, -10.0, 590.0]
+    mbins = [60, -10.0, 590.0]
+
+    out = {}
+    for var, title, bins in [("chi2", ";#chi^{2};events / bin", (40, -10.0, 190.0)),
+                             #("chi2", ";chi2;events / bin", (240, -100.0, 1100.0)),
+                             ("m", ";m_{fit} (GeV);events / bin", mbins),
+                             ("fMass", ";m_{no fit} (GeV);events / bin", mbins),
+                             ("svMass", ";svMass (GeV);events / bin", (40, 0.0, 200.0)),
+                             ("mbb", ";m_{bb} (GeV);events / bin", (40, 0.0, 200.0)),
+                             ("dRTauTau", ";#DeltaR_{#tau#tau};events / bin", (30, 0.0, 6.0)),
+                             ("dRJJ", ";#DeltaR_{bb};events / bin", (30, 0.0, 6.0)),
+                             ("status", ";status;events / bin", (10, -3.5, 6.5)),
+                             ]:
+        out[var] = r.TH1D("%s_%s" % (var, suffix), title, *bins)
+        rateTitle = title.replace("events / bin", "fraction of events with  \chi^{2} < %d" % chi2Fail)
+        out[var+"_rate"] = r.TEfficiency("%s_rate_%s" % (var, suffix), rateTitle, *bins)
+        ##print dir(out[var+"_rate"])
+        #out[var+"_rate"].SetBins(*bins)
+
+    labelStatusBins(out["status"])
+    #out["m_vs_m"] = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
+    #out["m_vs_m_rate"] = r.TEfficiency("h_m_vs_m_rate_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
+    #out["m_vs_m_rate"].SetBins(*(mbins+mbins))
 
     f = r.TFile(fileName)
     tree = f.Get("eventTree")
@@ -58,27 +113,9 @@ def loop(fileName="", nEventsMax=None, suffix=""):
 
     for iEvent in range(nEvents):
         tree.GetEntry(iEvent)
-        
-        if tree.charge1.at(0) == tree.charge2.at(0):
-            continue
 
-        if 1.5 < tree.iso1.at(0):
+        if not select(tree):
             continue
-            
-        if 1.5 < tree.iso2.at(0):
-            continue
-            
-        if tree.CSVJ1 < 0.679:
-            continue
-            
-        if tree.CSVJ2 < 0.244:
-            continue
-
-        #if not (70.0 < tree.svMass.at(0) < 160.0):
-        #    continue
-        #
-        #if not (70.0 < tree.mJJ < 160.0):
-        #    continue
 
         j1 = lvClass()
         j2 = lvClass()
@@ -86,14 +123,34 @@ def loop(fileName="", nEventsMax=None, suffix=""):
         j1.SetCoordinates(tree.CSVJ1Pt, tree.CSVJ1Eta, tree.CSVJ1Phi, tree.CSVJ1Mass)
         j2.SetCoordinates(tree.CSVJ2Pt, tree.CSVJ2Eta, tree.CSVJ2Phi, tree.CSVJ2Mass)
 
-        chi2, mh = fit(tree, j1, j2)
-        h_chi2.Fill(chi2)
-        h_m.Fill(mh)
-        h_fMass.Fill(tree.fMass)
-        h_m_vs_m.Fill(mh, tree.fMass)
+        chi2, mh, status = fit(tree, j1, j2)
+
+        out["chi2"].Fill(chi2)
+        out["m"].Fill(mh)
+        if status is not None:
+            out["status"].Fill(status)
+
+        out["fMass"].Fill(tree.fMass)
+        #out["m_vs_m"].Fill(mh, tree.fMass)
+        out["svMass"].Fill(tree.svMass.at(0))
+        out["mbb"].Fill(tree.mJJ)
+        out["dRTauTau"].Fill(tree.dRTauTau)
+        out["dRJJ"].Fill(tree.dRJJ)
+
+        passed = chi2 < chi2Fail
+        out["chi2_rate"].Fill(passed, chi2)
+        out["m_rate"].Fill(passed, mh)
+        if status is not None:
+            out["status_rate"].Fill(passed, status)
+        out["fMass_rate"].Fill(passed, tree.fMass)
+        #out["m_vs_m_rate"].Fill(passed, mh, tree.fMass)
+        out["svMass_rate"].Fill(passed, tree.svMass.at(0))
+        out["mbb_rate"].Fill(passed, tree.mJJ)
+        out["dRTauTau_rate"].Fill(passed, tree.dRTauTau)
+        out["dRJJ_rate"].Fill(passed, tree.dRJJ)
 
     f.Close()
-    return [h_chi2, h_m, h_fMass, h_m_vs_m]
+    return out
 
 
 def pdf(fileName="", histos={}):
@@ -109,6 +166,9 @@ def pdf(fileName="", histos={}):
     for key, lst in sorted(histos.iteritems()):
         color = 1
         for i, h in enumerate(lst):
+            if h.ClassName().startswith("TH2"):
+                continue
+
             th1 = h.ClassName().startswith("TH1")
             if th1:
                 integral = h.Integral(0, 1 + h.GetNbinsX())
@@ -124,25 +184,52 @@ def pdf(fileName="", histos={}):
                 name = h.GetName().split("_")[-1]
                 #text = "%s (%d)" % (name, integral)
                 text = name
-                leg.AddEntry(h, text, "le")
-            h.SetStats(False)
+                leg.AddEntry(h, text, "lpe")
+
+            if th1:
+                h.SetMinimum(1.0e-6*logY)
+                h.SetMaximum(1.0)
+            if hasattr(h, "SetStats"):
+                h.SetStats(False)
+
             h.SetLineColor(color)
             h.SetMarkerColor(color)
-            h.SetMinimum(0.0)
-            h.SetMaximum(1.0)
 
             color += 1
             if color == 5:
                 color += 1
 
-            gopts = "ehist" if th1 else ""
-            if i:
-                h.Draw("%ssame" % gopts)
+            if th1:
+                gopts = "ehist"
             else:
-                h.Draw(gopts)
+                gopts = "zp"
+                h.SetMarkerStyle(20)
+                h.SetMarkerSize(0.4 * h.GetMarkerSize())
+
+            if i:
+                gopts += "same"
+            elif not th1:
+                gopts += "a"
+
+            h.Draw(gopts)
+
+            if not th1:
+                r.gPad.Update()
+                pgh = h.GetPaintedGraph().GetHistogram()
+                pgh.GetYaxis().SetRangeUser(0.0, 1.5)
+                pghX = pgh.GetXaxis()
+                hX = r.gROOT.Get(h.GetName().replace("_rate", "")).GetXaxis()
+                s = h.GetName()
+                s += ", rate (%d, %g, %g)" % (pghX.GetNbins(), pghX.GetXmin(), pghX.GetXmax())
+                s += "; histo (%d, %g, %g)" % (hX.GetNbins(), hX.GetXmin(), hX.GetXmax())
+                print s
+                pgh.GetXaxis().SetRangeUser(hX.GetXmin(), hX.GetXmax())
+                ##labelStatusBins(pg.GetHistogram())
 
         r.gPad.SetTickx()
         r.gPad.SetTicky()
+        if logY:
+            r.gPad.SetLogy()
         leg.Draw()
         fillLeg = False
         can.Print(fileName)
@@ -155,14 +242,16 @@ if __name__ == "__main__":
     #r.gStyle.SetOptStat("e")
     r.TH1.SetDefaultSumw2(True)
 
+    chi2Fail = 900
+    logY = False
     setup()
     lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
-    histos = loopMulti(fileNames=[("v2/H2hh260_all.root",     "H260"),
-                                  ("v2/H2hh300_all.root",     "H300"),
-                                  ("v2/H2hh350_all.root",     "H350"),
-                                  ("v2/tt_eff_all.root",      "tt-dilep"),
-                                  #("v2/tt_semi_eff_all.root", "tt-semilep"),
-                                  #("v2/ZZ_eff_all.root",      "ZZ"),
+    histos = loopMulti(fileNames=[("v3/H2hh260_all.root",     "H260"),
+                                  ("v3/H2hh300_all.root",     "H300"),
+                                  ("v3/H2hh350_all.root",     "H350"),
+                                  ("v3/tt_eff_all.root",      "tt-dilep"),
+                                  #("v3/tt_semi_eff_all.root", "tt-semilep"),
+                                  #("v3/ZZ_eff_all.root",      "ZZ"),
                                   ],
                        #nEventsMax=200,
                        )
