@@ -54,16 +54,11 @@ inline double efficiency(double m, double m0, double sigma, double alpha, double
 }
 
 template<typename EffFunction>
-double CalculateWeight(double pt1, double eta1, double pt2, double eta2,
-		       const EffFunction& eff_leg1_data_fn, const EffFunction& eff_leg2_data_fn,
-		       const EffFunction& eff_leg1_mc_fn, const EffFunction& eff_leg2_mc_fn)
+double WeightOneLeg(double pt, double eta,
+		    const EffFunction& eff_leg_data_fn,
+		    const EffFunction& eff_leg_mc_fn)
 {
-    const double eff_leg1_data = eff_leg1_data_fn(pt1, eta1);
-    const double eff_leg2_data = eff_leg2_data_fn(pt2, eta2);
-    const double eff_leg1_mc = eff_leg1_mc_fn(pt1, eta1);
-    const double eff_leg2_mc = eff_leg2_mc_fn(pt2, eta2);
-
-    return (eff_leg1_data/eff_leg1_mc) * (eff_leg2_data/eff_leg2_mc);
+  return eff_leg_data_fn(pt, eta) / eff_leg_mc_fn(pt, eta);
 }
 
 template<typename EffFunction>
@@ -212,11 +207,11 @@ namespace DiTau {
                                         &MC::tauEfficiency, &MC::tauEfficiency);
     }
 
-    inline double CalculateWeight(double pt1, double eta1, double pt2, double eta2)
+    inline double WeightOneLeg(double pt, double eta)
     {
-      return detail::CalculateWeight(pt1, eta1, pt2, eta2,
-				     &Data::tauEfficiency, &Data::tauEfficiency,
-				     &MC::tauEfficiency, &MC::tauEfficiency);
+      return detail::WeightOneLeg(pt, eta,
+				  &Data::tauEfficiency,
+				  &MC::tauEfficiency);
     }
 
     inline std::vector<double> CalculateTurnOnCurveData(const TLorentzVector& lead_tau_momentum,
@@ -286,11 +281,11 @@ inline std::vector<double> CalculateWeights(const TLorentzVector& lead_tau_momen
                                     &MC::tauEfficiency, &MC::tauEfficiency);
 }
 
-  inline double CalculateWeight(double pt1, double eta1, double pt2, double eta2)
+  inline double WeightOneLeg(double pt, double eta)
 {
-  return detail::CalculateWeight(pt1, eta1, pt2, eta2,
-				 &Data::tauEfficiency, &Data::tauEfficiency,
-				 &MC::tauEfficiency, &MC::tauEfficiency);
+  return detail::WeightOneLeg(pt, eta,
+			      &Data::tauEfficiency,
+			      &MC::tauEfficiency);
 }
 
 } // namspace DiTauJet
