@@ -24,12 +24,12 @@ def getCorrectBDT(iTree, massPoint):
             }
     return bdts[massPoint]
 
-inputFiles = [('2M', 'combined_8_all_2M.root'),
-              ('1M', 'combined_8_all_1M.root'),
+inputFiles = [('2M', 'combined_all_2M.root'),
+              ('1M', 'combined_all_1M.root'),
 ]
 
 
-oFileName = 'combined_all_Cat.root'
+oFileName = 'combined_all_Cat2.root'
 oFile = r.TFile(oFileName, 'RECREATE')
 oTree = r.TTree('eventTree', '')
 
@@ -42,7 +42,7 @@ chi2KinFit = array('f', [0.])
 chi2KinFit2 = array('f', [0.])
 
 CSVJ2 = array('f', [0.])
-Category = bytearray(3)
+Category = bytearray(5)
 
 
 triggerEff = array('f', [0.])
@@ -108,7 +108,7 @@ for ifile in range(len(inputFiles)):
         triggerEff[0] = trees[ifile].triggerEff
         sampleName[:21] = trees[ifile].sampleName
         genMatchName[:3] = trees[ifile].genMatchName
-        Category[:3] = inputFiles[ifile][0]
+        Category[:5] = inputFiles[ifile][0]
         oTree.Fill()
 
     print ''
