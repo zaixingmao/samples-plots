@@ -4,7 +4,7 @@ from array import array
 from operator import itemgetter
 import math
 import optparse
-import triggerEfficiency
+import trigger
 
 varList = [('run', 'RUN', 'I'),
            ('lumi', 'LUMI', 'I'),
@@ -334,11 +334,9 @@ def makeSyncNtuples(iLocation, cut, treepath):
 #         if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
 #             continue
 
-        eff1 = calcTrigOneTauEff(eta=iTree.eta1.at(iBestPair), pt=iTree.pt1.at(iBestPair), data = False, fitStart=25)
-        eff2 = calcTrigOneTauEff(eta=iTree.eta2.at(iBestPair), pt=iTree.pt2.at(iBestPair), data = False, fitStart=25)
-        trigweight_1[0] = eff1
-        trigweight_2[0] = eff2        
-        effweight[0] = eff1*eff2
+        trigweight_1[0] = trigger.efficiency1(iTree, iBestPair)
+        trigweight_2[0] = trigger.efficiency2(iTree, iBestPair)
+        effweight[0] = trigweight_1[0] * trigweight_2[0]
         nTauPairs[0] = len(iTree.pt1)
 
         jetsList = [(iTree.J1CSVbtag, iTree.J1Pt, iTree.J1Eta, iTree.J1Phi, iTree.J1Mass),
