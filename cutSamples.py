@@ -247,7 +247,7 @@ for iSample, iLocation in sampleLocations:
 
     oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
     oTree.Branch("nElectrons", nElectrons, "nElectrons/I")
-    oTree.Branch("nMuons", nMuons, "nMuons/F")
+    oTree.Branch("nMuons", nMuons, "nMuons/I")
 
     if not isData:
         oTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
