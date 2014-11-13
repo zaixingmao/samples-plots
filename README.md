@@ -15,7 +15,7 @@ cd ..
 
 ####make samples from ntuples
 * Specify samples location, name in `cfg/enVars.py`
-* `python cutSamples.py -l LOCATIONOFOUTPUTFILE`
+* `./cutSamples.py -l LOCATIONOFOUTPUTFILE`
 
 ######to combined data, since we have A, B, C, D
 1. generate A, B, C, D separately in the same location
