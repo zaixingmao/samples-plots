@@ -30,6 +30,8 @@ J1 = lvClass()
 J2 = lvClass()
 J3 = lvClass()
 J4 = lvClass()
+J5 = lvClass()
+J6 = lvClass()
 
 matchedGenJet = lvClass()
 mGenJet1 = lvClass()
@@ -64,39 +66,45 @@ r.gStyle.SetOptStat(0)
 #*******Get Sample Name and Locations******
 sampleLocations = enVars.sampleLocations
 
-preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
-           'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
-           'charge1', 'charge2',  'metphi',  
-           'J1PtUncorr', 'J1VtxPt', 'J1Vtx3dL', 'J1Vtx3deL', 'J1ptLeadTrk', 'J1vtxMass', 'J1vtxPt', 'J1Ntot', 
-           'J1SoftLepPt', 'J1SoftLepEta', 'J1SoftLepPhi', 'J1SoftLepPID', 'J1JECUnc', 'J1Et', 'J1Mt',
-           'J2PtUncorr', 'J2VtxPt', 'J2Vtx3dL', 'J2Vtx3deL', 'J2ptLeadTrk', 'J2vtxMass', 'J2vtxPt', 'J2Ntot', 
-           'J2SoftLepPt', 'J2SoftLepEta', 'J2SoftLepPhi', 'J2SoftLepPID', 'J2JECUnc', 'J2Et', 'J2Mt',
-           'J3PtUncorr', 'J3VtxPt', 'J3Vtx3dL', 'J3Vtx3deL', 'J3ptLeadTrk', 'J3vtxMass', 'J3vtxPt', 'J3Ntot', 
-           'J3SoftLepPt', 'J3SoftLepEta', 'J3SoftLepPhi', 'J3SoftLepPID', 'J3JECUnc', 'J3Et', 'J3Mt',
-           'J4PtUncorr', 'J4VtxPt', 'J4Vtx3dL', 'J4Vtx3deL', 'J4ptLeadTrk', 'J4vtxMass', 'J4vtxPt', 'J4Ntot', 
-           'J4SoftLepPt', 'J4SoftLepEta', 'J4SoftLepPhi', 'J4SoftLepPID', 'J4JECUnc', 'J4Et', 'J4Mt', 'tauDecayMode1', 'tauDecayMode2',
-           'mvacov00','mvacov01','mvacov10','mvacov11', 'byIsolationMVA2raw_1', 'byIsolationMVA2raw_2'
-          ]
-genVarList = ['genBPt', 'genBEta', 'genBPhi','genBMass', 'genTauPt', 'genTauEta', 'genTauPhi', 'genElePt', 'genEleEta', 
-              'genElePhi', 'genMuPt', 'genMuEta', 'genMuPhi','J1GenPt', 'J1GenEta', 'J1GenPhi', 'J1GenMass',
-              'J2GenPt', 'J2GenEta', 'J2GenPhi', 'J2GenMass', 'J3GenPt', 'J3GenEta', 'J3GenPhi', 'J3GenMass',
-              'J4GenPt', 'J4GenEta', 'J4GenPhi', 'J4GenMass']
-
-fullVarList = []
-for iVar in preVarList:
-    fullVarList.append(iVar)
-for iVar in genVarList:
-    fullVarList.append(iVar)
+# preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
+#            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J5Pt', 'J5Eta','J5Phi', 'J5Mass', 'J6Pt', 'J6Eta','J6Phi', 'J6Mass', 
+#            'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'J5CSVbtag', 'J6CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
+#            'charge1', 'charge2',  'metphi',  
+#            'J1PtUncorr', 'J1VtxPt', 'J1Vtx3dL', 'J1Vtx3deL', 'J1ptLeadTrk', 'J1vtxMass', 'J1vtxPt', 'J1Ntot', 
+#            'J1SoftLepPt', 'J1SoftLepEta', 'J1SoftLepPhi', 'J1SoftLepPID', 'J1JECUnc', 'J1Et', 'J1Mt',
+#            'J2PtUncorr', 'J2VtxPt', 'J2Vtx3dL', 'J2Vtx3deL', 'J2ptLeadTrk', 'J2vtxMass', 'J2vtxPt', 'J2Ntot', 
+#            'J2SoftLepPt', 'J2SoftLepEta', 'J2SoftLepPhi', 'J2SoftLepPID', 'J2JECUnc', 'J2Et', 'J2Mt',
+#            'J3PtUncorr', 'J3VtxPt', 'J3Vtx3dL', 'J3Vtx3deL', 'J3ptLeadTrk', 'J3vtxMass', 'J3vtxPt', 'J3Ntot', 
+#            'J3SoftLepPt', 'J3SoftLepEta', 'J3SoftLepPhi', 'J3SoftLepPID', 'J3JECUnc', 'J3Et', 'J3Mt',
+#            'J4PtUncorr', 'J4VtxPt', 'J4Vtx3dL', 'J4Vtx3deL', 'J4ptLeadTrk', 'J4vtxMass', 'J4vtxPt', 'J4Ntot', 
+#            'J4SoftLepPt', 'J4SoftLepEta', 'J4SoftLepPhi', 'J4SoftLepPID', 'J4JECUnc', 'J4Et', 'J4Mt', 
+#            'J5PtUncorr', 'J5VtxPt', 'J5Vtx3dL', 'J5Vtx3deL', 'J5ptLeadTrk', 'J5vtxMass', 'J5vtxPt', 'J5Ntot', 
+#            'J5SoftLepPt', 'J5SoftLepEta', 'J5SoftLepPhi', 'J5SoftLepPID', 'J5JECUnc', 'J5Et', 'J5Mt', 
+#            'J6PtUncorr', 'J6VtxPt', 'J6Vtx3dL', 'J6Vtx3deL', 'J6ptLeadTrk', 'J6vtxMass', 'J6vtxPt', 'J6Ntot', 
+#            'J6SoftLepPt', 'J6SoftLepEta', 'J6SoftLepPhi', 'J6SoftLepPID', 'J6JECUnc', 'J6Et', 'J6Mt', 
+#             'tauDecayMode1', 'tauDecayMode2',
+#            'mvacov00','mvacov01','mvacov10','mvacov11', 'byIsolationMVA2raw_1', 'byIsolationMVA2raw_2'
+#           ]
+# genVarList = ['genBPt', 'genBEta', 'genBPhi','genBMass', 'genTauPt', 'genTauEta', 'genTauPhi', 'genElePt', 'genEleEta', 
+#               'genElePhi', 'genMuPt', 'genMuEta', 'genMuPhi','J1GenPt', 'J1GenEta', 'J1GenPhi', 'J1GenMass',
+#               'J2GenPt', 'J2GenEta', 'J2GenPhi', 'J2GenMass', 'J3GenPt', 'J3GenEta', 'J3GenPhi', 'J3GenMass',
+#               'J4GenPt', 'J4GenEta', 'J4GenPhi', 'J4GenMass']
+# 
+# fullVarList = []
+# for iVar in preVarList:
+#     fullVarList.append(iVar)
+# for iVar in genVarList:
+#     fullVarList.append(iVar)
 
 blackList = enVars.corruptedROOTfiles
 
 for iSample, iLocation in sampleLocations:
     if 'data' in iSample:
         isData = True
-        varList = preVarList
+#         varList = preVarList
     else:
         isData = False
-        varList = fullVarList
+#         varList = fullVarList
 
     cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
     if options.addFiles == 'True':
@@ -110,9 +118,9 @@ for iSample, iLocation in sampleLocations:
     else:
         iChain = r.TChain("ttTreeBeforeChargeCut/eventTree")
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=blackList)
-    iChain.SetBranchStatus("*",0)
-    for iVar in range(len(varList)):
-        iChain.SetBranchStatus(varList[iVar],1)
+    iChain.SetBranchStatus("*",1)
+#     for iVar in range(len(varList)):
+#         iChain.SetBranchStatus(varList[iVar],1)
     fullMass = array('f', [0.])
     mJJ = array('f', [0.])
     ptJJ = array('f', [0.])
@@ -192,6 +200,8 @@ for iSample, iLocation in sampleLocations:
     chi2KinFit = array('f', [0.])
     chi2KinFit2 = array('f', [0.])
     fMassKinFit = array('f', [0.])
+    nElectrons = array('i', [0])
+    nMuons = array('i', [0])
 
 
     iChain.LoadTree(0)
@@ -236,6 +246,8 @@ for iSample, iLocation in sampleLocations:
     oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
 
     oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
+    oTree.Branch("nElectrons", nElectrons, "nElectrons/I")
+    oTree.Branch("nMuons", nMuons, "nMuons/F")
 
     if not isData:
         oTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
@@ -303,7 +315,9 @@ for iSample, iLocation in sampleLocations:
         jetsList = [(iChain.J1CSVbtag, J1.SetCoordinates(iChain.J1Pt, iChain.J1Eta, iChain.J1Phi, iChain.J1Mass), 'J1'),
                     (iChain.J2CSVbtag, J2.SetCoordinates(iChain.J2Pt, iChain.J2Eta, iChain.J2Phi, iChain.J2Mass), 'J2'),
                     (iChain.J3CSVbtag, J3.SetCoordinates(iChain.J3Pt, iChain.J3Eta, iChain.J3Phi, iChain.J3Mass), 'J3'),
-                    (iChain.J4CSVbtag, J4.SetCoordinates(iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass), 'J4')]
+                    (iChain.J4CSVbtag, J4.SetCoordinates(iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass), 'J4'),
+                    (iChain.J5CSVbtag, J5.SetCoordinates(iChain.J5Pt, iChain.J5Eta, iChain.J5Phi, iChain.J5Mass), 'J5'),
+                    (iChain.J6CSVbtag, J6.SetCoordinates(iChain.J6Pt, iChain.J6Eta, iChain.J6Phi, iChain.J6Mass), 'J6')]
         sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
         bb = lvClass()
         bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
@@ -383,10 +397,13 @@ for iSample, iLocation in sampleLocations:
         mTop1[0] = (CSVJet1 + tau1).mass()
         mTop2[0] = (CSVJet2 + tau2).mass()
 
-        pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
-        pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
-        pZ_new2[0] = iChain.pZ/fullMass[0]
-        pZV_new2[0] = iChain.pZV/fullMass[0]
+        nElectrons[0] = iChain.nElectrons
+        nMuons[0] = iChain.nMuons
+
+#         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
+#         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
+#         pZ_new2[0] = iChain.pZ/fullMass[0]
+#         pZV_new2[0] = iChain.pZV/fullMass[0]
 
         dRTauTau[0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
