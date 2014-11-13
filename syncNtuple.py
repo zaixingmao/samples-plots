@@ -314,6 +314,8 @@ def makeSyncNtuples(iLocation, cut, treepath):
     for iEntry in range(nEntries):
         iTree.GetEntry(iEntry)
         iBestPair = findBestPair(iTree)
+        if iTree.nElectrons > 0 or iTree.nMuons > 0:
+            continue
         if iTree.pt1.at(iBestPair)<45 or iTree.pt2.at(iBestPair)<45:
             continue
 #         if iTree.J1Pt < 30 or abs(iTree.J1Eta) > 4.7:

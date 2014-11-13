@@ -4,13 +4,12 @@ import ROOT as r
 import tool
 from operator import itemgetter
 import os
-from cfg import enVars2
+from cfg import enVars
 from array import array
 import optparse
 import math
 import varsList
 import kinfit
-import triggerEfficiency
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
@@ -45,6 +44,38 @@ sv4Vec = lvClass()
 
 kinfit.setup()
 
+def calcTrigOneTauEff(eta, pt, data = True, fitStart=25):
+        le14_da = {20: (0.898, 44.3, 1.02),
+                  25: (0.866, 43.1, 0.86),
+                  30: (0.839, 42.3, 0.73),
+                  35: (0.846, 42.4, 0.78),
+                  }
+        le14_mc = {20: (0.837, 43.6, 1.09),
+                   25: (0.832, 40.4, 0.80),
+                   30: (0.829, 40.4, 0.74),
+                   35: (0.833, 40.1, 0.86),
+                   }
+        ge16_da = {20: (0.81, 43.6, 1.09),
+                   25: (0.76, 41.8, 0.86),
+                   30: (0.74, 41.2, 0.75),
+                   35: (0.74, 41.2, 0.79),
+                   }
+        ge16_mc = {20: (0.70, 39.7, 0.95),
+                   25: (0.69, 38.6, 0.74),
+                   30: (0.69, 38.7, 0.61),
+                   35: (0.69, 38.8, 0.61),
+                   }
+        le14 = le14_da if data else le14_mc
+        ge16 = ge16_da if data else ge16_mc
+        if abs(eta) < 1.4:
+            d = le14
+        else:
+            d = ge16
+        e, x0, sigma = d[fitStart]
+        y = r.TMath.Erf((pt-x0)/2.0/sigma/math.sqrt(pt))  # https://github.com/rmanzoni/HTT/blob/master/CMGTools/H2TauTau/interface/TriggerEfficiency.h
+        #y = r.TMath.Erf((pt-x0)/sigma/math.sqrt(2.0))
+        return (1+y)*e/2.0
+
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("-l", dest="location", default="/scratch/zmao", help="location to be saved")
@@ -59,10 +90,16 @@ def opts():
 options = opts()
 
 def findFullMass(jetsList = [], sv4Vec = ''):
-    jetsList = sorted(jetsList, key=itemgetter(0), reverse=True)
-    combinedJJ = jetsList[0][1]+jetsList[1][1]
-    if jetsList[1][0] > 0 and jetsList[0][1].pt() > 30 and jetsList[1][1].pt() > 30 and abs(jetsList[0][1].eta()) < 2.4 and abs(jetsList[1][1].eta()) < 2.4:
-        return combinedJJ, jetsList[0][0], jetsList[1][0], jetsList[0][1], jetsList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(jetsList[0][1], jetsList[1][1]), jetsList[0][2], jetsList[1][2]
+    newList = []
+    for i in range(len(jetsList)):
+        if jetsList[i][1].pt() > 20 and abs(jetsList[i][1].eta()) < 2.4:
+            newList.append(jetsList[i])
+    newList = sorted(newList, key=itemgetter(0), reverse=True)
+    if len(newList) < 2:
+        return -1, -1, -1, -1, -1, -1, -1, -1, -1
+    if newList[1][0] > 0:
+        combinedJJ = newList[0][1]+newList[1][1]
+        return combinedJJ, newList[0][0], newList[1][0], newList[0][1], newList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(newList[0][1], newList[1][1]), newList[0][2], newList[1][2]
     else:
         return -1, -1, -1, -1, -1, -1, -1, -1, -1
 
@@ -149,9 +186,9 @@ r.gStyle.SetOptStat(0)
 
 
 #*******Get Sample Name and Locations******
-sampleLocations = enVars2.sampleLocations
+sampleLocations = enVars.sampleLocations
 
-preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
+preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass', 'm1', 'm2',
            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
            'charge1', 'charge2',  'metphi',  
            'J1PtUncorr', 'J1VtxPt', 'J1Vtx3dL', 'J1Vtx3deL', 'J1ptLeadTrk', 'J1vtxMass', 'J1vtxPt', 'J1Ntot', 
@@ -175,7 +212,7 @@ for iVar in preVarList:
 for iVar in genVarList:
     fullVarList.append(iVar)
 
-blackList = enVars2.corruptedROOTfiles
+blackList = enVars.corruptedROOTfiles
 
 for iSample, iLocation in sampleLocations:
     if 'data' in iSample:
@@ -469,18 +506,18 @@ for iSample, iLocation in sampleLocations:
         mTop1[0] = (CSVJet1 + tau1).mass()
         mTop2[0] = (CSVJet2 + tau2).mass()
 
-        pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
-        pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
-        pZ_new2[0] = iChain.pZ/fullMass[0]
-        pZV_new2[0] = iChain.pZV/fullMass[0]
+#         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
+#         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
+#         pZ_new2[0] = iChain.pZ/fullMass[0]
+#         pZV_new2[0] = iChain.pZV/fullMass[0]
 
         dRTauTau[0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
 
         metTau1DPhi[0], metTau2DPhi[0], metJ1DPhi[0], metJ2DPhi[0], metTauPairDPhi[0], metJetPairDPhi[0], metSvTauPairDPhi[0] = calcdPhiMetValues(iChain.phi1.at(0), iChain.phi2.at(0), CSVJet1.phi(), CSVJet2.phi(), iChain.metphi.at(0), (tau1+tau2).phi(), bb.phi(), iChain.svPhi.at(0))
 
-        eff1 = triggerEfficiency.calcTrigOneTauEff(eta=iChain.eta1.at(0), pt=iChain.pt1.at(0), data = True, fitStart=25)
-        eff2 = triggerEfficiency.calcTrigOneTauEff(eta=iChain.eta2.at(0), pt=iChain.pt2.at(0), data = True, fitStart=25)
+        eff1 = calcTrigOneTauEff(eta=iChain.eta1.at(0), pt=iChain.pt1.at(0), data = True, fitStart=25)
+        eff2 = calcTrigOneTauEff(eta=iChain.eta2.at(0), pt=iChain.pt2.at(0), data = True, fitStart=25)
 
         triggerEff1[0] = eff1
         triggerEff2[0] = eff2        
@@ -491,12 +528,10 @@ for iSample, iLocation in sampleLocations:
             triggerEff2[0] = 1
 
         #For Kinematic Fit
-        chi2KinFit[0], fMassKinFit[0] = kinfit.fit(iChain, CSVJet1, CSVJet2)
-
+        chi2KinFit[0], fMassKinFit[0], status = kinfit.fit(iChain, CSVJet1, CSVJet2)
         chi2KinFit2[0] = chi2KinFit[0]
         if chi2KinFit2[0] > 200:
             chi2KinFit2[0] = 200
-
         iTree.Fill()
         counter += 1
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' %(iSample))

@@ -315,6 +315,14 @@ def findVarInChain_Data_speed(iChain, varName):
                         iChain.J4ptLeadTrk, iChain.J4vtxMass, iChain.J4vtxPt, iChain.J4Ntot,
                         iChain.J4SoftLepPt, iChain.J4SoftLepEta, iChain.J4SoftLepPhi, iChain.J4SoftLepPID,
                         iChain.J4JECUnc, iChain.J4Et, iChain.J4Mt, iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass),
+                'J5': (iChain.J5PtUncorr, iChain.J5VtxPt, iChain.J5Vtx3dL, iChain.J5Vtx3deL,
+                        iChain.J5ptLeadTrk, iChain.J5vtxMass, iChain.J5vtxPt, iChain.J5Ntot,
+                        iChain.J5SoftLepPt, iChain.J5SoftLepEta, iChain.J5SoftLepPhi, iChain.J5SoftLepPID,
+                        iChain.J5JECUnc, iChain.J5Et, iChain.J5Mt, iChain.J5Pt, iChain.J5Eta, iChain.J5Phi, iChain.J5Mass),
+                'J6': (iChain.J6PtUncorr, iChain.J6VtxPt, iChain.J6Vtx3dL, iChain.J6Vtx3deL,
+                        iChain.J6ptLeadTrk, iChain.J6vtxMass, iChain.J6vtxPt, iChain.J6Ntot,
+                        iChain.J6SoftLepPt, iChain.J6SoftLepEta, iChain.J6SoftLepPhi, iChain.J6SoftLepPID,
+                        iChain.J6JECUnc, iChain.J6Et, iChain.J6Mt, iChain.J6Pt, iChain.J6Eta, iChain.J6Phi, iChain.J6Mass),
     }
     if varName in varsDict:
         return varsDict[varName]
@@ -328,6 +336,7 @@ def findVarInChain_GenJet_speed(iChain, varName):
                 'J2': (iChain.J2GenPt, iChain.J2GenEta, iChain.J2GenPhi, iChain.J2GenMass),
                 'J3': (iChain.J3GenPt, iChain.J3GenEta, iChain.J3GenPhi, iChain.J3GenMass),
                 'J4': (iChain.J4GenPt, iChain.J4GenEta, iChain.J4GenPhi, iChain.J4GenMass),
+
     }    
     if varName in varsDict:
         return varsDict[varName]
