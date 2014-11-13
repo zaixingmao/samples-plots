@@ -3,6 +3,7 @@
 import ROOT as r
 import tool
 import os
+import cProfile
 from cfg import enVars
 from array import array
 import optparse
@@ -49,11 +50,11 @@ kinfit.setup()
 
 def opts():
     parser = optparse.OptionParser()
-    parser.add_option("-l", dest="location", default="/scratch/zmao", help="location to be saved")
+    parser.add_option("-l", dest="location", default="/scratch/%s" % os.environ["USER"], help="location to be saved")
     parser.add_option("-n", dest="nevents", default="-1", help="amount of events to be saved")
     parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
     parser.add_option("-a", dest="addFiles", default="False", help="")
-
+    parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     options, args = parser.parse_args()
 
     return options
@@ -62,9 +63,6 @@ options = opts()
 
 r.gStyle.SetOptStat(0)
 
-
-#*******Get Sample Name and Locations******
-sampleLocations = enVars.sampleLocations
 
 # preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
 #            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J5Pt', 'J5Eta','J5Phi', 'J5Mass', 'J6Pt', 'J6Eta','J6Phi', 'J6Mass', 
@@ -96,9 +94,8 @@ sampleLocations = enVars.sampleLocations
 # for iVar in genVarList:
 #     fullVarList.append(iVar)
 
-blackList = enVars.corruptedROOTfiles
 
-for iSample, iLocation in sampleLocations:
+def loop_one_sample(iSample, iLocation):
     if 'data' in iSample:
         isData = True
 #         varList = preVarList
@@ -117,7 +114,7 @@ for iSample, iLocation in sampleLocations:
         iChain = r.TChain("eventTree")
     else:
         iChain = r.TChain("ttTreeBeforeChargeCut/eventTree")
-    nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=blackList)
+    nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=enVars.corruptedROOTfiles)
     iChain.SetBranchStatus("*",1)
 #     for iVar in range(len(varList)):
 #         iChain.SetBranchStatus(varList[iVar],1)
@@ -432,10 +429,22 @@ for iSample, iLocation in sampleLocations:
 
         oTree.Fill()
         counter += 1
-        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' %(iSample))
+        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
     print '  -- saved %d events' %(counter)
     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
     cutFlow.Write()
     oTree.Write()
     iFile.Close()
+
+
+def go():
+    for iSample, iLocation in enVars.sampleLocations:
+        loop_one_sample(iSample, iLocation)
+
+
+if __name__ == "__main__":
+    if options.profile:
+        cProfile.run("go()", sort="time")
+    else:
+        go()

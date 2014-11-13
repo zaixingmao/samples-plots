@@ -1,3 +1,6 @@
+jetPtThreshold = 20
+corruptedROOTfiles = []
+
 preFix = '/hdfs/store/user/zmao/nt_'
 preFix2 = '/hdfs/store/user/zmao/'
 
@@ -22,10 +25,10 @@ sampleLocations = [("H2hh260",     "%sH2hh260%s" %(preFix, postFix)),
 
 # 
 #                    
-#                   ('dataA', '/hdfs/store/user/elaird/nt_tau_A_v1-SUB-TT-data/'),
-#                   ('dataB', '/hdfs/store/user/elaird/nt_tauP_B_v1-SUB-TT-data/'),
-#                   ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v1-SUB-TT-data/'),
-#                   ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v1-SUB-TT-data/'),
+#                   ('dataA', '/hdfs/store/user/elaird/nt_tau_A_v3-SUB-TT-data/'),
+#                   ('dataB', '/hdfs/store/user/elaird/nt_tauP_B_v3-SUB-TT-data/'),
+#                   ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data/'),
+#                   ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v3-SUB-TT-data/'),
 #                    ('dataTotal', '/scratch/zmao/jetPt20/data' ),
 
 #                     ('QCD_Pt-30to50', '/hdfs/store/user/zmao/QCD_Pt-30to50_newMET-SUB-TT'),
@@ -54,6 +57,3 @@ sampleLocations = [("H2hh260",     "%sH2hh260%s" %(preFix, postFix)),
 #                     ("H2hh300",  "/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT"),
 #                     ("H2hh300_newTauID", "/hdfs/store/user/zmao/H2hh300_newTauID-SUB-TT"),
                   ]
-
-jetPtThreshold = 20
-corruptedROOTfiles = []
