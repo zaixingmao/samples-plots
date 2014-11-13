@@ -90,10 +90,16 @@ def opts():
 options = opts()
 
 def findFullMass(jetsList = [], sv4Vec = ''):
-    jetsList = sorted(jetsList, key=itemgetter(0), reverse=True)
-    combinedJJ = jetsList[0][1]+jetsList[1][1]
-    if jetsList[1][0] > 0 and jetsList[0][1].pt() > 30 and jetsList[1][1].pt() > 30 and abs(jetsList[0][1].eta()) < 2.4 and abs(jetsList[1][1].eta()) < 2.4:
-        return combinedJJ, jetsList[0][0], jetsList[1][0], jetsList[0][1], jetsList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(jetsList[0][1], jetsList[1][1]), jetsList[0][2], jetsList[1][2]
+    newList = []
+    for i in range(len(jetsList)):
+        if jetsList[i][1].pt() > 20 and abs(jetsList[i][1].eta()) < 2.4:
+            newList.append(jetsList[i])
+    newList = sorted(newList, key=itemgetter(0), reverse=True)
+    if len(newList) < 2:
+        return -1, -1, -1, -1, -1, -1, -1, -1, -1
+    if newList[1][0] > 0:
+        combinedJJ = newList[0][1]+newList[1][1]
+        return combinedJJ, newList[0][0], newList[1][0], newList[0][1], newList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(newList[0][1], newList[1][1]), newList[0][2], newList[1][2]
     else:
         return -1, -1, -1, -1, -1, -1, -1, -1, -1
 
@@ -180,9 +186,9 @@ r.gStyle.SetOptStat(0)
 
 
 #*******Get Sample Name and Locations******
-sampleLocations = enVars2.sampleLocations
+sampleLocations = enVars.sampleLocations
 
-preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
+preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass', 'm1', 'm2',
            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
            'charge1', 'charge2',  'metphi',  
            'J1PtUncorr', 'J1VtxPt', 'J1Vtx3dL', 'J1Vtx3deL', 'J1ptLeadTrk', 'J1vtxMass', 'J1vtxPt', 'J1Ntot', 
@@ -206,7 +212,7 @@ for iVar in preVarList:
 for iVar in genVarList:
     fullVarList.append(iVar)
 
-blackList = enVars2.corruptedROOTfiles
+blackList = enVars.corruptedROOTfiles
 
 for iSample, iLocation in sampleLocations:
     if 'data' in iSample:
@@ -500,10 +506,10 @@ for iSample, iLocation in sampleLocations:
         mTop1[0] = (CSVJet1 + tau1).mass()
         mTop2[0] = (CSVJet2 + tau2).mass()
 
-        pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
-        pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
-        pZ_new2[0] = iChain.pZ/fullMass[0]
-        pZV_new2[0] = iChain.pZV/fullMass[0]
+#         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
+#         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
+#         pZ_new2[0] = iChain.pZ/fullMass[0]
+#         pZV_new2[0] = iChain.pZV/fullMass[0]
 
         dRTauTau[0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
@@ -523,11 +529,9 @@ for iSample, iLocation in sampleLocations:
 
         #For Kinematic Fit
         chi2KinFit[0], fMassKinFit[0], status = kinfit.fit(iChain, CSVJet1, CSVJet2)
-
         chi2KinFit2[0] = chi2KinFit[0]
         if chi2KinFit2[0] > 200:
             chi2KinFit2[0] = 200
-
         iTree.Fill()
         counter += 1
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' %(iSample))
