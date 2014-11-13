@@ -188,7 +188,7 @@ r.gStyle.SetOptStat(0)
 #*******Get Sample Name and Locations******
 sampleLocations = enVars.sampleLocations
 
-preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
+preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass', 'm1', 'm2',
            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
            'charge1', 'charge2',  'metphi',  
            'J1PtUncorr', 'J1VtxPt', 'J1Vtx3dL', 'J1Vtx3deL', 'J1ptLeadTrk', 'J1vtxMass', 'J1vtxPt', 'J1Ntot', 
@@ -506,10 +506,10 @@ for iSample, iLocation in sampleLocations:
         mTop1[0] = (CSVJet1 + tau1).mass()
         mTop2[0] = (CSVJet2 + tau2).mass()
 
-        pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
-        pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
-        pZ_new2[0] = iChain.pZ/fullMass[0]
-        pZV_new2[0] = iChain.pZV/fullMass[0]
+#         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
+#         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
+#         pZ_new2[0] = iChain.pZ/fullMass[0]
+#         pZV_new2[0] = iChain.pZV/fullMass[0]
 
         dRTauTau[0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
@@ -528,7 +528,7 @@ for iSample, iLocation in sampleLocations:
             triggerEff2[0] = 1
 
         #For Kinematic Fit
-        chi2KinFit[0], fMassKinFit[0] = kinfit.fit(iChain, CSVJet1, CSVJet2)
+        chi2KinFit[0], fMassKinFit[0], status = kinfit.fit(iChain, CSVJet1, CSVJet2)
         chi2KinFit2[0] = chi2KinFit[0]
         if chi2KinFit2[0] > 200:
             chi2KinFit2[0] = 200
