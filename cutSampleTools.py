@@ -9,7 +9,7 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 combinedJJ = lvClass()
 
 
-def findFullMass(jetsList = [], sv4Vec = '', ptThreshold):
+def findFullMass(jetsList = [], sv4Vec = '', ptThreshold = 20):
     newList = []
     for i in range(len(jetsList)):
         if jetsList[i][1].pt() > ptThreshold and abs(jetsList[i][1].eta()) < 2.4:
@@ -29,13 +29,14 @@ def findGenJet(j1Name, jet1, j2Name, jet2, tChain):
     genJet2 = lvClass()
     genJet1.SetCoordinates(0,0,0,0)
     genJet2.SetCoordinates(0,0,0,0)
-    pt1, eta1, phi1, mass1 = varsList.findVarInChain_GenJet_speed(tChain, '%s' %j1Name)
-    pt2, eta2, phi2, mass2 = varsList.findVarInChain_GenJet_speed(tChain, '%s' %j2Name)
-
-    if pt1 > 0 and mass1 > 0:
-        genJet1.SetCoordinates(pt1, eta1, phi1, mass1)
-    if pt2 > 0 and mass2 > 0:
-        genJet2.SetCoordinates(pt2, eta1, phi2, mass2)
+    if j1Name != 'J5' and j1Name != 'J6': 
+        pt1, eta1, phi1, mass1 = varsList.findVarInChain_GenJet_speed(tChain, '%s' %j1Name)
+        if pt1 > 0 and mass1 > 0:
+            genJet1.SetCoordinates(pt1, eta1, phi1, mass1)
+    if j2Name != 'J5' and j2Name != 'J6': 
+        pt2, eta2, phi2, mass2 = varsList.findVarInChain_GenJet_speed(tChain, '%s' %j2Name)
+        if pt2 > 0 and mass2 > 0:
+            genJet2.SetCoordinates(pt2, eta2, phi2, mass2)
 
     dR1 = r.Math.VectorUtil.DeltaR(genJet1, jet1)
     dR2 = r.Math.VectorUtil.DeltaR(genJet2, jet2)
