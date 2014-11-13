@@ -429,7 +429,7 @@ def loop_one_sample(iSample, iLocation):
 
         oTree.Fill()
         counter += 1
-        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' %(iSample))
+        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
     print '  -- saved %d events' %(counter)
     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
