@@ -3,14 +3,14 @@
 cd CMSSW_5_3_15/src
 cmsenv
 
+git clone https://github.com/zaixingmao/samples-plots.git
+cd samples-plots
+
 git clone https://github.com/bvormwald/HHKinFit.git
 cd HHKinFit
 git checkout v1.0
 ./compile.sh
 cd ..
-
-git clone https://github.com/zaixingmao/samples-plots.git
-cd samples-plots
 ```
 
 ####make samples from ntuples
