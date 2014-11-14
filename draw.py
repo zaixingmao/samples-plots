@@ -21,10 +21,12 @@ for varName, varConfig in draw_cfg.varsRange.items():
     output += ' --setMax %i' %varConfig[3]
     output += ' --sigBoost %i' %varConfig[4]
     output += ' --logY %s' %varConfig[5]
-    output += ' --bTag 2M'
+    output += ' --bTag 1M'
     output += ' --predict %s' %varConfig[6]
     output += ' --useData True'
     output += ' --region %s' %region
+    output += ' --thirdLeptonVeto True'
+
 #     output += ' --unit %s' %varConfig[7]
 
     os.system(output)
