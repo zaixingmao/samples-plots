@@ -2,23 +2,23 @@ import ROOT as r
 
 
 drawConfigs = {'script': 'drawVarsData_KS_CheckFlat.py',
-               'sampleLocation': '/scratch/zmao/jetPt20/',
+               'sampleLocation': '/scratch/zmao/v3/',
 #                'sampleLocation': '/scratch/zmao/newKinFit/8/350/ClassApp_both_TMVARegApp_',
                'signal': 'H350'}
 
 SamplePreFix = drawConfigs['sampleLocation']
 
-MCFileList = [('ZZ', SamplePreFix + 'ZZ_eff_all.root', 2500, 5),
-              #('WZJetsTo2L2Q', SamplePreFix + 'WZJetsTo2L2Q_eff_all.root', 2207, 5),
+MCFileList = [('ZZ', SamplePreFix + 'ZZ_all.root', 2500, 5),
+              ('WZJetsTo2L2Q', SamplePreFix + 'WZJetsTo2L2Q_all.root', 2207, 5),
               ('W1JetsToLNu', SamplePreFix + 'W1JetsToLNu_all.root', 5400000, r.kMagenta-9),
               ('W2JetsToLNu', SamplePreFix + 'W2JetsToLNu_all.root', 1750000, r.kMagenta-9),
               ('W3JetsToLNu', SamplePreFix + 'W3JetsToLNu_all.root', 519000, r.kMagenta-9),
-              ##('DYJetsToLL', 'TMVARegApp_DYJetsToLL_eff_all.root', 3504000, r.kGreen-7),
+#               ('DYJetsToLL', 'TMVARegApp_DYJetsToLL_all.root', 3504000, r.kGreen-7),
               ('DY1JetsToLL', SamplePreFix + 'DY1JetsToLL_all.root', 561000, r.kGreen-7),
               ('DY2JetsToLL', SamplePreFix + 'DY2JetsToLL_all.root', 181000, r.kGreen-7),
               ('DY3JetsToLL', SamplePreFix + 'DY3JetsToLL_all.root', 51100, r.kGreen-7),
-              ('tt_full_lep',SamplePreFix + 'tt_eff_all.root', 26197.5, r.kRed-7),
-              ('tt_semi_lep',SamplePreFix + 'tt_semi_eff_all.root', 109281, r.kAzure+7),]
+              ('tt_full_lep',SamplePreFix + 'tt_all.root', 26197.5, r.kRed-7),
+              ('tt_semi_lep',SamplePreFix + 'tt_semi_all.root', 109281, r.kAzure+7),]
 
 singalPreFix = SamplePreFix
 signalDict = {'H260': (singalPreFix + 'H2hh260_all.root', 14.76),
