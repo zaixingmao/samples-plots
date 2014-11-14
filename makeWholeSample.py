@@ -185,11 +185,20 @@ for indexFile in range(nSamples):
     if isData:
         xsValue = xsValue
 
+    region = 'bTag'
+    if '1M' in option:
+        region = '1M'
+    elif '2M' in option:
+        region = '2M'
+
+
     for i in range(0, total):
         tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
         #Fill Histograms
         iTree.GetEntry(i)
-        if passCut(iTree, 'OSrelaxedbTag') and (not ("H2hh" in name)):
+        if makeWholeSample_cfg.thirdLeptonVeto and (iTree.nElectrons > 0 or iTree.nMuons > 0):
+            continue
+        if passCut(iTree, 'OSrelaxed%s' %region) and (not ("H2hh" in name)):
             if isData:
                 scaleSVMass.Fill(iTree.svMass.at(0), iTree.triggerEff)
                 #scaleMJJReg.Fill(iTree.mJJReg, iTree.triggerEff)
@@ -218,7 +227,10 @@ for indexFile in range(nSamples):
     else:
         xs.Fill(name, xsValue)
     finalEventsWithXS.Fill(name, eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
-    print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi) #eventsSaved
+    if isData:
+            print ' --- Events Saved: %.2f' %(eventsSaved*xsValue) 
+    else:
+        print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
 
 
 total_Data = scaleSVMass.Integral(0, svMassRange[0]+1)
