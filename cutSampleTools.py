@@ -69,24 +69,40 @@ def findGenBJet(jet1, jet2, tChain):
         print '  WARNING:: Matched to the same b quark (b mass = %.3f)' %genJet2.mass() 
     return dR1, genJet1, dR2, genJet2
 
-def getRegVars(jName, tChain):
-    jet = lvClass()
-    SoftLep = 0
-    PtUncorr, VtxPt, Vtx3dL, Vtx3deL, ptLeadTrk, vtxMass, vtxPt, Ntot, SoftLepPt, SoftLepEta, SoftLepPhi, SoftLepPID, JECUnc, Et, Mt, Pt, Eta, Phi, Mass = varsList.findVarInChain_Data_speed(tChain,'%s' %jName)
+def getRegVars(j1Name, j2Name, tChain):
+    jet1 = lvClass()
+    jet2 = lvClass()
 
-    jet.SetCoordinates(Pt, Eta, Phi, 0)
-    if SoftLepPID == 0:
-        SoftLepPtRel = 0
-        SoftLepdR = 0
+    SoftLep = 0
+    PtUncorr1, VtxPt1, Vtx3dL1, Vtx3deL1, ptLeadTrk1, vtxMass1, vtxPt1, Ntot1, SoftLepPt1, SoftLepEta1, SoftLepPhi1, SoftLepPID1, JECUnc1, Et1, Mt1, Pt1, Eta1, Phi1, Mass1, PtUncorr2, VtxPt2, Vtx3dL2, Vtx3deL2, ptLeadTrk2, vtxMass2, vtxPt2, Ntot2, SoftLepPt2, SoftLepEta2, SoftLepPhi2, SoftLepPID2, JECUnc2, Et2, Mt2, Pt2, Eta2, Phi2, Mass2 = varsList.findVarInChain_Data_speed(tChain,j1Name,j2Name)
+
+    jet1.SetCoordinates(Pt1, Eta1, Phi1, 0)
+    if SoftLepPID1 == 0:
+        SoftLepPtRel1 = 0
+        SoftLepdR1 = 0
     else:
-        SoftLepPtRel = Pt - SoftLepPt
-        softLept = lvClass()
-        softLept.SetCoordinates(SoftLepPt, SoftLepEta, SoftLepPhi, 0)
-        SoftLepdR = r.Math.VectorUtil.DeltaR(softLept, jet)
-        SoftLepPt = SoftLepPt
-    if SoftLepPt < 0:
-        SoftLepPt = 0
-    return PtUncorr, Et, Mt, ptLeadTrk, Vtx3dL,Vtx3deL, vtxMass, VtxPt, JECUnc, float(Ntot), SoftLepPtRel, SoftLepPt, SoftLepdR
+        SoftLepPtRel1 = Pt1 - SoftLepPt1
+        softLept1 = lvClass()
+        softLept1.SetCoordinates(SoftLepPt1, SoftLepEta1, SoftLepPhi1, 0)
+        SoftLepdR1 = r.Math.VectorUtil.DeltaR(softLept1, jet1)
+        SoftLepPt1 = SoftLepPt1
+    if SoftLepPt1 < 0:
+        SoftLepPt1 = 0
+
+    jet2.SetCoordinates(Pt2, Eta2, Phi2, 0)
+    if SoftLepPID2 == 0:
+        SoftLepPtRel2 = 0
+        SoftLepdR2 = 0
+    else:
+        SoftLepPtRel2 = Pt2 - SoftLepPt2
+        softLept2 = lvClass()
+        softLept2.SetCoordinates(SoftLepPt2, SoftLepEta2, SoftLepPhi2, 0)
+        SoftLepdR2 = r.Math.VectorUtil.DeltaR(softLept2, jet2)
+        SoftLepPt2 = SoftLepPt2
+    if SoftLepPt2 < 0:
+        SoftLepPt2 = 0
+
+    return PtUncorr1, Et1, Mt1, ptLeadTrk1, Vtx3dL1,Vtx3deL1, vtxMass1, VtxPt1, JECUnc1, float(Ntot1), SoftLepPtRel1, SoftLepPt1, SoftLepdR1, PtUncorr2, Et2, Mt2, ptLeadTrk2, Vtx3dL2,Vtx3deL2, vtxMass2, VtxPt2, JECUnc2, float(Ntot2), SoftLepPtRel2, SoftLepPt2, SoftLepdR2
 
 
 def setDPhiInRange(dPhi):
