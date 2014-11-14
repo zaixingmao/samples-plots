@@ -297,7 +297,7 @@ def findVarInChain_Data(iChain, varName):
         print 'Variable: %s not defined in varList.py' %varName
         return 'Null'
 
-def findVarInChain_Data_speed(iChain, varName):
+def findVarInChain_Data_speed(iChain, varName1, varName2):
     varsDict = {
                 'J1': (iChain.J1PtUncorr, iChain.J1VtxPt, iChain.J1Vtx3dL, iChain.J1Vtx3deL,
                         iChain.J1ptLeadTrk, iChain.J1vtxMass, iChain.J1vtxPt, iChain.J1Ntot,
@@ -324,10 +324,10 @@ def findVarInChain_Data_speed(iChain, varName):
                         iChain.J6SoftLepPt, iChain.J6SoftLepEta, iChain.J6SoftLepPhi, iChain.J6SoftLepPID,
                         iChain.J6JECUnc, iChain.J6Et, iChain.J6Mt, iChain.J6Pt, iChain.J6Eta, iChain.J6Phi, iChain.J6Mass),
     }
-    if varName in varsDict:
-        return varsDict[varName]
+    if varName1 in varsDict and varName2 in varsDict:
+        return varsDict[varName1]+varsDict[varName2]
     else:
-        print 'Variable: %s not defined in varList.py' %varName
+        print 'Variable: %s not defined in varList.py' %varName1
         return 'Null'
 
 def findVarInChain_GenJet_speed(iChain, varName):
