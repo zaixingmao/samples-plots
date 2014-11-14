@@ -15,16 +15,9 @@ r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
 r.gStyle.SetOptStat("e")
 
-xLabels = ['processedEvents', 'PATSkimmedEvents',
-'eTau',"eleTausEleID", "eleTausEleConvRej", "eleTausElePtEta",
-"eleTausTauPtEta", "eleTausDecayFound", "eleTausVLooseIsolation",
-"eleTausTauMuonVeto", "eleTausTauElectronVeto", "eleTausTauElectronVetoM",
-"eleTausEleIsolation", "eleTausLooseIsolation", "eleTauOS",
-"muTau", "muTauId", "muTausMuonPtEta", "muTausTauPtEta", "muTausDecayFound",
-"muTausVLooseTauIsolation", "muTausTauElectronVeto", "muTausTauMuonVeto",
-"muTausMuonIsolation", "muTausLooseTauIsolation", "muTausLooseIsolation", "muTausOS",
-'atLeastOneDiTau', 'ptEta1', 'ptEta2', 'tau1Hadronic', 
-	   'tau2Hadronic','muonVeto1', 'muonVeto2', 'eleVeto1', 'eleVeto2', 'isolation1', 'relaxed', 'myCut']
+xLabels = ['processedEvents', 'initialEventsTT', 'extraEleVeto','extraMuVeto', 'AtLeastOneDiTau', 'ttPtEta1',
+           'ttPtEta2','tau1Hadronic','tau2Hadronic','ttMuonVeto1', 'ttMuonVeto2', 'ttElectronVeto1', 'ttElectronVeto2', 
+           'ttIsolation1', 'ttRelaxed2', 'myCut']
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 J1 = lvClass()
@@ -199,7 +192,7 @@ def loop_one_sample(iSample, iLocation):
     fMassKinFit = array('f', [0.])
     nElectrons = array('i', [0])
     nMuons = array('i', [0])
-
+    sampleName = bytearray(30)
 
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
@@ -245,6 +238,7 @@ def loop_one_sample(iSample, iLocation):
     oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
     oTree.Branch("nElectrons", nElectrons, "nElectrons/I")
     oTree.Branch("nMuons", nMuons, "nMuons/I")
+    oTree.Branch("sampleName", sampleName, "sampleName[31]/C")
 
     if not isData:
         oTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
@@ -359,8 +353,7 @@ def loop_one_sample(iSample, iLocation):
         CSVJ2Phi[0] = CSVJet2.phi()
         CSVJ2Mass[0] = CSVJet2.mass()
 
-        CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0] = getRegVars(j1Name, iChain)
-        CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j2Name, iChain)
+        CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0], CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j1Name, j2Name, iChain)
 
         if CSVJ1Vtx3dL[0] == -10:
             CSVJ1Vtx3dL[0] = 0
@@ -396,7 +389,7 @@ def loop_one_sample(iSample, iLocation):
 
         nElectrons[0] = iChain.nElectrons
         nMuons[0] = iChain.nMuons
-
+        sampleName[:31] = iSample
 #         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
 #         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
 #         pZ_new2[0] = iChain.pZ/fullMass[0]
