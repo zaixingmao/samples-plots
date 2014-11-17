@@ -32,9 +32,9 @@ def __correction_one_leg(tree, pt, eta):
     return 0.0
 
 
-def efficiency1(tree, iBestPair):
+def correction_leg1(tree, iBestPair):
     return __correction_one_leg(tree, tree.pt1.at(iBestPair), tree.eta1.at(iBestPair))
 
 
-def efficiency2(tree, iBestPair):
+def correction_leg2(tree, iBestPair):
     return __correction_one_leg(tree, tree.pt2.at(iBestPair), tree.eta2.at(iBestPair))
