@@ -333,8 +333,8 @@ def makeSyncNtuples(iLocation, cut, treepath):
 #         if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
 #             continue
 
-        trigweight_1[0] = trigger.efficiency1(iTree, iBestPair)
-        trigweight_2[0] = trigger.efficiency2(iTree, iBestPair)
+        trigweight_1[0] = trigger.correction_leg1(iTree, iBestPair)
+        trigweight_2[0] = trigger.correction_leg2(iTree, iBestPair)
         effweight[0] = trigweight_1[0] * trigweight_2[0]
         nTauPairs[0] = len(iTree.pt1)
 
