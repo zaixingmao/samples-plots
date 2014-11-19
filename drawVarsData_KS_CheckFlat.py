@@ -71,7 +71,9 @@ def bTagSelection(tree, bTag):
         passCut = 1
     if bTag == '2M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 >= 0.679):
         passCut = 1
-    if bTag == '1M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 < 0.679):
+    if bTag == '1M1NonM' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 < 0.679):
+        passCut = 1
+    if bTag == '1M' and (tree.CSVJ1 > 0.679):
         passCut = 1
     return passCut
 
@@ -137,7 +139,7 @@ def findBin(x, nBins, xMin, xMax):
 def findPtScale(pt1, pt2, direction, region):
     scaleDictUp = {'LLTrue': 0.051, #0.352, #1.690, #0.051, #0.038, #  
                    'LL2M': 0.069, #0.352, #1.690, #0.051, #0.038, #  
-                   'LL1M': 0.053, #0.352, #1.690, #0.051, #0.038, #  
+                   'LL1M': 0.050, #0.352, #1.690, #0.051, #0.038, #  
                    'LT': 0.248, #0.221,
                    'TL': 0.229, #0.201
                   }  
@@ -313,9 +315,17 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
                 QCDHistList_4KS[i].SetBinContent(j+1, dataValue4KS - MCValue4KS)
     ss_t = QCDHistList[0].Integral()
     ss_l = QCDHistList[2].Integral()
+
+    os_l = QCDHistList[1].Integral()
+    os_l_data = var_data[1].Integral()
     print "QCD in SS_T: %.4f" %ss_t
     print "QCD in SS_L: %.4f" %ss_l
+
+    print "QCD in OS_L: %.4f" %os_l
+    print "Data in OS_L:%.4f" %os_l_data
+
     print "SF: %.4f" %(ss_t/ss_l)
+    print "SF qcd/data: %.4f" %(os_l/os_l_data)
 
 
     for i in range(4):
@@ -470,7 +480,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     print 'KS Test 1: %.3f' %KS1
     print 'KS Test 2: %.3f' %KS2
 
-    psfile = '%s_%s_all.pdf' %(varName, fileName)
+    psfile = '%s_%s_%s.pdf' %(varName, fileName, signalSelection)
     c = r.TCanvas("c","Test", 800, 900)
     #ps = r.TPDF(psfile,112)
     c.Divide(2,3)
@@ -489,11 +499,14 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     for k in range(6):
         c.cd(k+1)
         r.gPad.SetTicky()
-        if logY == 'True':
+        if k > 1 and logY == 'True':
             r.gPad.SetLogy()
         signSelection, iso = conditions(k+1)
         var_background[k].SetTitle('%s %s Events %s (%.1f fb^{-1}); %s; events / bin' %(signSelection, iso, titleName, Lumi,varName))
-        var_background[k].SetMaximum(max)
+        if k < 2:
+            var_background[k].SetMaximum(250)
+        else:
+            var_background[k].SetMaximum(max)
         var_background[k].SetMinimum(0.01)
         var_background[k].Draw()
         if predict == 'True' and k == 0:
