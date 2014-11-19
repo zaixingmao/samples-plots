@@ -7,6 +7,7 @@ import optparse
 import os
 from array import array
 import makeWholeSample_cfg
+import makeWholeTools
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
@@ -14,15 +15,14 @@ dR_tauEleMu_max = 0.2
 dR_b_max = 0.5
 lumi = 19.7
 
-def findCat(option):
-    if 'bTag' in option:
-        return 'MM_LM'
-    elif '2M' in option:
-        return '2M'
-    elif '1M' in option:
-        return '1M'
-    else:
+def findCat(CSVJ1, CSVJ2):
+    if CSVJ1 < 0.679:
         return 'none'
+    elif CSVJ2 > 0.679:
+        return '2M'
+    else:
+        return '1M'
+        
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi):
 
@@ -85,11 +85,11 @@ def passCut(tree, option):
         return 0
     if '2M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.679):
         return 0
-    if '1M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 > 0.679):
+    if '1M' in option and (tree.CSVJ1 < 0.679):
         return 0
-#     if  tree.mJJ<90  or tree.mJJ>140:
-#         return 0
 
+    if makeWholeSample_cfg.thirdLeptonVeto and (tree.nElectrons>0 or tree.nMuons>0):
+        return 0
     passIso = 0
     passSign = 0
     if 'tight' in option and (tree.iso1.at(0) < 1.5 and tree.iso2.at(0) < 1.5):
@@ -143,6 +143,7 @@ nSamples = len(fileList)/nMassPoints
 mJJReg = array('f', [0.])
 mJJ = array('f', [0.])
 svMass = array('f', [0.])
+met = array('f', [0.])
 fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
@@ -158,7 +159,9 @@ genMatchName = bytearray(3)
 initEvents = r.TH1F('initEvents', '', nSamples, 0, nSamples)
 xs = r.TH1F('xs', '', nSamples, 0, nSamples)
 finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
-L2T = r.TH1F('L_to_T_%s' %findCat(makeWholeSample_cfg.bTag), '', 1, 0, 1)
+L2T_1M = r.TH1F('L_to_T_1M', '', 1, 0, 1)
+L2T_2M = r.TH1F('L_to_T_2M', '', 1, 0, 1)
+
 L2T_value = 0
 svMassRange = [20, 0, 400]
 mJJRegRange = [15, 50, 200]
@@ -183,6 +186,8 @@ scaleMJJRegMC = r.TH1F("MC_Data_mJJReg", "", mJJRegRange[0], mJJRegRange[1], mJJ
 
 oTree.Branch("mJJReg", mJJReg, "mJJReg/F")
 oTree.Branch("mJJ", mJJ, "mJJ/F")
+oTree.Branch("met", met, "met/F")
+
 oTree.Branch("fMass", fMass, "fMass/F")
 oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
 oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
@@ -250,13 +255,13 @@ for indexFile in range(nSamples):
         fMassKinFit[0] = iTrees[0].fMassKinFit
         chi2KinFit[0] = iTrees[0].chi2KinFit
         chi2KinFit2[0] = iTrees[0].chi2KinFit2
-
-        svMass[0] = iTrees[0].svMass.at(0)
+        met[0] = iTrees[0].met
+        svMass[0] = iTrees[0].svMass
         CSVJ2[0] = iTrees[0].CSVJ2
         triggerEff[0] = iTrees[0].triggerEff
         sampleName[:21] = name
         genMatchName[:3] = findMatch(iTrees[0], isData)
-        Category[:5] = findCat(option)
+        Category[:5] = findCat(iTrees[0].CSVJ1, iTrees[0].CSVJ2)
 
         for iMP in range(nMassPoints):
             BDTs[iMP][0] = iTrees[iMP].BDT_both
@@ -268,9 +273,9 @@ for indexFile in range(nSamples):
     finalEventsWithXS.Fill(name, eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
     print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi) #eventsSaved
 
-total_Data = scaleSVMass.Integral(0, svMassRange[0]+1)
-total_MC = scaleSVMassMC.Integral(0, svMassRange[0]+1)
-L2T.Fill(0.5, L2T_value*(1-(total_MC/total_Data)))
+weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigs, makeWholeSample_cfg.preFixTools, 'veto12',True)
+L2T_1M.Fill(0.5, weights[0])
+L2T_2M.Fill(0.5, weights[1])
 
 scaleSVMass.Sumw2()
 scaleSVMassMC.Sumw2()
@@ -291,7 +296,9 @@ scaleSVMassMC.Write()
 scaleMJJRegMC.Write()
 initEvents.Write()
 xs.Write()
-L2T.Write()
+L2T_1M.Write()
+L2T_2M.Write()
+
 finalEventsWithXS.Write()
 oTree.Write()
 oFile.Close()
