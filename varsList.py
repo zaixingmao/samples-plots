@@ -66,7 +66,7 @@ def findVar(iTree, varName):
 #                'mJJReg': iTree.mJJReg,
 #                 'BDT_EWK': iTree.BDT_EWK,
 #                 'BDT_QCD': iTree.BDT_QCD,
-#                 'BDT_both': iTree.BDT_both,
+                'BDT_both': iTree.BDT_both,
                 'met': iTree.met.at(0),
                 'svPt': iTree.svPt.at(0),
                 'nTauPairs': iTree.pt1.size(),
