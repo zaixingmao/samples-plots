@@ -193,6 +193,7 @@ def loop_one_sample(iSample, iLocation):
     nElectrons = array('i', [0])
     nMuons = array('i', [0])
     sampleName = bytearray(30)
+    category = bytearray(30)
 
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
@@ -239,6 +240,7 @@ def loop_one_sample(iSample, iLocation):
     oTree.Branch("nElectrons", nElectrons, "nElectrons/I")
     oTree.Branch("nMuons", nMuons, "nMuons/I")
     oTree.Branch("sampleName", sampleName, "sampleName[31]/C")
+    oTree.Branch("category", category, "category[31]/C")
 
     if not isData:
         oTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
@@ -288,6 +290,13 @@ def loop_one_sample(iSample, iLocation):
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
+
+        if options.addFiles == 'True':
+            oTree.Fill()
+            counter += 1
+            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
+            continue
+
         if counter == int(options.nevents):
             break
         if iChain.svMass.size() == 0:
@@ -314,6 +323,8 @@ def loop_one_sample(iSample, iLocation):
         bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
         if bb == -1:
             continue
+
+        category[:31] = findCategory(CSVJ1[0], CSVJ2[0])
 
         #Gen Matching
         matchGenJet1Pt[0] = 0
