@@ -1,10 +1,11 @@
 import ROOT as r
 
+signal = '350'
 
 drawConfigs = {'script': 'drawVarsData_KS_CheckFlat.py',
-               'sampleLocation': '/scratch/zmao/v3/',
+               'sampleLocation': '/scratch/zmao/BDTStudy/8/%s/ClassApp_both_TMVARegApp_' %signal,
 #                'sampleLocation': '/scratch/zmao/newKinFit/8/350/ClassApp_both_TMVARegApp_',
-               'signal': 'H350'}
+               'signal': 'H%s' %signal}
 
 SamplePreFix = drawConfigs['sampleLocation']
 
@@ -22,7 +23,14 @@ MCFileList = [('ZZ', SamplePreFix + 'ZZ_all.root', 2500, 5),
 
 singalPreFix = SamplePreFix
 signalDict = {'H260': (singalPreFix + 'H2hh260_all.root', 14.76),
+              'H270': (singalPreFix + 'H2hh270_all.root', 15.9),
+              'H280': (singalPreFix + 'H2hh280_all.root', 15.9),
+              'H290': (singalPreFix + 'H2hh290_all.root', 15.9),
               'H300': (singalPreFix + 'H2hh300_all.root', 15.9),
+              'H310': (singalPreFix + 'H2hh310_all.root', 15.9),
+              'H320': (singalPreFix + 'H2hh320_all.root', 15.9),
+              'H330': (singalPreFix + 'H2hh330_all.root', 15.9),
+              'H340': (singalPreFix + 'H2hh340_all.root', 15.9),
               'H350': (singalPreFix + 'H2hh350_all.root', 8.57)}
 
 dataFile = SamplePreFix + 'dataTotal_all.root'
@@ -70,11 +78,11 @@ varsRange = {
 #             'dRTauTau': (10, 0, r.TMath.Pi(), 35, 100, False, True), 
 #             'dPhiTauTau': (20, 0, r.TMath.Pi(), 5000, 500, True, True), 
 #             'dEtaTauTau': (20, 0, r.TMath.Pi(), 5000, 500, True, True), 
-            'dRJJ': (10, 0, 2*r.TMath.Pi(), 10000, 100, True, True),
+#             'dRJJ': (10, 0, 2*r.TMath.Pi(), 10000, 100, True, True),
 #             'dRhh': (10, 0, 6.28, 60, 100, False, True),
 #             'BDT_EWK': (20, -1., 1., 10000, 100, True, True),
 #             'BDT_QCD': (20, -1., 1., 10000, 100, True, True),
-#             'BDT_both': (10, -1., 1., 70, 100, False, True, 'binWidth'),
+            'BDT_both': (10, -1., 1., 500000, 300, True, True, 'binWidth'),
 #             'nTauPairs': (5, 0, 5, 10000, 100, True, True),
 #             'CSVJ1': (10, 0.6, 1.2, 60, 100, False, True),
 #             'CSVJ2': (10, 0.2, 1.2, 30, 100, False, True),
