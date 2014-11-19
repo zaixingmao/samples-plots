@@ -71,7 +71,7 @@ BDT_Sig_Test.Scale(1/BDT_Sig_Test.Integral())
 
 c = r.TCanvas("c","Test", 800, 600)
 BDT_Sig_Test.Draw()
-BDT_Sig_Test.SetMaximum(0.3)
+BDT_Sig_Test.SetMaximum(0.5)
 BDT_Sig_Train.Draw('sameE1P')
 BDT_Bkg_Test.Draw('same')
 BDT_Bkg_Train.Draw('sameE1P')
