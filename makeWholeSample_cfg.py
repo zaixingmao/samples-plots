@@ -7,9 +7,9 @@
 
 
 #preFix0 = '/scratch/zmao/relaxed_regression4/'
-# preFix0 = '/scratch/zmao/newKinFit/8/'
+preFix0 = '/scratch/zmao/BDTStudy/7_mJJ/'
 # preFix0 = '/scratch/zmao/jetPt20/'
-preFix0 = '/scratch/zmao/v3/'
+preFixTools = '/scratch/zmao/v3_2/'
 
 # preFix0 = '/scratch/zmao/BDTStudy/7_noDPhiMetJ2_mJJ/'
 
@@ -17,16 +17,18 @@ preFix0 = '/scratch/zmao/v3/'
 postFix = ''
 bTag = '1M'
 
-thirdLeptonVeto = False
+thirdLeptonVeto = True
 
 scaleFactors = {'bTag': 0.051,
                 '2M': 0.058,
+                '1M1NonM': 0.0523,
                 '1M': 0.0523}  
 
 if thirdLeptonVeto:
     scaleFactors = {'bTag': 0.051,
                     '2M': 0.0507,
-                    '1M': 0.0498}
+                    '1M1NonM': 0.0498,
+                    '1M': 0.0499}
 
 
 sampleConfigs =[('H2hh260', 'H2hh260_all%s.root' %postFix, 'OStight%s' %bTag, 14.76),
@@ -44,9 +46,9 @@ sampleConfigs =[('H2hh260', 'H2hh260_all%s.root' %postFix, 'OStight%s' %bTag, 14
 
                 ('H2hh350', 'H2hh350_all%s.root' %postFix, 'OStight%s' %bTag, 8.57),
 
-                ('H2hh500', 'H2hh500_all.root', 'OStight%s' %bTag, 8.57),
-                ('H2hh700', 'H2hh700_all.root', 'OStight%s' %bTag, 8.57),
-                ('H2hh1000', 'H2hh1000_all.root', 'OStight%s' %bTag, 8.57),
+#                 ('H2hh500', 'H2hh500_all.root', 'OStight%s' %bTag, 8.57),
+#                 ('H2hh700', 'H2hh700_all.root', 'OStight%s' %bTag, 8.57),
+#                 ('H2hh1000', 'H2hh1000_all.root', 'OStight%s' %bTag, 8.57),
 
                 ('ZZ','ZZ_all%s.root' %postFix, 'OStight%s' %bTag, 2500),
                 ("tt_full","tt_all%s.root" %postFix, 'OStight%s' %bTag, 26197.5),
@@ -60,5 +62,5 @@ sampleConfigs =[('H2hh260', 'H2hh260_all%s.root' %postFix, 'OStight%s' %bTag, 14
                 ('W3JetsToLNu','W3JetsToLNu_all.root', 'OStight%s' %bTag, 519000),
                 ('dataOSRelax','dataTotal_all%s.root' %postFix, 'OSrelaxed%s' %bTag, scaleFactors[bTag])]
 
-oFileName = 'combined%s_%s.root' %(postFix, bTag)
+oFileName = 'combined%s_%s_8_newMethod.root' %(postFix, bTag)
 trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
