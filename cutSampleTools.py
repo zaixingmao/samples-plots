@@ -7,7 +7,13 @@ import math
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 combinedJJ = lvClass()
-
+def findCategory(csv1, csv2):
+    if csv1 < 0.679:
+        return 'none'
+    elif csv2 > 0.679:
+        return '2M'
+    else:
+        return '1M1NonM' 
 
 def findFullMass(jetsList = [], sv4Vec = '', ptThreshold = 20):
     newList = []
