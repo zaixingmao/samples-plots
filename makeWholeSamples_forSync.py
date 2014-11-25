@@ -24,12 +24,12 @@ def getCorrectBDT(iTree, massPoint):
             }
     return bdts[massPoint]
 
-inputFiles = [('2M', 'combined_with3rdLeptVeto_2M.root'),
-              ('1M', 'combined_with3rdLeptVeto_1M.root'),
+inputFiles = [('2M', 'combined_2M_iso1.0.root'),
+              ('1M', 'combined_1M_iso1.0.root'),
 ]
 
 
-oFileName = 'combined_with3rdLeptVeto.root'
+oFileName = 'combined_iso1.0.root'
 oFile = r.TFile(oFileName, 'RECREATE')
 oTree = r.TTree('eventTree', '')
 
