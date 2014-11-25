@@ -396,7 +396,7 @@ def nameEnDecoder(name, opt = 'encode'):
                 'H2hh500': 500,
                 'H2hh700': 700,
                 'H2hh1000': 1000,
-                'tt': 1,
+                'tt_full': 1,
                 'tt_semi': 2,
                 'ZZ': 3,
                 'W1JetsToLNu': 11,
@@ -408,7 +408,7 @@ def nameEnDecoder(name, opt = 'encode'):
                 'DY3JetsToLL': 23,
                 'GluGlu': 50,
                 'VBF': 60,
-                'data': 0
+                'dataOSRelax': 0
                 }
 
     if opt == 'encode': 
