@@ -61,8 +61,7 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
 
     L_to_T_1M = r.TH1F('L_to_T_1M', 'L_to_T_1M', 1, 0, 1)
     L_to_T_2M = r.TH1F('L_to_T_2M', 'L_to_T_2M', 1, 0, 1)
-    L_to_T_1M.Fill(0.5, weight1)
-    L_to_T_2M.Fill(0.5, weight2)
+
 
     oFile = r.TFile('combined_%s.root' %iFileName, 'recreate')
     oTree = r.TTree('eventTree', '')
@@ -206,14 +205,20 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
             fracs0[iSample] = (sampleNamesCounterTest_1[iSample]+sampleNamesCounterTest_2[iSample])/(sampleNamesCounterTest_1[iSample]+sampleNamesCounterTrain_1[iSample]+sampleNamesCounterTest_2[iSample]+sampleNamesCounterTrain_2[iSample])
         else:
             fracs0[iSample] = 0
+        if fracs0[iSample] == 0:
+            fracs0[iSample] = 0.5
         if (sampleNamesCounterTest_1[iSample]+sampleNamesCounterTrain_1[iSample]) != 0:
             fracs1[iSample] = (sampleNamesCounterTest_1[iSample])/(sampleNamesCounterTest_1[iSample]+sampleNamesCounterTrain_1[iSample])
         else:
             fracs1[iSample] = 0
+        if fracs1[iSample] == 0:
+            fracs1[iSample] = 0.5
         if (sampleNamesCounterTest_2[iSample]+sampleNamesCounterTrain_2[iSample]) != 0:
            fracs2[iSample] = (sampleNamesCounterTest_2[iSample])/(sampleNamesCounterTest_2[iSample]+sampleNamesCounterTrain_2[iSample])
         else:
             fracs2[iSample] = 0
+        if fracs2[iSample] == 0:
+            fracs2[iSample] = 0.5
         if ('train' in sample) and ('test' in sample):
             fracs0[iSample] = 1
         initEventsHist.Fill(iSample, initEvents[iSample]*fracs0[iSample])
@@ -238,22 +243,21 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
             if tmpInitEvents2 == 0:
                 tmpInitEvents2 = 1        
             if fracs0[iSample] != 0:
-                dataScale0 = 1/fracs0[iSample]
+                dataScale0 = 1.0/fracs0[iSample]
             if fracs1[iSample] != 0:
-                dataScale1 = 1/fracs1[iSample]
+                dataScale1 = 1.0/fracs1[iSample]
             if fracs2[iSample] != 0:
-                dataScale2 = 1/fracs2[iSample]
+                dataScale2 = 1.0/fracs2[iSample]
 
         if 'data' in iSample:
             xs.Fill(iSample, weight0)
 
-        xs.Fill(iSample, xsValues[iSample])
+        xs.Fill(iSample, xsValues[iSample]*1000)
         extraSpace = ''
         if len(iSample) < 8:
             extraSpace = '\t'
 
         
-
         if 'tt' in iSample:
             if 'tt' in validDict1.keys():
                 validDict0['tt'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
@@ -326,7 +330,10 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
     print "cat2"
     for iSample in validDict2.keys():
         print "%s\t%s%0.4f" %(iSample,extraSpace, validDict2[iSample])
-
+    print 1.0/fracs1['dataOSRelax']
+    print 1.0/fracs2['dataOSRelax']
+    L_to_T_1M.Fill(0.5, weight1/fracs1['dataOSRelax'])
+    L_to_T_2M.Fill(0.5, weight2/fracs2['dataOSRelax'])
 
     oFile.cd()
     initEventsHist.Write()
@@ -342,9 +349,16 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
 
 weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigs, makeWholeSample_cfg.preFixTools, 'veto012')
 
-massPoints = ['260', '300', '350']
-postFix = '_8_n150_1M'
+massPoints = ['260','270','280','290','300','310','320','330','340','350']
+# nTreesList = ['50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150']
+nTreesList = ['150']
+
 region = 'test'
 
-for iMass in massPoints:
-    makeWhole('H%s%s_%s' %(iMass,postFix,region), '/scratch/zmao/TMVA/new3/TMVA%s%s.root' %(iMass,postFix), weights[0], weights[1], weights[2], region)
+for nTrees in nTreesList:
+    postFix = '_7_n%s_mJJ_1M' %nTrees
+    for iMass in massPoints:
+        makeWhole('H%s%s_%s' %(iMass,postFix,region), '/scratch/zmao/TMVA/new3/TMVA%s%s.root' %(iMass,postFix), weights[0], weights[1], weights[2], region)
+    postFix = '_8_n%s_mJJ_1M' %nTrees
+    for iMass in massPoints:
+        makeWhole('H%s%s_%s' %(iMass,postFix,region), '/scratch/zmao/TMVA/new3/TMVA%s%s.root' %(iMass,postFix), weights[0], weights[1], weights[2], region)
