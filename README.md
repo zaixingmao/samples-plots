@@ -8,7 +8,7 @@ cd samples-plots
 
 git clone https://github.com/bvormwald/HHKinFit.git
 cd HHKinFit
-git checkout v1.0
+git checkout v1.1
 ./compile.sh
 cd ..
 ```
