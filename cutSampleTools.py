@@ -2,18 +2,32 @@
 import ROOT as r
 from operator import itemgetter
 import varsList
+import FWCore.ParameterSet.Config as cms
 import math
 
+r.gSystem.Load("libFWCoreFWLite.so")
+r.AutoLibraryLoader.enable()
+# r.gSystem.Load("libPhysicsToolsUtilities.so")
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 combinedJJ = lvClass()
+reWeight = 1.0
+
 def findCategory(csv1, csv2):
     if csv1 < 0.679:
         return 'none'
     elif csv2 > 0.679:
         return '2M'
     else:
-        return '1M1NonM' 
+        return '1M1NonM'
+
+def setupLumiReWeight():
+    location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/pileUp/"
+    global reWeight
+    reWeight = r.edm.LumiReWeighting("%sMC_Summer12_PU_S10-600bins.root" %location,"%sData_Pileup_2012_ReReco-600bins.root" %location,"pileup","pileup")
+
+def getPUWeight(npu = 0):
+    return reWeight.weight(npu)
 
 def findFullMass(jetsList = [], sv4Vec = '', ptThreshold = 20):
     newList = []
