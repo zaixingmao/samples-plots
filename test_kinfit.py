@@ -100,6 +100,7 @@ def loop(fileName="", nEventsMax=None, suffix=""):
         #out[var+"_rate"].SetBins(*bins)
 
     labelStatusBins(out["status"])
+
     #out["m_vs_m"] = r.TH2D("h_m_vs_m%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
     #out["m_vs_m_rate"] = r.TEfficiency("h_m_vs_m_rate_%s" % suffix, ";m_{fit} (GeV);m_{no fit};events / bin", *(mbins+mbins))
     #out["m_vs_m_rate"].SetBins(*(mbins+mbins))
@@ -255,4 +256,4 @@ if __name__ == "__main__":
                                   ],
                        #nEventsMax=200,
                        )
-    pdf(fileName="kinfit_v1.0.pdf", histos=histos)
+    pdf(fileName="kinfit.pdf", histos=histos)
