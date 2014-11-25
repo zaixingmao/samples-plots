@@ -71,6 +71,8 @@ def bTagSelection(tree, bTag):
         passCut = 1
     if bTag == 'False':
         passCut = 1
+    if bTag == 'anti' and (tree.CSVJ1 < 0.679 and tree.CSVJ2 < 0.679):
+        passCut = 1
     if bTag == '2M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 >= 0.679):
         passCut = 1
     if bTag == '1M1NonM' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 < 0.679):
@@ -102,6 +104,9 @@ def passCut(tree, bTag, region, thirdLeptonVeto):
                 iso_count = 0
             if 'semiTight' in region and tree.iso2.at(0)>3:
                 iso_count = 0
+        elif tree.iso2.at(0)<1.5:
+            if 'semiTight' in region and tree.iso1.at(0)>3:
+                iso_count = 0
         if tree.charge1.at(0) -  tree.charge2.at(0) == 0:
             sign_count = 1
 
@@ -117,8 +122,8 @@ def findBin(x, nBins, xMin, xMax):
         return bin
 
 def dontUnblind(tree):
-    if 90 < tree.svMass.at(0) < 150:
-        return True
+#     if 90 < tree.svMass.at(0) < 150:
+#         return True
 #     if 70 < tree.mJJ < 150:
 #         return True
 #     if tree.BDT > 0:
@@ -193,7 +198,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         var_data[j].SetMarkerSize(0.9)
         legendHistos.append([])
         integral = 'observed'
-        if j != 0:
+        if j != 0 or (region != 'tight'):
             integral = 'observed (%.0f)' %var_data[j].Integral()
         legendHistos[j].append((var_data[j], integral))
 
@@ -376,7 +381,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     QCDPredict.SetLineWidth(1)
 
     QCDPredict.SetLineColor(r.kBlack)
-    legendHistos[0].append((QCDPredict, 'QCD (%.0f)' %QCDPredict.Integral()))
+    legendHistos[0].append((QCDPredict, 'QCD (%.0f, SF = %.3f)' %(QCDPredict.Integral(), SF)))
 
     QCDPredict.SetFillColor(r.kRed-10)
     allStacked.Add(QCDPredict)
@@ -422,6 +427,9 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     elif bTag == '1M1NonM':
         titleName = '1 Medium 1 Anti-Medium b-tag'
         fileName = '1M1NonMbTag'
+    elif bTag == 'anti':
+        titleName = '0 b-tag'
+        fileName = 'antibTag'
 
     KS1 = QCDHistList_4KS[0].KolmogorovTest(QCDHistList_4KS[2])
     KS2 = QCDHistList_4KS[1].KolmogorovTest(QCDHistList_4KS[2])
@@ -551,9 +559,9 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     delta.SetMaximum(2)
     delta.GetXaxis().SetTitle(varName)
     delta.GetXaxis().SetTitle(varName)
-    delta.GetXaxis().SetLabelSize(0.08)
-    delta.GetXaxis().SetTitleSize(0.08)
-    delta.GetYaxis().SetLabelSize(0.08)
+    delta.GetXaxis().SetLabelSize(0.07)
+    delta.GetXaxis().SetTitleSize(0.07)
+    delta.GetYaxis().SetLabelSize(0.07)
     delta.GetYaxis().SetNdivisions(5,5,0)
 
     delta.Draw()
