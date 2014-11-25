@@ -7,8 +7,11 @@ import optparse
 import os
 from array import array
 import makeWholeSample_cfg
-
+import makeWholeTools
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
+import cutSampleTools 
+
+cutSampleTools.setupLumiReWeight()
 
 dR_tauEleMu_max = 0.2
 dR_b_max = 0.5
@@ -70,7 +73,9 @@ def findGenMatch(dR1_tau, dR2_tau, dR1_b, dR2_b, dR1_ele, dR2_ele, dR1_mu, dR2_m
     stringList.sort()
     return '%s%s' %(stringList[0], stringList[1])
 
-def passCut(tree, option):
+def passCut(tree, option, iso):
+    if tree.pt1.at(0) < 45 or tree.pt2.at(0) < 45:
+        return 0
     if 'bTag' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.244):
         return 0
     if '2M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.679):
@@ -82,7 +87,7 @@ def passCut(tree, option):
 
     passIso = 0
     passSign = 0
-    if 'tight' in option and (tree.iso1.at(0) < 1.5 and tree.iso2.at(0) < 1.5):
+    if 'tight' in option and (tree.iso1.at(0) < iso and tree.iso2.at(0) < iso):
             passIso = 1
     if 'relaxed' in option and (tree.iso1.at(0) > 3 and tree.iso2.at(0) > 3):
             passIso = 1
@@ -123,7 +128,7 @@ for i in range(len(makeWholeSample_cfg.sampleConfigs)):
 oFileName = makeWholeSample_cfg.oFileName
 oFile = r.TFile(oFileName, 'RECREATE')
 oTree = r.TTree('eventTree', '')
-
+iso = makeWholeSample_cfg.iso
 nSamples = len(fileList)
 
 mJJ = array('f', [0.])
@@ -132,7 +137,7 @@ fMass = array('f', [0.])
 fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
 chi2KinFit2 = array('f', [0.])
-
+puWeight = array('f', [0.])
 CSVJ2 = array('f', [0.])
 
 triggerEff = array('f', [0.])
@@ -159,8 +164,9 @@ oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
 oTree.Branch("svMass", svMass, "svMass/F")
 oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 
-
 oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
+oTree.Branch("puWeight", puWeight, "puWeight/F")
+
 oTree.Branch("sampleName", sampleName, "sampleName[21]/C")
 oTree.Branch("genMatchName", genMatchName, "genMatchName[21]/C")
 
@@ -198,7 +204,7 @@ for indexFile in range(nSamples):
         iTree.GetEntry(i)
         if makeWholeSample_cfg.thirdLeptonVeto and (iTree.nElectrons > 0 or iTree.nMuons > 0):
             continue
-        if passCut(iTree, 'OSrelaxed%s' %region) and (not ("H2hh" in name)):
+        if passCut(iTree, 'OSrelaxed%s' %region, iso) and (not ("H2hh" in name)):
             if isData:
                 scaleSVMass.Fill(iTree.svMass.at(0), iTree.triggerEff)
                 #scaleMJJReg.Fill(iTree.mJJReg, iTree.triggerEff)
@@ -206,7 +212,7 @@ for indexFile in range(nSamples):
                 scaleSVMassMC.Fill(iTree.svMass.at(0), iTree.triggerEff*scale)
                 #scaleMJJRegMC.Fill(iTree.mJJReg, iTree.triggerEff*scale)
 
-        if not passCut(iTree, option):
+        if not passCut(iTree, option, iso):
             continue
         mJJ[0] = iTree.mJJ
         fMass[0] = iTree.fMass
@@ -218,9 +224,12 @@ for indexFile in range(nSamples):
         triggerEff[0] = iTree.triggerEff
         sampleName[:21] = name
         genMatchName[:3] = findMatch(iTree, isData)
-
+        if isData:
+            puWeight[0] = 1.0
+        else:
+            puWeight[0] = cutSampleTools.getPUWeight(iTree.puTruth)
         oTree.Fill()
-        eventsSaved += triggerEff[0]
+        eventsSaved += triggerEff[0]*puWeight[0]
 
     if isData:
         L2T_value = xsValue
@@ -229,13 +238,22 @@ for indexFile in range(nSamples):
     finalEventsWithXS.Fill(name, eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
     if isData:
             print ' --- Events Saved: %.2f' %(eventsSaved*xsValue) 
+    elif 'H2hh' in name:
+        print ' --- Events Saved: %.2f' %(eventsSaved*1000/tmpHist.GetBinContent(1)*lumi)
     else:
         print ' --- Events Saved: %.2f' %(eventsSaved*xsValue/tmpHist.GetBinContent(1)*lumi)
 
 
 total_Data = scaleSVMass.Integral(0, svMassRange[0]+1)
 total_MC = scaleSVMassMC.Integral(0, svMassRange[0]+1)
-L2T.Fill(0.5, L2T_value*(1-(total_MC/total_Data)))
+
+weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', True)
+
+
+if region == "2M":
+    L2T.Fill(0.5, weights[2])
+elif region == "1M":
+    L2T.Fill(0.5, weights[1])
 
 scaleSVMass.Sumw2()
 scaleSVMassMC.Sumw2()
