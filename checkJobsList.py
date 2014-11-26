@@ -4,13 +4,13 @@
 import checkJobs
 import os
 
-postFix = 'down'
+postFix = 'shift'
 
 locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh270_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh280_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh290_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh300_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh300_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh310_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh320_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh330_%s-SUB-TT' %postFix,
@@ -19,14 +19,14 @@ locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/H2hh500_rad_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/H2hh700_rad_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/H2hh1000_rad_%s-SUB-TT' %postFix,
-#                 '/nfs_scratch/zmao/nt_ttfull_%s-SUB-TT' %postFix,
+                '/nfs_scratch/zmao/nt_ttfull_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_ttsemi_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_zz_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_w1_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_w2_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_w3_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_wz_%s-SUB-TT' %postFix, 
-                '/nfs_scratch/zmao/nt_dy_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_dy_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy1_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy2_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy3_%s-SUB-TT' %postFix,

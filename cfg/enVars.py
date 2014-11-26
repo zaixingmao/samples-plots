@@ -4,19 +4,19 @@ corruptedROOTfiles = []
 preFix = '/hdfs/store/user/zmao/nt_'
 preFix2 = '/hdfs/store/user/zmao/'
 
-postFix = '_up-SUB-TT'
+postFix = '_v3-SUB-TT'
 postName = ""
 wScale = 1.193
-sampleLocations = [("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix), 1000),
-                    ("H2hh270%s" %postName,     "%sH2hh270%s" %(preFix, postFix), 1000),
-                    ("H2hh280%s" %postName,     "%sH2hh280%s" %(preFix, postFix), 1000),
-                    ("H2hh290%s" %postName,     "%sH2hh290%s" %(preFix, postFix), 1000),
-                    ("H2hh300%s" %postName,     "%sH2hh300%s" %(preFix, postFix), 1000),
-                    ("H2hh310%s" %postName,     "%sH2hh310%s" %(preFix, postFix), 1000),
-                    ("H2hh320%s" %postName,     "%sH2hh320%s" %(preFix, postFix), 1000),
-                    ("H2hh330%s" %postName,     "%sH2hh330%s" %(preFix, postFix), 1000),
-                    ("H2hh340%s" %postName,     "%sH2hh340%s" %(preFix, postFix), 1000),
-                    ("H2hh350%s" %postName,     "%sH2hh350%s" %(preFix, postFix), 1000),
+sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix), 1000),
+#                     ("H2hh270%s" %postName,     "%sH2hh270%s" %(preFix, postFix), 1000),
+#                     ("H2hh280%s" %postName,     "%sH2hh280%s" %(preFix, postFix), 1000),
+#                     ("H2hh290%s" %postName,     "%sH2hh290%s" %(preFix, postFix), 1000),
+#                     ("H2hh300%s" %postName,     "%sH2hh300%s" %(preFix, postFix), 1000),
+#                     ("H2hh310%s" %postName,     "%sH2hh310%s" %(preFix, postFix), 1000),
+#                     ("H2hh320%s" %postName,     "%sH2hh320%s" %(preFix, postFix), 1000),
+#                     ("H2hh330%s" %postName,     "%sH2hh330%s" %(preFix, postFix), 1000),
+#                     ("H2hh340%s" %postName,     "%sH2hh340%s" %(preFix, postFix), 1000),
+#                     ("H2hh350%s" %postName,     "%sH2hh350%s" %(preFix, postFix), 1000),
 #                     ("H2hh500%s" %postName,     "%sH2hh500_rad%s" %(preFix2, postFix), 1000),
 #                     ("H2hh700%s" %postName,     "%sH2hh700_rad%s" %(preFix2, postFix), 1000),
 #                     ("H2hh1000%s" %postName,     "%sH2hh1000_rad%s" %(preFix2, postFix), 1000),
@@ -31,7 +31,7 @@ sampleLocations = [("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix),
 #                     ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data/', 1),
 #                     ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v3-SUB-TT-data/', 1),
 #                    ('dataTotal', '/scratch/zmao/v3_2/data', 1),
-                    ('DYJetsToLL%s' %postName, "%sdy%s" %(preFix, postFix), 3504000),
+#                     ('DYJetsToLL%s' %postName, "%sdy%s" %(preFix, postFix), 3504000),
 
 #                     ('DY1JetsToLL%s' %postName, "%sdy1%s" %(preFix, postFix), 561000),
 #                     ('DY2JetsToLL%s' %postName, "%sdy2%s" %(preFix, postFix), 181000),
