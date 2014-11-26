@@ -71,7 +71,7 @@ def bTagSelection(tree, bTag):
         passCut = 1
     if bTag == 'False':
         passCut = 1
-    if bTag == 'anti' and (tree.CSVJ1 < 0.679 and tree.CSVJ2 < 0.679):
+    if bTag == 'None' and (tree.CSVJ1 < 0.679 and tree.CSVJ2 < 0.679):
         passCut = 1
     if bTag == '2M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 >= 0.679):
         passCut = 1
@@ -198,7 +198,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         var_data[j].SetMarkerSize(0.9)
         legendHistos.append([])
         integral = 'observed'
-        if j != 0 or (region != 'tight'):
+        if j != 0 or ((region != 'tight') and (bTag != 'None')):
             integral = 'observed (%.0f)' %var_data[j].Integral()
         legendHistos[j].append((var_data[j], integral))
 
@@ -361,9 +361,9 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     QCDHistList_withScale[2].Scale(scale_SS2OS)
     QCDHistList_withScale[3].Scale(scale_relaxed2Tight)
 
-    QCDHistList_withScale[3].SetFillColor(r.kSpring+1)
+    QCDHistList_withScale[3].SetFillColor(r.kRed-10)
     QCDHistList_withScale[2].SetFillColor(r.kRed-10)
-    QCDHistList_withScale[0].SetLineColor(r.kSpring+1)
+    QCDHistList_withScale[0].SetLineColor(r.kRed-10)
     QCDHistList_withScale[0].SetLineWidth(2)
     QCDHistList_withScale[1].SetLineStyle(2)
     QCDHistList_withScale[1].SetLineColor(r.kRed-10)
@@ -373,8 +373,8 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
 
     var_background[1].Add(QCDHistList_withScale[3])
     var_background[2].Add(QCDHistList_withScale[2])
-    legendHistos[1].append((QCDHistList_withScale[3], 'From SS/Relax (%.0f)' %QCDHistList_withScale[3].Integral()))
-    legendHistos[2].append((QCDHistList_withScale[2], 'From SS/Relax (%.0f)' %QCDHistList_withScale[2].Integral()))
+    legendHistos[1].append((QCDHistList_withScale[3], 'QCD (%.0f)' %QCDHistList_withScale[3].Integral()))
+    legendHistos[2].append((QCDHistList_withScale[2], 'QCD (%.0f)' %QCDHistList_withScale[2].Integral()))
     allStacked = var_background[0].Clone()
     QCDPredict = QCDHistList_withScale[1].Clone()
     QCDPredict.SetLineStyle(1)
@@ -427,9 +427,9 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     elif bTag == '1M1NonM':
         titleName = '1 Medium 1 Anti-Medium b-tag'
         fileName = '1M1NonMbTag'
-    elif bTag == 'anti':
+    elif bTag == 'None':
         titleName = '0 b-tag'
-        fileName = 'antibTag'
+        fileName = '0bTag'
 
     KS1 = QCDHistList_4KS[0].KolmogorovTest(QCDHistList_4KS[2])
     KS2 = QCDHistList_4KS[1].KolmogorovTest(QCDHistList_4KS[2])
@@ -467,8 +467,59 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     QCDDiff_R2T.SetMaximum(4)
     QCDDiff_R2T.SetMinimum(0)
 
-    for k in range(6):
-        c.cd(k+1)
+    pl_1 = r.TPad("pl_1","pl_1",0.,1,0.5,0.65)
+    pl_1_delta = r.TPad("pl_1_delta","pl_1_delta",0.,0.65,0.5,0.45)
+    pl_2 = r.TPad("pl_2","pl_2",0.,0.45,0.5,0.0)
+    pl_1.SetMargin(1, 1, 0, 1)
+    pl_1_delta.SetMargin(1, 1, 0.2, 0.05)
+
+    pr_1 = r.TPad("pr_1","pr_1",0.5,1,1.,0.65)
+    pr_1_delta = r.TPad("pr_1_delta","pr_1_delta",0.5,0.65,1.0,0.45)
+    pr_2 = r.TPad("pr_2","pr_2",0.5,0.45,1.0,0.0)
+    pr_1.SetMargin(1, 1, 0, 1)
+    pr_1_delta.SetMargin(1, 1, 0.2, 0.05)
+
+    pl_1.Draw()
+    pl_1_delta.Draw()
+    pl_2.Draw()
+    pr_1.Draw()
+    pr_1_delta.Draw()
+    pr_2.Draw()
+
+    pl_1.cd()
+    r.gPad.SetTicky()
+    signSelection, iso = conditions(1, region)
+    allStacked.SetMaximum(int(yMax))
+    allStacked.SetTitle('CMS Preliminary %.1f fb^{-1} at 8 TeV; %s; events / bin' %(Lumi,varName))
+    allStacked.Draw()
+    var_data[0].Draw('PE same')
+    legendPosition = (0.47, 0.9 - 0.06*len(legendHistos[0]), 0.87, 0.9)
+    l.append(tool.setMyLegend(lPosition=legendPosition, lHistList=legendHistos[0]))
+    l[0].Draw('same')
+    var_signal[0].Draw('same')
+
+    pl_1_delta.cd()
+    r.gPad.SetTicky()
+    r.gPad.SetTickx()
+    pl_1_delta.SetGridy(1)
+    bkgEst = QCDHistList_withScale[1].Clone()
+    delta = var_data[0].Clone()
+    delta.Sumw2()
+    bkgEst.Sumw2()
+    delta.Divide(bkgEst)
+    delta.SetMinimum(0.5)
+    delta.SetMaximum(1.5)
+    delta.GetXaxis().SetTitle(varName)
+    delta.GetXaxis().SetLabelSize(0.07)
+    delta.GetXaxis().SetTitleSize(0.07)
+    delta.GetYaxis().SetLabelSize(0.07)
+    delta.GetYaxis().SetNdivisions(5,5,0)
+    delta.Draw()
+
+    pList = [pr_1, pl_2, pr_2]
+
+    for k in range(1, len(pList)+1):
+        pList[k-1].cd()
         r.gPad.SetTicky()
         if k > 1 and logY == 'True':
             r.gPad.SetLogy()
@@ -480,66 +531,51 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
             var_background[k].SetMaximum(max)
         var_background[k].SetMinimum(0.01)
         var_background[k].Draw()
-        if predict == 'True' and k == 0:
-            QCDHistList_withScale[1].Draw('same')
         if useData == 'True':
             var_data[k].Draw('PE same')
-        legendPosition = (0.57, 0.9 - 0.05*len(legendHistos[k]), 0.87, 0.85)
+        legendPosition = (0.47, 0.9 - 0.06*len(legendHistos[k]), 0.87, 0.9)
         l.append(tool.setMyLegend(lPosition=legendPosition, lHistList=legendHistos[k]))
         if k == 1:
-            ksLegend1 = tool.setMyLegend((0.3, 0.8, 0.6, 0.9), [(QCDHistList_withScale[3], 'KS Test: %.3f' %KS1)])
+            ksLegend1 = tool.setMyLegend((0.2, 0.8, 0.5, 0.9), [(QCDHistList_withScale[3], 'KS Test: %.3f' %KS1)])
             ksLegend1.Draw('same')
         if k == 2:
-            ksLegend2 = tool.setMyLegend((0.3, 0.8, 0.6, 0.9), [(QCDHistList_withScale[2], 'KS Test: %.3f' %KS2)])
+            ksLegend2 = tool.setMyLegend((0.2, 0.8, 0.5, 0.9), [(QCDHistList_withScale[2], 'KS Test: %.3f' %KS2)])
             ksLegend2.Draw('same')
         l[k].Draw('same')
         var_signal[k].Draw('same')
 
-    c.Update()
-    c.cd(5)
-    r.gPad.SetLogy(0)
-    QCDDiff.Draw('PE')
-    fit1.Draw('same')
-    c.cd(6)
-    r.gPad.SetLogy(0)
-    QCDDiff_R2T.Draw('PE')
-    fit2.Draw('same')
+    pr_1_delta.cd()
+    r.gPad.SetTicky()
+    r.gPad.SetTickx()
+    pr_1_delta.SetGridy(1)
+    bkgEst2 = QCDHistList_withScale[3].Clone()
+    delta2 = var_data[1].Clone()
+    delta2.Sumw2()
+    bkgEst2.Sumw2()
+    delta2.Divide(bkgEst2)
+    delta2.SetMinimum(0.5)
+    delta2.SetMaximum(1.5)
+    delta2.GetXaxis().SetTitle(varName)
+    delta2.GetXaxis().SetLabelSize(0.07)
+    delta2.GetXaxis().SetTitleSize(0.07)
+    delta2.GetYaxis().SetLabelSize(0.07)
+    delta2.GetYaxis().SetNdivisions(5,5,0)
+    delta2.Draw()
+
     c.Update()
     c.Print('%s(' %psfile)
-    c.cd(1)
-    r.gPad.SetLogy(0)
-    QCDDiff.Draw('PE')
-
-    fit1.Draw('same')
-    lFit1 = tool.setMyLegend((0.15, 0.7, 0.9, 0.85),[(fit1,'Scale between OS/SS in relaxed region: %.2f \pm %.2f' %(fit1.GetParameter(0), fit1.GetParError(0)))])
-    lFit1.Draw('same')
-    for k in range(3):
-        c.cd(k+2)
-        if logY == 'True':
-            r.gPad.SetLogy()
-        signSelection, iso = conditions(k+2, region)
-        QCDHistList_withScale[k+1].SetTitle('%s %s Data - MC Events %s (%.1f fb^{-1}); %s; events / bin' %(signSelection, iso, titleName, Lumi,varName))
-        QCDHistList_withScale[k+1].SetMarkerStyle(8)
-        QCDHistList_withScale[k+1].SetMarkerSize(0.9)
-        QCDHistList_withScale[k+1].SetMaximum(max)
-        QCDHistList_withScale[k+1].SetMinimum(1)
-        QCDHistList_withScale[k+1].Draw('PE')
-    c.Update()
-    c.Print('%s' %psfile)
 
     c.Clear()
 
     p1 = r.TPad("p1","p1",0.,1,1.,0.4)
     p1_r = r.TPad("p1_r","p1_r",0.,0.39,1.,0.06)
-    p1.SetMargin(1, 1, 0, 1);
-    p1_r.SetMargin(1, 1, 1, 1);
+    p1.SetMargin(1, 1, 0, 1)
+    p1_r.SetMargin(1, 1, 0.2, 1)
 
     p1.Draw()
     p1_r.Draw()
     p1.cd()
     r.gPad.SetTicky()
-    allStacked.SetMaximum(int(yMax))
-    allStacked.SetTitle('CMS Preliminary %.1f fb^{-1} at 8 TeV; %s; events / bin' %(Lumi,varName))
     allStacked.Draw()
 
     var_data[0].Draw('PE same')
@@ -550,19 +586,6 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     r.gPad.SetTicky()
     r.gPad.SetTickx()
     p1_r.SetGridy(1)
-    bkgEst = QCDHistList_withScale[0].Clone()
-    delta = var_data[0].Clone()
-    delta.Sumw2()
-    bkgEst.Sumw2()
-    delta.Divide(bkgEst)
-    delta.SetMinimum(0)
-    delta.SetMaximum(2)
-    delta.GetXaxis().SetTitle(varName)
-    delta.GetXaxis().SetTitle(varName)
-    delta.GetXaxis().SetLabelSize(0.07)
-    delta.GetXaxis().SetTitleSize(0.07)
-    delta.GetYaxis().SetLabelSize(0.07)
-    delta.GetYaxis().SetNdivisions(5,5,0)
 
     delta.Draw()
     c.Print('%s)' %psfile)
