@@ -18,7 +18,7 @@ def passCut(tree, option):
         return 0
     passIso = 0
     passSign = 0
-    if 'tight' in option and (tree.iso1.at(0) < iso1 and tree.iso2.at(0) < iso2):
+    if 'tight' in option and (tree.iso1.at(0) < 1.5 and tree.iso2.at(0) < 1.5):
             passIso = 1
     if 'semiTight' in option and ((tree.iso1.at(0) < 1.5 and tree.iso2.at(0) > 3) or (tree.iso1.at(0) > 3 and tree.iso2.at(0) < 1.5)):
             passIso = 1
