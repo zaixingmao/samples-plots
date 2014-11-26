@@ -16,10 +16,11 @@ region = 'semiTight'
 relPath = __file__
 script = os.path.abspath(relPath).replace(relPath, "%s" % draw_cfg.drawConfigs['script'])
 
-bTags = ['1M1NonM']
-
+bTags = ['1M1NonM', '2M', 'None']
 
 weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SFveto012None', region,True)
+
+# weights = [0.438, 0.440, 0.413, 0.444]
 
 for ibTag in bTags:
     bTag = ibTag
@@ -30,20 +31,23 @@ for ibTag in bTags:
     elif bTag == '2M':
         weight = weights[2]
     elif bTag == 'None':
+        region = 'tight'
+        weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SFveto012None', region,True)
         weight = weights[3]
 
     for varName, varConfig in draw_cfg.varsRange.items():
-#         if ('pt2' in varName) or ('Pt' in varName):
-#             yMax = 100
-#         elif ('pt1' in varName):
-#             yMax = 80
-#         elif varName == 'CSVJ2':
-#             yMax = 100
-#         elif varName == 'CSVJ1':
-#             yMax = 200
-#         else:
-#             yMax = 50
-        yMax = 2000
+        yMax = 1000
+        if bTag == '2M':
+            yMax = yMax/10
+        if bTag == 'None':
+            yMax = yMax*2
+        if ('mJJ' in varName) or ('svMass' in varName):
+            yMax = yMax*0.6
+        elif ('CSVJ1Pt' in varName):
+            yMax = yMax*2
+        elif ('pt1' in varName):
+            yMax = yMax*0.9
+
         output = 'python %s --location %s  --signal %s' %(script, draw_cfg.drawConfigs['sampleLocation'], draw_cfg.drawConfigs['signal'])
         output += ' --variable %s --nbins %i --setRangeMin %f --setRangeMax %f' %(varName, varConfig[0], varConfig[1], varConfig[2])
         output += ' --setMax %i' %varConfig[3]

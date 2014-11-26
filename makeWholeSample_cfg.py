@@ -52,8 +52,8 @@ sampleConfigs =[('H2hh260', 'H2hh260%s_all.root' %postFix, 'OStight%s' %bTag, 14
 #                 ('H2hh1000', 'H2hh1000_all.root', 'OStight%s' %bTag, 8.57),
 
                 ('ZZ','ZZ_all.root', 'OStight%s' %bTag, 2500),
-                ("tt_full","tt_all.root" , 'OStight%s' %bTag, 26197.5),
-                ("tt_semi","tt_semi_all.root", 'OStight%s' %bTag, 109281),
+                ("tt_full","tt%s_all.root" %postFix, 'OStight%s' %bTag, 26197.5),
+                ("tt_semi","tt_semi%s_all.root" %postFix, 'OStight%s' %bTag, 109281),
                 ('WZJetsTo2L2Q', 'WZJetsTo2L2Q_all.root', 'OStight%s' %bTag, 2207),
                 ("DYJetsToLL","DYJetsToLL%s_all.root" %postFix, 'OStight%s' %bTag, 3504000),
 #                 ("DY1JetsToLL","DY1JetsToLL_all.root", 'OStight%s' %bTag, 561000),
