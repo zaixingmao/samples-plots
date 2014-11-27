@@ -13,17 +13,37 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
 lumi = 19.7
 
+def calcSysUnc(sf, num, denom, delta_num = 0, delta_denom = 0):
+    if delta_num == 0:
+        delta_num = math.sqrt(num)
+    if delta_denom == 0:
+        delta_denom = math.sqrt(denom)
+    return sf*math.sqrt((delta_num/num)**2 + (delta_denom/denom)**2)
+
 def passCut(tree, option):
     if tree.pt1.at(0) < 45 or tree.pt2.at(0) < 45:
         return 0
     passIso = 0
     passSign = 0
-    if 'tight' in option and (tree.iso1.at(0) < 1.5 and tree.iso2.at(0) < 1.5):
+    isoTight = 1.5
+    isoCut = 3
+    isoMax = 10
+
+    if 'INFN' in option:
+        isoTight = 1.0
+        isoCut = 1.0
+        isoMax = 4.0
+    if 'very' in option:
+        isoCut = 1.5
+
+    if 'tight' in option and (tree.iso1.at(0) < isoTight and tree.iso2.at(0) < isoTight):
             passIso = 1
-    if 'semiTight' in option and ((tree.iso1.at(0) < 1.5 and tree.iso2.at(0) > 3) or (tree.iso1.at(0) > 3 and tree.iso2.at(0) < 1.5)):
+    if 'semiTight' in option and ((tree.iso1.at(0) < isoTight and isoCut < tree.iso2.at(0) < isoMax) or (isoCut < tree.iso1.at(0) < isoMax and tree.iso2.at(0) < isoTight)):
             passIso = 1
-    if 'relaxed' in option and (tree.iso1.at(0) > 3 and tree.iso2.at(0) > 3):
+    if 'relaxed' in option and (isoCut < tree.iso1.at(0) < isoMax and isoCut < tree.iso2.at(0) < isoMax):
             passIso = 1
+
+
     if 'SS' in option and (tree.charge1.at(0) == tree.charge2.at(0)):
             passSign = 1
     if 'OS' in option and (tree.charge1.at(0) == -tree.charge2.at(0)):
@@ -31,7 +51,7 @@ def passCut(tree, option):
     return passIso*passSign
 
 
-def calculateSF(fileList, location0, out, sigRegionOption = 'tight', verbose = False):
+def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegionOption = 'relaxed', verbose = False):
     files = []
     trees = []
 
@@ -70,11 +90,10 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', verbose = F
     DATA_SS_LL_catNone_veto = 0
     DATA_OS_LL_catNone_veto = 0
 
-    for fileName, location, selection, xs in fileList:
+    for fileName, location, in fileList:
 
         files.append(r.TFile(location0+location))
         trees.append(files[len(files)-1].Get("eventTree"))
-        initEvents = (files[len(files)-1].Get("preselection")).GetBinContent(1)
         total = trees[len(trees)-1].GetEntries()
         if 'data' in fileName:
             isData = True
@@ -90,33 +109,33 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', verbose = F
                     if isData:
                         DATA_SS_TT_cat1+=1
                     else:
-                        MC_SS_TT_cat1+=xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], 'relaxedOS'):
+                        MC_SS_TT_cat1+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
                     if isData:
                         DATA_OS_LL_cat1+=1
                     else:
-                        MC_OS_LL_cat1+=xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], 'relaxedSS'):
+                        MC_OS_LL_cat1+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
                     if isData:
                         DATA_SS_LL_cat1+=1
                     else:
-                        MC_SS_LL_cat1 +=xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
+                        MC_SS_LL_cat1 +=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
             elif trees[len(trees)-1].category == '2M':
                 if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
                     if isData:
                         DATA_SS_TT_cat2 += 1
                     else:
-                        MC_SS_TT_cat2 += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], 'relaxedOS'):
+                        MC_SS_TT_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
                     if isData:
                         DATA_OS_LL_cat2 += 1
                     else:
-                        MC_OS_LL_cat2 += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], 'relaxedSS'):
+                        MC_OS_LL_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
                     if isData:
                         DATA_SS_LL_cat2 += 1
                     else:
-                        MC_SS_LL_cat2 += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
+                        MC_SS_LL_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
 
 
             if trees[len(trees)-1].nElectrons == 0 and trees[len(trees)-1].nMuons == 0:
@@ -125,49 +144,49 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', verbose = F
                         if isData:
                             DATA_SS_TT_cat1_veto+=1
                         else:
-                            MC_SS_TT_cat1_veto+=xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], 'relaxedOS'):
+                            MC_SS_TT_cat1_veto+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
                         if isData:
                             DATA_OS_LL_cat1_veto+=1
                         else:
-                            MC_OS_LL_cat1_veto+=xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], 'relaxedSS'):
+                            MC_OS_LL_cat1_veto+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
                         if isData:
                             DATA_SS_LL_cat1_veto+=1
                         else:
-                            MC_SS_LL_cat1_veto +=xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
+                            MC_SS_LL_cat1_veto +=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
                 elif trees[len(trees)-1].category == '2M':
                     if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
                         if isData:
                             DATA_SS_TT_cat2_veto += 1
                         else:
-                            MC_SS_TT_cat2_veto += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], 'relaxedOS'):
+                            MC_SS_TT_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
                         if isData:
                             DATA_OS_LL_cat2_veto += 1
                         else:
-                            MC_OS_LL_cat2_veto += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], 'relaxedSS'):
+                            MC_OS_LL_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
                         if isData:
                             DATA_SS_LL_cat2_veto += 1
                         else:
-                            MC_SS_LL_cat2_veto += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
+                            MC_SS_LL_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
                 elif trees[len(trees)-1].category == 'none':
                     if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
                         if isData:
                             DATA_SS_TT_catNone_veto += 1
                         else:
-                            MC_SS_TT_catNone_veto += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], 'relaxedOS'):
+                            MC_SS_TT_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
                         if isData:
                             DATA_OS_LL_catNone_veto += 1
                         else:
-                            MC_OS_LL_catNone_veto += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], 'relaxedSS'):
+                            MC_OS_LL_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
                         if isData:
                             DATA_SS_LL_catNone_veto += 1
                         else:
-                            MC_SS_LL_catNone_veto += xs*(lumi/initEvents)*trees[len(trees)-1].triggerEff
+                            MC_SS_LL_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
 
 
         print ''
@@ -214,43 +233,80 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', verbose = F
     QCD_SS_LL_cat0_veto = QCD_SS_LL_cat1_veto + QCD_SS_LL_cat2_veto
     QCD_SS_TT_cat0_veto = QCD_SS_TT_cat1_veto + QCD_SS_TT_cat2_veto
     QCD_OS_LL_cat0_veto = QCD_OS_LL_cat1_veto + QCD_OS_LL_cat2_veto
+    DATA_SS_LL_cat0_veto = DATA_SS_LL_cat1_veto + DATA_SS_LL_cat2_veto
+    DATA_SS_TT_cat0_veto = DATA_SS_TT_cat1_veto + DATA_SS_TT_cat2_veto
     DATA_OS_LL_cat0_veto = DATA_OS_LL_cat1_veto + DATA_OS_LL_cat2_veto
 
     SF_cat0_veto = QCD_SS_TT_cat0_veto/QCD_SS_LL_cat0_veto
     sf_cat0_veto = QCD_OS_LL_cat0_veto/DATA_OS_LL_cat0_veto
     weight0_veto = SF_cat0_veto*sf_cat0_veto
 
+    un_SF_cat0_veto = calcSysUnc(SF_cat0_veto, QCD_SS_TT_cat0_veto, QCD_SS_LL_cat0_veto)
+    un_sf_cat0_veto = calcSysUnc(1-sf_cat0_veto, DATA_OS_LL_cat0_veto - QCD_SS_TT_cat0_veto, DATA_OS_LL_cat0_veto)
+    un_weight0_veto = calcSysUnc(weight0_veto, SF_cat0_veto, sf_cat0_veto, un_SF_cat0_veto, un_sf_cat0_veto)
+
     SF_cat1_veto = QCD_SS_TT_cat1_veto/QCD_SS_LL_cat1_veto
     sf_cat1_veto = QCD_OS_LL_cat1_veto/DATA_OS_LL_cat1_veto
     weight1_veto = SF_cat1_veto*sf_cat1_veto
     
+    un_SF_cat1_veto = calcSysUnc(SF_cat1_veto, QCD_SS_TT_cat1_veto, QCD_SS_LL_cat1_veto)
+    un_sf_cat1_veto = calcSysUnc(1-sf_cat1_veto, MC_OS_LL_cat1_veto, DATA_OS_LL_cat1_veto)
+    un_weight1_veto = calcSysUnc(weight1_veto, SF_cat1_veto, sf_cat1_veto, un_SF_cat1_veto, un_sf_cat1_veto)
+
     SF_cat2_veto = QCD_SS_TT_cat2_veto/QCD_SS_LL_cat2_veto
     sf_cat2_veto = QCD_OS_LL_cat2_veto/DATA_OS_LL_cat2_veto
     weight2_veto = SF_cat2_veto*sf_cat2_veto
+
+    un_SF_cat2_veto = calcSysUnc(SF_cat2_veto, QCD_SS_TT_cat2_veto, QCD_SS_LL_cat2_veto)
+    un_sf_cat2_veto = calcSysUnc(1-sf_cat2_veto, MC_OS_LL_cat2_veto, DATA_OS_LL_cat2_veto)
+    un_weight2_veto = calcSysUnc(weight2_veto, SF_cat2_veto, sf_cat2_veto, un_SF_cat2_veto, un_sf_cat2_veto)
 
     SF_catNone_veto = QCD_SS_TT_catNone_veto/QCD_SS_LL_catNone_veto
     sf_catNone_veto = QCD_OS_LL_catNone_veto/DATA_OS_LL_catNone_veto
     weightNone_veto = SF_catNone_veto*sf_catNone_veto
 
+    un_SF_catNone_veto = calcSysUnc(SF_catNone_veto, QCD_SS_TT_catNone_veto, QCD_SS_LL_catNone_veto)
+    un_sf_catNone_veto = calcSysUnc(1-sf_catNone_veto, MC_OS_LL_catNone_veto, DATA_OS_LL_catNone_veto)
+    un_weightNone_veto = calcSysUnc(weightNone_veto, SF_catNone_veto, sf_catNone_veto, un_SF_catNone_veto, un_sf_catNone_veto)
+
     if verbose:
-        print 'Category None'
-        print '\t%.1f' %(QCD_SS_TT_catNone_veto)
-        print '%.1f\t%.1f'%(QCD_OS_LL_catNone_veto, QCD_SS_LL_catNone_veto)        
-        print 'Category 0'
-        print '\t%.1f' %(QCD_SS_TT_cat0_veto)
-        print '%.1f\t%.1f'%(QCD_OS_LL_cat0_veto, QCD_SS_LL_cat0_veto)
-        print 'Category 1'
-        print '\t%.1f' %(QCD_SS_TT_cat1_veto)
-        print '%.1f\t%.1f'%(QCD_OS_LL_cat1_veto, QCD_SS_LL_cat1_veto)
-        print 'Category 2'
-        print '\t%.1f' %(QCD_SS_TT_cat2_veto)
-        print '%.1f\t%.1f'%(QCD_OS_LL_cat2_veto, QCD_SS_LL_cat2_veto)
+        
+        print 'MC/QCD/Data'
+        print 'Category 0tag'
+        print '\t\t\t%.1f/%.1f/%.0f' %(MC_SS_TT_catNone_veto,QCD_SS_TT_catNone_veto, DATA_SS_TT_catNone_veto)
+        print '%.1f/%.1f/%.0f\t%.1f/%.1f/%.0f'%(MC_OS_LL_catNone_veto, QCD_OS_LL_catNone_veto, DATA_OS_LL_catNone_veto, 
+                                                MC_SS_LL_catNone_veto, QCD_SS_LL_catNone_veto, DATA_SS_LL_catNone_veto)        
+        print ''
+        print 'Category 1+2tag'
+        print '\t\t\t%.1f/%.1f/%.0f' %(DATA_SS_TT_cat0_veto-QCD_SS_TT_cat0_veto,QCD_SS_TT_cat0_veto, DATA_SS_TT_cat0_veto)
+        print '%.1f/%.1f/%.0f\t%.1f/%.1f/%.0f'%(DATA_OS_LL_cat0_veto-QCD_OS_LL_cat0_veto, QCD_OS_LL_cat0_veto, DATA_OS_LL_cat0_veto, 
+                                                DATA_SS_LL_cat0_veto-QCD_SS_LL_cat0_veto, QCD_SS_LL_cat0_veto, DATA_SS_LL_cat0_veto) 
+        print ''
+        print 'Category 1tag'
+        print '\t\t\t%.1f/%.1f/%.0f' %(MC_SS_TT_cat1_veto,QCD_SS_TT_cat1_veto, DATA_SS_TT_cat1_veto)
+        print '%.1f/%.1f/%.0f\t%.1f/%.1f/%.0f'%(MC_OS_LL_cat1_veto, QCD_OS_LL_cat1_veto, DATA_OS_LL_cat1_veto, 
+                                                MC_SS_LL_cat1_veto, QCD_SS_LL_cat1_veto, DATA_SS_LL_cat1_veto)
+        print ''
+        print 'Category 2tag'
+        print '\t\t\t%.1f/%.1f/%.0f' %(MC_SS_TT_cat2_veto,QCD_SS_TT_cat2_veto, DATA_SS_TT_cat2_veto)
+        print '%.1f/%.1f/%.0f\t\t%.1f/%.1f/%.0f'%(MC_OS_LL_cat2_veto, QCD_OS_LL_cat2_veto, DATA_OS_LL_cat2_veto, 
+                                                MC_SS_LL_cat2_veto, QCD_SS_LL_cat2_veto, DATA_SS_LL_cat2_veto)
 
         print 'Results__________________________________'
-        print 'Category\t0\t\t1\t\t2\t\t0_veto\t\t1_veto\t\t2_veto\t\tNone_veto'
-        print 'SF\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f' %(SF_cat0, SF_cat1, SF_cat2, SF_cat0_veto, SF_cat1_veto, SF_cat2_veto, SF_catNone_veto)
-        print 'OCD/Data\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f' %(sf_cat0, sf_cat1, sf_cat2, sf_cat0_veto, sf_cat1_veto, sf_cat2_veto, sf_catNone_veto)
-        print 'Weights\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f' %(weight0, weight1, weight2, weight0_veto, weight1_veto, weight2_veto, weightNone_veto)
+        print 'Category\t1+2tag_veto\t\t1tag_veto\t\t2tag_veto\t\t0tag_veto'
+        print 'SF\t\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)' %(SF_cat0_veto, un_SF_cat0_veto, 100*un_SF_cat0_veto/SF_cat0_veto,
+                                                                                                                   SF_cat1_veto, un_SF_cat1_veto, 100*un_SF_cat1_veto/SF_cat1_veto,
+                                                                                                                   SF_cat2_veto, un_SF_cat2_veto, 100*un_SF_cat2_veto/SF_cat2_veto,
+                                                                                                                   SF_catNone_veto, un_SF_catNone_veto, 100*un_SF_catNone_veto/SF_catNone_veto)
+        print 'OCD/Data\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)' %(sf_cat0_veto, un_sf_cat0_veto, 100*un_sf_cat0_veto/sf_cat0_veto,
+                                                                                                   sf_cat1_veto, un_sf_cat1_veto, 100*un_sf_cat1_veto/sf_cat1_veto,
+                                                                                                   sf_cat2_veto, un_sf_cat2_veto, 100*un_sf_cat2_veto/sf_cat2_veto,
+                                                                                                   sf_catNone_veto, un_sf_catNone_veto, 100*un_sf_catNone_veto/sf_catNone_veto)
+        print 'Weights\t\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)\t%.3f +/- %.3f (%.f%%)' %(weight0_veto, un_weight0_veto, 100*un_weight0_veto/weight0_veto,
+                                                                                                    weight1_veto, un_weight1_veto, 100*un_weight1_veto/weight1_veto,
+                                                                                                    weight2_veto, un_weight2_veto, 100*un_weight2_veto/weight2_veto,
+                                                                                                    weightNone_veto, un_weightNone_veto, 100*un_weightNone_veto/weightNone_veto)
+
 
     output = []
     if 'SF' not in out:
@@ -290,4 +346,4 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', verbose = F
                 output.append(SF_cat2) 
         return output
 
-# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight',True)
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'tight','relaxed',True)
