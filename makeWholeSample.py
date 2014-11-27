@@ -229,7 +229,7 @@ for indexFile in range(nSamples):
         else:
             puWeight[0] = cutSampleTools.getPUWeight(iTree.puTruth)
         oTree.Fill()
-        eventsSaved += triggerEff[0]*puWeight[0]
+        eventsSaved += triggerEff[0]
 
     if isData:
         L2T_value = xsValue
