@@ -24,12 +24,12 @@ def getCorrectBDT(iTree, massPoint):
             }
     return bdts[massPoint]
 
-inputFiles = [('2M', 'combined_2M_iso1.0.root'),
-              ('1M', 'combined_1M_iso1.0.root'),
+inputFiles = [('2M', 'combined_up_2M.root'),
+              ('1M', 'combined_up_1M.root'),
 ]
 
 
-oFileName = 'combined_iso1.0.root'
+oFileName = 'combined_up.root'
 oFile = r.TFile(oFileName, 'RECREATE')
 oTree = r.TTree('eventTree', '')
 
@@ -48,6 +48,7 @@ Category = bytearray(5)
 triggerEff = array('f', [0.])
 sampleName = bytearray(20)
 genMatchName = bytearray(3)
+puWeight = array('f', [0.])
 
 BDTs = []
 nMassPoints = len(makeWholeSample_cfg.trainedMassPoints)
@@ -63,6 +64,7 @@ oTree.Branch("sampleName", sampleName, "sampleName[21]/C")
 oTree.Branch("genMatchName", genMatchName, "genMatchName[21]/C")
 oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
 oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
+oTree.Branch("puWeight", puWeight, "puWeight/F")
 
 oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 oTree.Branch("Category", Category, "Category[21]/C")
@@ -104,6 +106,7 @@ for ifile in range(len(inputFiles)):
 
         svMass[0] = trees[ifile].svMass
         CSVJ2[0] = trees[ifile].CSVJ2
+        puWeight[0] = trees[ifile].puWeight
 
         triggerEff[0] = trees[ifile].triggerEff
         sampleName[:21] = trees[ifile].sampleName
