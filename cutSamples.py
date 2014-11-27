@@ -48,6 +48,7 @@ def opts():
     parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
     parser.add_option("-a", dest="addFiles", default="False", help="")
     parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
+    parser.add_option("-c", dest="cutLHEProduct", default=False, action="store_true", help="cut to 0 jet")
 
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     options, args = parser.parse_args()
@@ -309,6 +310,9 @@ def loop_one_sample(iSample, iLocation, iXS):
             tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
             continue
 
+        if options.cutLHEProduct:
+            if iChain.LHEProduct != 5:
+                continue
         if counter == int(options.nevents):
             break
         if iChain.svMass.size() == 0:
