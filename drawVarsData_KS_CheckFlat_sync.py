@@ -32,7 +32,8 @@ def opts():
     parser.add_option("--thirdLeptonVeto", dest="thirdLeptonVeto", default = 'False', help="")
     parser.add_option("--weight", dest="weight", default = "0.05", help="")
     parser.add_option("--yMax", dest="yMax", default = 300, help="")
-
+    parser.add_option("--relaxedRegionOption", dest="relaxedRegionOption", default = 'relaxed', help="")
+    parser.add_option("--usePUWeight", dest="usePUWeight", default = False, action="store_true", help="use pu reweight")
 
 
     options, args = parser.parse_args()
@@ -51,6 +52,22 @@ def conditions(selection, region):
         return 'OS', 'cut-off with iso3'
     elif selection == 6:
         return 'SS', 'cut-off with iso3'
+
+def getNewLegend(legendHisto, fakeHist):
+    MCTotal = 0.0
+    for iHist, iLegend in legendHisto:
+        if ("H" not in iLegend) and ("observed" not in iLegend):
+            MCTotal += iHist.Integral(0, iHist.GetNbinsX()+1)
+    newLegend = []
+    indexForSignal = 0
+    for i in range(len(legendHisto)):
+        if 'H' not in legendHisto[i][1]:
+            newLegend.append(legendHisto[i])
+        else:
+            indexForSignal = i
+    newLegend.append(legendHisto[indexForSignal])
+    newLegend.append((fakeHist, 'bkg (%.2f)' %MCTotal))
+    return newLegend
 
 def getCombinedError(x, x_e, y, y_e):
     if x != 0:
@@ -85,27 +102,36 @@ def getIntegralFromString(info):
     integral = info[info.find('(')+1:info.find(')')]
     return float(integral)
 
-def passCut(tree, bTag, region, thirdLeptonVeto):
-    isoCut = 3
+def passCut(tree, bTag, region, thirdLeptonVeto, relaxedRegionOption = "relaxed"):
+    isoCut = 3.0
     iso_count = 3
+    isoMax = 10.0
+    isoTight = 1.5
+    if "INFN" in relaxedRegionOption:
+        isoMax = 4.0
+        isoCut = 1.0
+        isoTight = 1.0
+    elif "very" in relaxedRegionOption:
+        isoMax = 10
+        isoCut = 1.5
     if thirdLeptonVeto == 'True':
         if tree.nElectrons > 0 or tree.nMuons>0:
             return 0
     if bTagSelection(tree, bTag) and abs(tree.eta1.at(0))<2.1 and abs(tree.eta2.at(0))<2.1:
         sign_count = 0
-        maxIso = 10
+        maxIso = isoMax
         if  tree.iso1.at(0) > maxIso  or tree.iso2.at(0) > maxIso:
             return 0
         elif tree.iso1.at(0)>isoCut and tree.iso2.at(0)>isoCut:
             iso_count = 1
 
-        elif  tree.iso1.at(0)<1.5:
-            if 'tight' in region and tree.iso2.at(0)<1.5:
+        elif  tree.iso1.at(0) < isoTight:
+            if 'tight' in region and tree.iso2.at(0) < isoTight:
                 iso_count = 0
-            if 'semiTight' in region and tree.iso2.at(0)>3:
+            if 'semiTight' in region and tree.iso2.at(0) > isoCut:
                 iso_count = 0
-        elif tree.iso2.at(0)<1.5:
-            if 'semiTight' in region and tree.iso1.at(0)>3:
+        elif tree.iso2.at(0) < isoTight:
+            if 'semiTight' in region and tree.iso1.at(0) > isoCut:
                 iso_count = 0
         if tree.charge1.at(0) -  tree.charge2.at(0) == 0:
             sign_count = 1
@@ -140,7 +166,7 @@ def getAccuDist(hist, xMin, xMax, name):
     return accuDist
 
 
-def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, rangeMin, rangeMax, location, bTag, predict, predictPtBin, region, thirdLeptonVeto, SF, yMax):
+def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, rangeMin, rangeMax, location, bTag, predict, predictPtBin, region, thirdLeptonVeto, SF, yMax, relaxedRegionOption, usePU):
     r.gStyle.SetOptStat(0)
     SF = float(SF)
     fileList = draw_cfg.MCFileList
@@ -154,15 +180,16 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     Lumi = 19.7
     legendHistos = []
     var_background = []
-
     scaleMCPt = 1.0
-
     tmpFile = []
     tmpTree = []
     var_data_4KS = []
     var_data = []
     var_data_4QCD = []
     histList_4KS = []
+    MC_Counts_0 = 0.0
+    MC_Counts_1 = 0.0
+    MC_Counts_2 = 0.0
 
     for i in range(6):
         var_data.append(r.TH1F('data_%i' %(i),"", varRange[0], varRange[1], varRange[2]))
@@ -170,13 +197,14 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         if i < 5:
             var_data_4QCD.append(r.TH1F('data_4QCD_%i' %(i),"", varRange[0], varRange[1], varRange[2]))
 
+
     dataName = draw_cfg.dataFile
     fData = r.TFile(dataName)
     treeData = fData.Get('eventTree')
     print 'Adding events from: %s ...' %dataName
     for iEntry in range(treeData.GetEntries()):
         treeData.GetEntry(iEntry)
-        select = passCut(treeData, bTag, region, thirdLeptonVeto)
+        select = passCut(treeData, bTag, region, thirdLeptonVeto, relaxedRegionOption)
         if (select == 0) or (select > 6):
             continue
         if (select == 1) and dontUnblind(treeData):
@@ -198,8 +226,8 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         var_data[j].SetMarkerSize(0.9)
         legendHistos.append([])
         integral = 'observed'
-        if j != 0 or ((region != 'tight') and (bTag != 'None')):
-            integral = 'observed (%.0f)' %var_data[j].Integral()
+        if j != 0 or (region != 'tight') or (bTag == 'None'):
+            integral = 'observed (%.0f)' %var_data[j].Integral(0, varRange[0]+1)
         legendHistos[j].append((var_data[j], integral))
 
     for i in range(len(fileList)): 
@@ -212,18 +240,22 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         tmpTree.append(tmpFile[i].Get('eventTree'))
         for iEntry in range(tmpTree[i].GetEntries()):
             tmpTree[i].GetEntry(iEntry)
-            select = passCut(tmpTree[i], bTag, region, thirdLeptonVeto)
+            select = passCut(tmpTree[i], bTag, region, thirdLeptonVeto, relaxedRegionOption)
             if (not select) or (select > 6):
                 continue
-            histList[6*i+select-1].Fill(varsList.findVar(tmpTree[i], varName), tmpTree[i].triggerEff*tmpTree[i].xs/(tmpTree[i].initEvents))
-            histList_4KS[6*i+select-1].Fill(varsList.findVar(tmpTree[i], varName), tmpTree[i].triggerEff*tmpTree[i].xs/(tmpTree[i].initEvents))
+            if usePU:
+                allWeights = tmpTree[i].triggerEff*tmpTree[i].PUWeight
+            else:
+                allWeights = tmpTree[i].triggerEff
+            histList[6*i+select-1].Fill(varsList.findVar(tmpTree[i], varName), allWeights*tmpTree[i].xs/(tmpTree[i].initEvents))
+            histList_4KS[6*i+select-1].Fill(varsList.findVar(tmpTree[i], varName), allWeights*tmpTree[i].xs/(tmpTree[i].initEvents))
             if select == 2:
-                histList_4QCD[6*i].Fill(varsList.findVar(tmpTree[i], varName), tmpTree[i].triggerEff*1.0*tmpTree[i].xs/(tmpTree[i].initEvents))
+                histList_4QCD[6*i].Fill(varsList.findVar(tmpTree[i], varName), allWeights*1.0*tmpTree[i].xs/(tmpTree[i].initEvents))
             elif select == 3:
-                histList_4QCD[6*i+1].Fill(varsList.findVar(tmpTree[i], varName), tmpTree[i].triggerEff*SF*tmpTree[i].xs/(tmpTree[i].initEvents))
+                histList_4QCD[6*i+1].Fill(varsList.findVar(tmpTree[i], varName), allWeights*SF*tmpTree[i].xs/(tmpTree[i].initEvents))
             elif select == 4:             
-                histList_4QCD[6*i+2].Fill(varsList.findVar(tmpTree[i], varName), tmpTree[i].triggerEff*1.0*tmpTree[i].xs/(tmpTree[i].initEvents))
-                histList_4QCD[6*i+3].Fill(varsList.findVar(tmpTree[i], varName), tmpTree[i].triggerEff*SF*tmpTree[i].xs/(tmpTree[i].initEvents))
+                histList_4QCD[6*i+2].Fill(varsList.findVar(tmpTree[i], varName), allWeights*1.0*tmpTree[i].xs/(tmpTree[i].initEvents))
+                histList_4QCD[6*i+3].Fill(varsList.findVar(tmpTree[i], varName), allWeights*SF*tmpTree[i].xs/(tmpTree[i].initEvents))
 
         for j in range(6):
             var_background.append(r.THStack())
@@ -231,9 +263,9 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
             histList[6*i+j].Scale(Lumi)
             histList_4QCD[6*i+j].Scale(Lumi)
             histList_4KS[6*i+j].Scale(Lumi)   
-
             var_background[j].Add(histList[6*i+j])
-            legendHistos[j].append((histList[6*i+j], '%s (%.2f)' %(fileList[i][0], histList[6*i+j].Integral())))
+            legendHistos[j].append((histList[6*i+j], '%s (%.2f)' %(fileList[i][0], histList[6*i+j].Integral(0, varRange[0]+1))))
+
 
     data_i = []
     MC_i = []
@@ -246,12 +278,12 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         QCDHistList_4KS.append(r.TH1F('QCD_%i_KS' %(i),"", nBins, varRange[1], varRange[2]))
         MC_List.append(r.TH1F('MC_total_%i' %(i),"", varRange[0], varRange[1], varRange[2]))
 
-        for j in range(varRange[0]):
-            dataValue = var_data[i+1].GetBinContent(j+1)
-            dataError = var_data[i+1].GetBinError(j+1)
+        for j in range(varRange[0]+2):
+            dataValue = var_data[i+1].GetBinContent(j)
+            dataError = var_data[i+1].GetBinError(j)
             MCValue = 0
             for k in range(len(fileList)):
-                MCValue +=  histList[6*k+1+i].GetBinContent(j+1)
+                MCValue +=  histList[6*k+1+i].GetBinContent(j)
             if i == 0:
                 data_i.append(dataValue)
                 e.append(dataError)
@@ -259,23 +291,24 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
             if i == 2:
                 data_r.append(dataValue)
                 MC_r.append(MCValue)
-            MC_List[i].SetBinContent(j+1, MCValue)
+            MC_List[i].SetBinContent(j, MCValue)
             if dataValue - MCValue > 0:
-                QCDHistList[i].SetBinContent(j+1, dataValue - MCValue)
-                QCDHistList[i].SetBinError(j+1, dataError)
+                QCDHistList[i].SetBinContent(j, dataValue - MCValue)
+                QCDHistList[i].SetBinError(j, dataError)
         MC_List[i].Sumw2()
-        for j in range(nBins):
-            dataValue4KS = var_data_4KS[i].GetBinContent(j+1)
+        for j in range(nBins+2):
+            dataValue4KS = var_data_4KS[i].GetBinContent(j)
             MCValue4KS = 0
             for k in range(len(fileList)):
-                MCValue4KS += histList_4KS[6*k+1+i].GetBinContent(j+1)
+                MCValue4KS += histList_4KS[6*k+1+i].GetBinContent(j)
             if dataValue4KS - MCValue4KS > 0:
-                QCDHistList_4KS[i].SetBinContent(j+1, dataValue4KS - MCValue4KS)
-    ss_t = QCDHistList[0].Integral()
-    ss_l = QCDHistList[2].Integral()
+                QCDHistList_4KS[i].SetBinContent(j, dataValue4KS - MCValue4KS)
 
-    os_l = QCDHistList[1].Integral()
-    os_l_data = var_data[2].Integral()
+    ss_t = QCDHistList[0].Integral(0, varRange[0]+1)
+    ss_l = QCDHistList[2].Integral(0, varRange[0]+1)
+
+    os_l = QCDHistList[1].Integral(0, varRange[0]+1)
+    os_l_data = var_data[2].Integral(0, varRange[0]+1)
     print "QCD in SS_T: %.4f" %ss_t
     print "QCD in SS_L: %.4f" %ss_l
 
@@ -288,14 +321,14 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
 
     for i in range(4):
         QCDHistList_withScale.append(r.TH1F('QCD_withScale_%i' %(i),"", varRange[0], varRange[1], varRange[2]))
-        for j in range(varRange[0]):
-            dataValue = var_data_4QCD[i].GetBinContent(j+1)
-            dataError = var_data_4QCD[i].GetBinError(j+1)
+        for j in range(varRange[0]+2):
+            dataValue = var_data_4QCD[i].GetBinContent(j)
+            dataError = var_data_4QCD[i].GetBinError(j)
             MCValue = 0
             for k in range(len(fileList)):
-                MCValue +=  histList_4QCD[6*k+i].GetBinContent(j+1)
+                MCValue +=  histList_4QCD[6*k+i].GetBinContent(j)
             if dataValue - MCValue > 0:
-                QCDHistList_withScale[i].SetBinContent(j+1, dataValue - MCValue)
+                QCDHistList_withScale[i].SetBinContent(j, dataValue - MCValue)
 
     QCDDiff = r.TH1F('QCD_diff',"", varRange[0], varRange[1], varRange[2])
     QCDDiff2 = r.TH1F('QCD_diff2',"", varRange[0], varRange[1], varRange[2])
@@ -332,11 +365,15 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
             print 'Adding events from: %s ...' %(signalDict[signalSelection])
             for iEntry in range(treeSignal.GetEntries()):
                 treeSignal.GetEntry(iEntry)
-                select = passCut(treeSignal, bTag, region, thirdLeptonVeto)
+                select = passCut(treeSignal, bTag, region, thirdLeptonVeto, relaxedRegionOption)
                 if (not select) or (select > 6):
                     continue
-                var_signal[select-1].Fill(varsList.findVar(treeSignal, varName), treeSignal.triggerEff*treeSignal.xs/(treeSignal.initEvents))
-                var_signal_4KS[select-1].Fill(varsList.findVar(treeSignal, varName), treeSignal.triggerEff*treeSignal.xs/(treeSignal.initEvents))
+                if usePU:
+                    allWeights = treeSignal.triggerEff*treeSignal.PUWeight
+                else:
+                    allWeights = treeSignal.triggerEff
+                var_signal[select-1].Fill(varsList.findVar(treeSignal, varName), allWeights*treeSignal.xs/(treeSignal.initEvents))
+                var_signal_4KS[select-1].Fill(varsList.findVar(treeSignal, varName), allWeights*treeSignal.xs/(treeSignal.initEvents))
             initNEventsSignal = fSignal.Get('preselection')
             for i in range(6):
                 var_signal[i].SetLineStyle(7)
@@ -344,9 +381,9 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
                 var_signal[i].Scale(sigBoost*Lumi)
                 if sigBoost != 1:
                     sum = var_signal[i].Integral(0, var_signal[i].GetNbinsX()+1)
-                    legendHistos[i].append((var_signal[i], '%sx%0.f (%.2f)' %(signalSelection, sigBoost, var_signal[i].Integral())))
+                    legendHistos[i].append((var_signal[i], '%sx%0.f (%.2f)' %(signalSelection, sigBoost, var_signal[i].Integral(0, varRange[0]+1))))
                 else:
-                    legendHistos[i].append((var_signal[i], '%s (%.2f)' %(signalSelection, var_signal[i].Integral())))
+                    legendHistos[i].append((var_signal[i], '%s (%.2f)' %(signalSelection, var_signal[i].Integral(0, varRange[0]+1))))
             DrawSignal = True
         else:
             print '%s not supported, please use H260, H300 or H350' %signalSelection
@@ -361,29 +398,28 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     QCDHistList_withScale[2].Scale(scale_SS2OS)
     QCDHistList_withScale[3].Scale(scale_relaxed2Tight)
 
-    QCDHistList_withScale[3].SetFillColor(r.kRed-10)
-    QCDHistList_withScale[2].SetFillColor(r.kRed-10)
-    QCDHistList_withScale[0].SetLineColor(r.kRed-10)
+    QCDHistList_withScale[3].SetFillColor(r.TColor.GetColor(250,202,255))
+    QCDHistList_withScale[2].SetFillColor(r.TColor.GetColor(250,202,255))
+    QCDHistList_withScale[0].SetLineColor(r.TColor.GetColor(250,202,255))
     QCDHistList_withScale[0].SetLineWidth(2)
     QCDHistList_withScale[1].SetLineStyle(2)
-    QCDHistList_withScale[1].SetLineColor(r.kRed-10)
+    QCDHistList_withScale[1].SetLineColor(r.TColor.GetColor(250,202,255))
     QCDHistList_withScale[1].SetLineWidth(2)
 
-#     legendHistos[0].append((QCDHistList_withScale[0], 'From SS/Tight (%.0f)' %QCDHistList_withScale[0].Integral()))
 
     var_background[1].Add(QCDHistList_withScale[3])
     var_background[2].Add(QCDHistList_withScale[2])
-    legendHistos[1].append((QCDHistList_withScale[3], 'QCD (%.0f)' %QCDHistList_withScale[3].Integral()))
-    legendHistos[2].append((QCDHistList_withScale[2], 'QCD (%.0f)' %QCDHistList_withScale[2].Integral()))
+    legendHistos[1].append((QCDHistList_withScale[3], 'QCD (%.2f)' %QCDHistList_withScale[3].Integral(0, varRange[0]+1)))
+    legendHistos[2].append((QCDHistList_withScale[2], 'QCD (%.2f)' %QCDHistList_withScale[2].Integral(0, varRange[0]+1)))
     allStacked = var_background[0].Clone()
     QCDPredict = QCDHistList_withScale[1].Clone()
     QCDPredict.SetLineStyle(1)
     QCDPredict.SetLineWidth(1)
 
     QCDPredict.SetLineColor(r.kBlack)
-    legendHistos[0].append((QCDPredict, 'QCD (%.0f, SF = %.3f)' %(QCDPredict.Integral(), SF)))
+    legendHistos[0].append((QCDPredict, 'QCD (%.0f, SF = %.3f)' %(QCDPredict.Integral(0, varRange[0]+1), SF)))
 
-    QCDPredict.SetFillColor(r.kRed-10)
+    QCDPredict.SetFillColor(r.TColor.GetColor(250,202,255))
     allStacked.Add(QCDPredict)
 
     QCDHistList_withScale[1] = tool.addFakeTHStack(QCDHistList_withScale[1],var_background[0])
@@ -396,7 +432,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         if oldValue - mcValue > 0:
             QCDDiff2.SetBinContent(i+1, (oldValue - mcValue)/oldValue)
             QCDDiff2.SetBinError(i+1, MC_List[1].GetBinError(i+1)/oldValue)
-    print QCDDiff2.Integral()
+    print QCDDiff2.Integral(0, varRange[0]+1)
 
 
     QCDDiff = var_data[2].Clone()
@@ -450,8 +486,12 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     print ''
     print 'KS Test 1: %.3f' %KS1
     print 'KS Test 2: %.3f' %KS2
-
-    psfile = '%s_%s_%s.pdf' %(varName, fileName, signalSelection)
+    fakeHist = r.TH1F()
+    fakeHist.SetLineColor(0)
+    usePUWeightName = ''
+    if usePU:
+        usePUWeightName = '_usePU'
+    psfile = '%s_%s_%s_%s_%s%s.pdf' %(varName, fileName, signalSelection, region, relaxedRegionOption, usePUWeightName)
     c = r.TCanvas("c","Test", 800, 900)
     #ps = r.TPDF(psfile,112)
     c.Divide(2,3)
@@ -493,8 +533,8 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     allStacked.SetTitle('CMS Preliminary %.1f fb^{-1} at 8 TeV; %s; events / bin' %(Lumi,varName))
     allStacked.Draw()
     var_data[0].Draw('PE same')
-    legendPosition = (0.47, 0.9 - 0.06*len(legendHistos[0]), 0.87, 0.9)
-    l.append(tool.setMyLegend(lPosition=legendPosition, lHistList=legendHistos[0]))
+    legendPosition = (0.43, 0.9 - 0.06*len(legendHistos[0]), 0.87, 0.9)
+    l.append(tool.setMyLegend(lPosition=legendPosition, lHistList=getNewLegend(legendHistos[0], fakeHist)))
     l[0].Draw('same')
     var_signal[0].Draw('same')
 
@@ -534,7 +574,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         if useData == 'True':
             var_data[k].Draw('PE same')
         legendPosition = (0.47, 0.9 - 0.06*len(legendHistos[k]), 0.87, 0.9)
-        l.append(tool.setMyLegend(lPosition=legendPosition, lHistList=legendHistos[k]))
+        l.append(tool.setMyLegend(lPosition=legendPosition, lHistList=getNewLegend(legendHistos[k], fakeHist)))
         if k == 1:
             ksLegend1 = tool.setMyLegend((0.2, 0.8, 0.5, 0.9), [(QCDHistList_withScale[3], 'KS Test: %.3f' %KS1)])
             ksLegend1.Draw('same')
@@ -596,5 +636,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
 op = opts()
 if op.varName != 'test':
     getHistos(op.varName, op.signal, op.logy, float(op.sigBoost), int(op.nbins),
-           op.useData, float(op.max), float(op.rangeMin), float(op.rangeMax), op.location, op.bTag, op.predict, 'False', op.region, op.thirdLeptonVeto, op.weight, op.yMax)
+              op.useData, float(op.max), float(op.rangeMin), float(op.rangeMax), 
+              op.location, op.bTag, op.predict, 'False', op.region, op.thirdLeptonVeto, 
+              op.weight, op.yMax, op.relaxedRegionOption, op.usePUWeight)
 
