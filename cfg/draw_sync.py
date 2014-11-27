@@ -9,9 +9,9 @@ drawConfigs = {'script': 'drawVarsData_KS_CheckFlat_sync.py',
 
 SamplePreFix = drawConfigs['sampleLocation']
 
-MCFileList = [('Electroweak', SamplePreFix + 'Electroweak.root', r.kRed-6),
-              ('DYJetsToLL', SamplePreFix + 'DYJetsToLL_all.root', r.kOrange),
-              ('t#bar{t}',SamplePreFix + 'tt.root', r.kBlue-8)]
+MCFileList = [('Electroweak', SamplePreFix + 'Electroweak.root', r.TColor.GetColor(222, 90,106)),
+              ('DYJetsToLL', SamplePreFix + 'DYJetsToLL_all.root', r.TColor.GetColor(248,206,104)),
+              ('t#bar{t}',SamplePreFix + 'tt.root', r.TColor.GetColor(155,152,204))]
 
 singalPreFix = SamplePreFix
 signalDict = {'H260': (singalPreFix + 'H2hh260_all.root'),
@@ -32,7 +32,7 @@ varsRange = {
 #             'fMass': (10, 200, 800, 30, 100, False, True),
 #            'nPairs': (5, 0, 5, 10000, 100, True, True, ''),
 
-            'pt1': (20, 30, 150, 500000, 1, True, True, 'GeV'),
+#             'pt1': (20, 30, 150, 500000, 1, True, True, 'GeV'),
 #             'pt2': (20, 30, 150, 50000, 100, True, True, 'GeV'),
 #              'tightPt': (20, 0, 400, 10000, 100, True, True),
 #              'relaxPt': (20, 0, 400, 10000, 100, True, True),
@@ -46,7 +46,7 @@ varsRange = {
 #             'NBTags': (6, 0, 5, 2000, 100, True, True), 
 #             'J1CSVbtag': (12, 0, 1.2, 100000, 100, True, True),
 #             'CSVJ1Eta': (30, -3.14, 3.14, 50000, 100, True, True),
-            'CSVJ1Pt': (20, 0, 400, 500000, 1, True, True),
+#             'CSVJ1Pt': (20, 0, 400, 500000, 1, True, True),
 #             'J2CSVbtag': (12, 0, 1.2, 100000, 100, True, True),
 #             'CSVJ2Eta': (30, -3.14, 3.14, 50000, 100, True, True),
 #             'CSVJ2Pt': (20, 0, 250, 50000, 100, True, True),
@@ -58,9 +58,9 @@ varsRange = {
 #             'J4Pt': (15, 0, 250, 5000, 100, True, True),
              'svMass': (30, 0, 450, 500000, 1, True, True),
 #             'svPt': (10, 0, 600, 50, 100, False, True),
-             'mJJ': (20, 0, 300, 300000, 1, True, True),
+#              'mJJ': (20, 0, 300, 300000, 1, True, True),
 #              'mJJReg': (10, 50, 200, 20, 100, False, True),
-             'met': (20, 0, 150, 500000, 1, True, True),
+#              'met': (20, 0, 150, 500000, 1, True, True),
 #             'ptJJ': (15, 0, 600, 5000, 100, True, True),
 #             'etaJJ': (20, -3.14, 3.14, 50000, 100, True, True),
 #             'dPhiMetTau1': (8, 0, 3.14, 60, 100, False, True),
