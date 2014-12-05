@@ -15,8 +15,6 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 lumi = 19.7
 
 
-
-
 def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
     ifile = r.TFile(iLocation)
     iTestTree = ifile.Get('TestTree')
@@ -34,24 +32,31 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
     dataCounter2 = 0
     categories = []
     sampleName = bytearray(30)
-    category2 = bytearray(30)
+    category_char = bytearray(30)
  
     validDict0 = {}
     validDict1 = {}
     validDict2 = {}
 
-    mJJReg = array('f', [0.])
     mJJ = array('f', [0.])
     CSVJ2 = array('f', [0.])
     BDT = array('f', [0.])
     met = array('f', [0.])
     fMass = array('f', [0.])
+    iso1 = array('f', [0.])
+    iso2 = array('f', [0.])
     fMassKinFit = array('f', [0.])
     chi2KinFit = array('f', [0.])
     chi2KinFit2 = array('f', [0.])
     svMass = array('f', [0.])
+    sampleName2 = array('I', [0])
+    NBTags = array('I', [0])
+
     CSVJ2 = array('f', [0.])
     triggerEff = array('f', [0.])
+    PUWeight = array('f', [0.])
+    xs_value = array('f', [0.])
+    initEvents_value = array('f', [0.])
 
     totalTest = iTestTree.GetEntries()
     totalTrain = iTrainTree.GetEntries()
@@ -67,10 +72,14 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
     oTree = r.TTree('eventTree', '')
 
     oTree.Branch("sampleName", sampleName, "sampleName[31]/C")
-    oTree.Branch("Category", category2, "Category[31]/C")
+    oTree.Branch("sampleName2", sampleName2, "sampleName2/I")
+    oTree.Branch("Category", category_char, "Category[31]/C")
+    oTree.Branch("NBTags", NBTags, "NBTags/I")
+    oTree.Branch("iso1_1", iso1, "iso1_1/F")
+    oTree.Branch("iso2_1", iso2, "iso2_1/F")
 
-    oTree.Branch("mJJReg", mJJReg, "mJJReg/F")
     oTree.Branch("mJJ", mJJ, "mJJ/F")
+    oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
     oTree.Branch("fMass", fMass, "fMass/F")
     oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
     oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
@@ -78,7 +87,8 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
     oTree.Branch("svMass", svMass, "svMass/F")
     oTree.Branch("met", met, "met/F")
     oTree.Branch("BDT", BDT, "BDT/F")
-
+    oTree.Branch("xs", xs_value, "xs_value/F")
+    oTree.Branch("initEvents", initEvents_value, "initEvents/F")
     oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
 
     oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
@@ -87,6 +97,7 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
         tool.printProcessStatus(iCurrent=i+1, total=totalTest, processName = 'Looping sample [%s]' %iFileName)
         iTrainTree.GetEntry(i)
         tmpSampleName = tool.nameEnDecoder(iTrainTree.sampleName2, 'decode')
+        sampleName2[0] = iTrainTree.sampleName2
         if tmpSampleName not in sampleNames:
             sampleNames.append(tmpSampleName)
             sampleNamesCounterTest_1[tmpSampleName] = 0.0
@@ -95,29 +106,28 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
             sampleNamesCounter_triggerEff2[tmpSampleName] = 0.0
             sampleNamesCounterTrain_1[tmpSampleName] = 0.0
             sampleNamesCounterTrain_2[tmpSampleName] = 0.0
-            if iTrainTree.category == 1:
+            if iTrainTree.NBTags == 1:
                 sampleNamesCounterTrain_1[tmpSampleName] = iTrainTree.triggerEff
-            elif iTrainTree.category == 2:
+            elif iTrainTree.NBTags > 1:
                 sampleNamesCounterTrain_2[tmpSampleName] = iTrainTree.triggerEff
             initEvents[tmpSampleName] = iTrainTree.initEvents
             xsValues[tmpSampleName] = iTrainTree.xs
         else:
-            if iTrainTree.category == 1:
+            if iTrainTree.NBTags == 1:
                 sampleNamesCounterTrain_1[tmpSampleName] += iTrainTree.triggerEff
-            elif iTrainTree.category == 2:
+            elif iTrainTree.NBTags > 1:
                 sampleNamesCounterTrain_2[tmpSampleName] += iTrainTree.triggerEff
         sampleName[:31] = tmpSampleName
-        if tmpSampleName == 'tt':
-            sampleName[:31] = 'tt_full'
         if tmpSampleName == 'data':
             sampleName[:31] = 'dataOSRelax'
-        if iTrainTree.category == 1:
-            category2[:31] = '1M'
-        elif iTrainTree.category == 2:
-            category2[:31] = '2M'
+        NBTags[0] = int(iTrainTree.NBTags)
+        if iTrainTree.NBTags == 1:
+            category_char[:31] = '1M'
+        elif iTrainTree.NBTags > 1:
+            category_char[:31] = '2M'
         else:
-            category2[:31] = 'None'
-        mJJReg[0] = iTrainTree.mJJReg
+            category_char[:31] = 'None'
+        PUWeight[0] = iTrainTree.PUWeight
         mJJ[0] = iTrainTree.mJJ
         CSVJ2[0] = iTrainTree.CSVJ2
         fMass[0] = iTrainTree.fMass
@@ -127,11 +137,15 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
         svMass[0] = iTrainTree.svMass
         triggerEff[0] = iTrainTree.triggerEff
         BDT[0] = iTrainTree.BDT
+        xs_value[0] = iTrainTree.xs
+        initEvents_value[0] = iTrainTree.initEvents
+        iso1[0] = iTrainTree.iso1_1
+        iso2[0] = iTrainTree.iso2_1
 
         if 'train' in sample:
-            if iTrainTree.category == 1:
+            if iTrainTree.NBTags == 1:
                 sampleNamesCounter_triggerEff1[tmpSampleName] += iTrainTree.triggerEff
-            elif iTrainTree.category == 2:
+            elif iTrainTree.NBTags > 1:
                 sampleNamesCounter_triggerEff2[tmpSampleName] += iTrainTree.triggerEff
             oTree.Fill()         
 
@@ -140,6 +154,7 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
         tool.printProcessStatus(iCurrent=i+1, total=totalTest, processName = 'Looping sample [%s]' %iFileName)
         iTestTree.GetEntry(i)
         tmpSampleName = tool.nameEnDecoder(iTestTree.sampleName2, 'decode')
+        sampleName2[0] = iTestTree.sampleName2
         if tmpSampleName not in sampleNames:
             sampleNames.append(tmpSampleName)
             sampleNamesCounterTest_1[tmpSampleName] = 0.0
@@ -148,33 +163,30 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
             sampleNamesCounter_triggerEff2[tmpSampleName] = 0.0
             sampleNamesCounterTrain_1[tmpSampleName] = 0.0
             sampleNamesCounterTrain_2[tmpSampleName] = 0.0
-            if iTestTree.category == 1:
+            if iTestTree.NBTags == 1:
                 sampleNamesCounterTest_1[tmpSampleName] = iTestTree.triggerEff
-            elif iTestTree.category == 2:
+            elif iTestTree.NBTags > 1:
                 sampleNamesCounterTest_2[tmpSampleName] = iTestTree.triggerEff
             initEvents[tmpSampleName] = iTestTree.initEvents
             xsValues[tmpSampleName] = iTestTree.xs
 
         else:
-            if iTestTree.category == 1:
+            if iTestTree.NBTags == 1:
                 sampleNamesCounterTest_1[tmpSampleName] += iTestTree.triggerEff
-            elif iTestTree.category == 2:
+            elif iTestTree.NBTags > 1:
                 sampleNamesCounterTest_2[tmpSampleName] += iTestTree.triggerEff
-
+        NBTags[0] = iTestTree.NBTags
         sampleName[:31] = tmpSampleName
-        if tmpSampleName == 'tt':
-            sampleName[:31] = 'tt_full'
         if tmpSampleName == 'data':
             sampleName[:31] = 'dataOSRelax'
-        if iTestTree.category == 1:
-            category2[:31] = '1M'
-        elif iTestTree.category == 2:
-            category2[:31] = '2M'
+        if iTestTree.NBTags == 1:
+            category_char[:31] = '1M'
+        elif iTestTree.NBTags > 1:
+            category_char[:31] = '2M'
         else:
-            category2[:31] = 'None'
-        mJJReg[0] = iTestTree.mJJReg
+            category_char[:31] = 'None'
         BDT[0] = iTestTree.BDT
-
+        PUWeight[0] = iTestTree.PUWeight
         mJJ[0] = iTestTree.mJJ
         CSVJ2[0] = iTestTree.CSVJ2
         fMass[0] = iTestTree.fMass
@@ -182,13 +194,16 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
         chi2KinFit[0] = iTestTree.chi2KinFit
         chi2KinFit2[0] = iTestTree.chi2KinFit2
         met[0] = iTestTree.met
-
+        xs_value[0] = iTestTree.xs
+        initEvents_value[0] = iTestTree.initEvents
+        iso1[0] = iTestTree.iso1_1
+        iso2[0] = iTestTree.iso2_1
         svMass[0] = iTestTree.svMass
         triggerEff[0] = iTestTree.triggerEff
         if 'test' in sample:
-            if iTestTree.category == 1:
+            if iTestTree.NBTags == 1:
                 sampleNamesCounter_triggerEff1[tmpSampleName] += iTestTree.triggerEff
-            elif iTestTree.category == 2:
+            elif iTestTree.NBTags > 1:
                 sampleNamesCounter_triggerEff2[tmpSampleName] += iTestTree.triggerEff
             oTree.Fill()
 
@@ -252,7 +267,7 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
         if 'data' in iSample:
             xs.Fill(iSample, weight0)
 
-        xs.Fill(iSample, xsValues[iSample]*1000)
+        xs.Fill(iSample, xsValues[iSample])
         extraSpace = ''
         if len(iSample) < 8:
             extraSpace = '\t'
@@ -260,56 +275,56 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
         
         if 'tt' in iSample:
             if 'tt' in validDict1.keys():
-                validDict0['tt'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['tt'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['tt'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['tt'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['tt'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['tt'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
 
             else:
-                validDict0['tt'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['tt'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['tt'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['tt'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['tt'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['tt'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
 
         elif 'DY' in iSample:
             if 'DY' in validDict1.keys():
-                validDict0['DY'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['DY'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['DY'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['DY'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['DY'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['DY'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
 
             else:
-                validDict0['DY'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['DY'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['DY'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['DY'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['DY'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['DY'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
 
         elif 'Z' in iSample:
             if 'Z' in validDict1.keys():
-                validDict0['Z'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['Z'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['Z'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['Z'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['Z'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['Z'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
 
             else:
-                validDict0['Z'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['Z'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['Z'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['Z'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['Z'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['Z'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
 
         elif 'LNu' in iSample:
             if 'W' in validDict1.keys():
-                validDict0['W'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['W'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['W'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['W'] += (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['W'] += sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['W'] += sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
 
             else:
-                validDict0['W'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-                validDict1['W'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-                validDict2['W'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+                validDict0['W'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+                validDict1['W'] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+                validDict2['W'] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
         elif 'data' in iSample:
             validDict0['QCD'] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])*weight0*dataScale0
             validDict1['QCD'] = sampleNamesCounter_triggerEff1[iSample]*weight1*dataScale1
             validDict2['QCD'] = sampleNamesCounter_triggerEff2[iSample]*weight2*dataScale2
             
         else:
-            validDict0[iSample] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]*1000
-            validDict1[iSample] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]*1000
-            validDict2[iSample] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]*1000
+            validDict0[iSample] = (sampleNamesCounter_triggerEff1[iSample]+sampleNamesCounter_triggerEff2[iSample])/tmpInitEvents0*lumi*xsValues[iSample]
+            validDict1[iSample] = sampleNamesCounter_triggerEff1[iSample]/tmpInitEvents1*lumi*xsValues[iSample]
+            validDict2[iSample] = sampleNamesCounter_triggerEff2[iSample]/tmpInitEvents2*lumi*xsValues[iSample]
         extraSpace = ''
         extraSpace2 = ''
         if len(iSample) < 8:
@@ -347,18 +362,16 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
     oTree.Write()
     oFile.Close()
 
-weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigs, makeWholeSample_cfg.preFixTools, 'veto012')
-
-massPoints = ['260','270','280','290','300','310','320','330','340','350']
-# nTreesList = ['50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150']
+weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', 'relaxed', True)
+# massPoints = ['260','270','280','290','300','310','320','330','340','350']
+massPoints = ['260', '300', '350']
 nTreesList = ['150']
-
 region = 'test'
 
 for nTrees in nTreesList:
-    postFix = '_7_n%s_mJJ_1M' %nTrees
+    postFix = '_7_n%s_mJJ' %nTrees
     for iMass in massPoints:
-        makeWhole('H%s%s_%s' %(iMass,postFix,region), '/scratch/zmao/TMVA/new3/TMVA%s%s.root' %(iMass,postFix), weights[0], weights[1], weights[2], region)
-    postFix = '_8_n%s_mJJ_1M' %nTrees
-    for iMass in massPoints:
-        makeWhole('H%s%s_%s' %(iMass,postFix,region), '/scratch/zmao/TMVA/new3/TMVA%s%s.root' %(iMass,postFix), weights[0], weights[1], weights[2], region)
+        makeWhole('H%s%s_%s' %(iMass,postFix,region), '/nfs_scratch/zmao/TMVA/TMVA%s%s.root' %(iMass,postFix), weights[0], weights[1], weights[2], region)
+ #    postFix = '_8_n%s_mJJ_1M' %nTrees
+#     for iMass in massPoints:
+#         makeWhole('H%s%s_%s' %(iMass,postFix,region), '/scratch/zmao/TMVA/new3/TMVA%s%s.root' %(iMass,postFix), weights[0], weights[1], weights[2], region)

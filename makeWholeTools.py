@@ -20,14 +20,14 @@ def calcSysUnc(sf, num, denom, delta_num = 0, delta_denom = 0):
         delta_denom = math.sqrt(denom)
     return sf*math.sqrt((delta_num/num)**2 + (delta_denom/denom)**2)
 
-def passCut(tree, option):
+def passCut(tree, option, iso):
     if tree.pt1.at(0) < 45 or tree.pt2.at(0) < 45:
         return 0
     passIso = 0
     passSign = 0
-    isoTight = 1.5
+    isoTight = iso
     isoCut = 3
-    isoMax = 10
+    isoMax = 10.0
 
     if 'INFN' in option:
         isoTight = 1.0
@@ -36,13 +36,14 @@ def passCut(tree, option):
     if 'very' in option:
         isoCut = 1.5
 
+    if tree.iso1.at(0) > isoMax or tree.iso2.at(0) > isoMax:
+        return 0
     if 'tight' in option and (tree.iso1.at(0) < isoTight and tree.iso2.at(0) < isoTight):
             passIso = 1
-    if 'semiTight' in option and ((tree.iso1.at(0) < isoTight and isoCut < tree.iso2.at(0) < isoMax) or (isoCut < tree.iso1.at(0) < isoMax and tree.iso2.at(0) < isoTight)):
+    if 'semiTight' in option and ((tree.iso1.at(0) < isoTight and tree.iso2.at(0) > isoCut) or (tree.iso1.at(0) > isoCut and tree.iso2.at(0) < isoTight)):
             passIso = 1
-    if 'relaxed' in option and (isoCut < tree.iso1.at(0) < isoMax and isoCut < tree.iso2.at(0) < isoMax):
+    if 'relaxed' in option and (isoCut < tree.iso1.at(0)) and (isoCut < tree.iso2.at(0)):
             passIso = 1
-
 
     if 'SS' in option and (tree.charge1.at(0) == tree.charge2.at(0)):
             passSign = 1
@@ -51,7 +52,7 @@ def passCut(tree, option):
     return passIso*passSign
 
 
-def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegionOption = 'relaxed', verbose = False):
+def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegionOption = 'relaxed', usePU = False, verbose = False, iso = 1.5):
     files = []
     trees = []
 
@@ -104,89 +105,100 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
         for i in range(total):
             tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %fileName)
             trees[len(trees)-1].GetEntry(i)
-            if trees[len(trees)-1].category == '1M1NonM':
-                if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
+            if usePU and (not isData):
+                puWeight = trees[len(trees)-1].PUWeight
+            else:
+                puWeight = 1.0
+#             if trees[len(trees)-1].category == '1M1NonM':
+            if trees[len(trees)-1].NBTags == 1:
+                if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption, iso):
                     if isData:
                         DATA_SS_TT_cat1+=1
                     else:
-                        MC_SS_TT_cat1+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
+                        MC_SS_TT_cat1+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption, iso):
                     if isData:
                         DATA_OS_LL_cat1+=1
                     else:
-                        MC_OS_LL_cat1+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
+                        MC_OS_LL_cat1+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption, iso):
                     if isData:
                         DATA_SS_LL_cat1+=1
                     else:
-                        MC_SS_LL_cat1 +=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-            elif trees[len(trees)-1].category == '2M':
-                if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
+                        MC_SS_LL_cat1 +=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+#             elif trees[len(trees)-1].category == '2M':
+            elif trees[len(trees)-1].NBTags > 1:
+
+                if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption, iso):
                     if isData:
                         DATA_SS_TT_cat2 += 1
                     else:
-                        MC_SS_TT_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
+                        MC_SS_TT_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption, iso):
                     if isData:
                         DATA_OS_LL_cat2 += 1
                     else:
-                        MC_OS_LL_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
+                        MC_OS_LL_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption, iso):
                     if isData:
                         DATA_SS_LL_cat2 += 1
                     else:
-                        MC_SS_LL_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                        MC_SS_LL_cat2 += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
 
 
             if trees[len(trees)-1].nElectrons == 0 and trees[len(trees)-1].nMuons == 0:
-                if trees[len(trees)-1].category == '1M1NonM':
-                    if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
+#                 if trees[len(trees)-1].category == '1M1NonM':
+                if trees[len(trees)-1].NBTags == 1:
+                    if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption, iso):
                         if isData:
                             DATA_SS_TT_cat1_veto+=1
                         else:
-                            MC_SS_TT_cat1_veto+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
+                            MC_SS_TT_cat1_veto+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption, iso):
                         if isData:
                             DATA_OS_LL_cat1_veto+=1
                         else:
-                            MC_OS_LL_cat1_veto+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
+                            MC_OS_LL_cat1_veto+=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption, iso):
                         if isData:
                             DATA_SS_LL_cat1_veto+=1
                         else:
-                            MC_SS_LL_cat1_veto +=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                elif trees[len(trees)-1].category == '2M':
-                    if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
+                            MC_SS_LL_cat1_veto +=trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+#                 elif trees[len(trees)-1].category == '2M':
+                elif trees[len(trees)-1].NBTags > 1:
+
+                    if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption, iso):
                         if isData:
                             DATA_SS_TT_cat2_veto += 1
                         else:
-                            MC_SS_TT_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
+                            MC_SS_TT_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption, iso):
                         if isData:
                             DATA_OS_LL_cat2_veto += 1
                         else:
-                            MC_OS_LL_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
+                            MC_OS_LL_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption, iso):
                         if isData:
                             DATA_SS_LL_cat2_veto += 1
                         else:
-                            MC_SS_LL_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                elif trees[len(trees)-1].category == 'none':
-                    if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption):
+                            MC_SS_LL_cat2_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+#                 elif trees[len(trees)-1].category == 'none':
+                elif trees[len(trees)-1].NBTags == 0:
+                    if passCut(trees[len(trees)-1], '%sSS' %sigRegionOption, iso):
                         if isData:
                             DATA_SS_TT_catNone_veto += 1
                         else:
-                            MC_SS_TT_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption):
+                            MC_SS_TT_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                    elif passCut(trees[len(trees)-1], '%sOS' %relaxedRegionOption, iso):
                         if isData:
                             DATA_OS_LL_catNone_veto += 1
                         else:
-                            MC_OS_LL_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
-                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption):
+                            MC_OS_LL_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
+                    elif passCut(trees[len(trees)-1], '%sSS' %relaxedRegionOption, iso):
                         if isData:
                             DATA_SS_LL_catNone_veto += 1
                         else:
-                            MC_SS_LL_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff
+                            MC_SS_LL_catNone_veto += trees[len(trees)-1].xs*(lumi/trees[len(trees)-1].initEvents)*trees[len(trees)-1].triggerEff*puWeight
 
 
         print ''
@@ -346,4 +358,5 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
                 output.append(SF_cat2) 
         return output
 
-# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'tight','relaxed',True)
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
