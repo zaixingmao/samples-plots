@@ -17,14 +17,15 @@ import makeWholeSample_cfg
 relPath = __file__
 script = os.path.abspath(relPath).replace(relPath, "%s" % draw_cfg.drawConfigs['script'])
 
-bTags = ['1M1NonM','2M']
+bTags = ['1M1NonM']
 bTagsNone = ['None']
-bTags = ['2M']
 
-configs = [('semiTight', 'relaxed', bTags),
+configs = [# ('semiTight', 'relaxed', bTags),
 #            ('INFN_tight', 'INFN_relaxed', bTagsNone),
-#            ('semiTight', 'very_relaxed', bTags)]
+#            ('very_semiTight', 'very_relaxed', bTags),
 #            ('tight', 'relaxed', bTagsNone)
+           ('tight', 'relaxed', bTags)
+
           ]
 
 pu = [True]
@@ -34,7 +35,7 @@ def drawPlots(config, usePU):
     relaxedRegionOption = config[1]
     weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, 
                                          makeWholeSample_cfg.preFixTools,
-                                         'SFveto012None', region, relaxedRegionOption, True)
+                                         'SFveto012None', region, relaxedRegionOption, usePU, True)
     bTags = config[2]
     for ibTag in bTags:
         bTag = ibTag
@@ -45,19 +46,21 @@ def drawPlots(config, usePU):
         elif bTag == '2M':
             weight = weights[2]
         elif bTag == 'None':
-            region = 'tight'
-            weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SFveto012None', region, relaxedRegionOption, True)
             weight = weights[3]
 
         for varName, varConfig in draw_cfg.varsRange.items():
-            yMax = 2000
+            yMax = 180
             if 'INFN' in region:
                 yMax = yMax*0.8
+            if 'very' in relaxedRegionOption:
+                yMax = 1.3*yMax
+            if 'semi' in region:
+                yMax = yMax/2.0
             if bTag == '2M':
                 yMax = yMax/10
             if bTag == 'None':
-                yMax = yMax*2
-            if ('mJJ' in varName) or ('svMass' in varName):
+                yMax = yMax/2
+            if ('svMass' in varName):
                 yMax = yMax*0.6
             elif ('CSVJ1Pt' in varName):
                 yMax = yMax*2
