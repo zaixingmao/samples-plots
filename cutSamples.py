@@ -15,16 +15,9 @@ r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
 r.gStyle.SetOptStat("e")
 
-xLabels = ['processedEvents', 'PATSkimmedEvents',
-'eTau',"eleTausEleID", "eleTausEleConvRej", "eleTausElePtEta",
-"eleTausTauPtEta", "eleTausDecayFound", "eleTausVLooseIsolation",
-"eleTausTauMuonVeto", "eleTausTauElectronVeto", "eleTausTauElectronVetoM",
-"eleTausEleIsolation", "eleTausLooseIsolation", "eleTauOS",
-"muTau", "muTauId", "muTausMuonPtEta", "muTausTauPtEta", "muTausDecayFound",
-"muTausVLooseTauIsolation", "muTausTauElectronVeto", "muTausTauMuonVeto",
-"muTausMuonIsolation", "muTausLooseTauIsolation", "muTausLooseIsolation", "muTausOS",
-'atLeastOneDiTau', 'ptEta1', 'ptEta2', 'tau1Hadronic', 
-	   'tau2Hadronic','muonVeto1', 'muonVeto2', 'eleVeto1', 'eleVeto2', 'isolation1', 'relaxed', 'myCut']
+xLabels = ['processedEvents', 'initialEventsTT', 'extraEleVeto','extraMuVeto', 'AtLeastOneDiTau', 'ttPtEta1',
+           'ttPtEta2','tau1Hadronic','tau2Hadronic','ttMuonVeto1', 'ttMuonVeto2', 'ttElectronVeto1', 'ttElectronVeto2', 
+           'ttIsolation1', 'ttRelaxed2', 'myCut']
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 J1 = lvClass()
@@ -54,6 +47,9 @@ def opts():
     parser.add_option("-n", dest="nevents", default="-1", help="amount of events to be saved")
     parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
     parser.add_option("-a", dest="addFiles", default="False", help="")
+    parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
+    parser.add_option("-c", dest="cutLHEProduct", default=False, action="store_true", help="cut to 0 jet")
+
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     options, args = parser.parse_args()
 
@@ -95,7 +91,7 @@ r.gStyle.SetOptStat(0)
 #     fullVarList.append(iVar)
 
 
-def loop_one_sample(iSample, iLocation):
+def loop_one_sample(iSample, iLocation, iXS):
     if 'data' in iSample:
         isData = True
 #         varList = preVarList
@@ -113,7 +109,8 @@ def loop_one_sample(iSample, iLocation):
     if options.addFiles == 'True':
         iChain = r.TChain("eventTree")
     else:
-        iChain = r.TChain("ttTreeBeforeChargeCut/eventTree")
+        folderName = options.folderName
+        iChain = r.TChain("%s/eventTree" %folderName)
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=enVars.corruptedROOTfiles)
     iChain.SetBranchStatus("*",1)
 #     for iVar in range(len(varList)):
@@ -199,7 +196,11 @@ def loop_one_sample(iSample, iLocation):
     fMassKinFit = array('f', [0.])
     nElectrons = array('i', [0])
     nMuons = array('i', [0])
-
+    sampleName = bytearray(30)
+    category = bytearray(30)
+    PUWeight = array('f', [0.])
+    initEvents = array('i', [0])
+    xs = array('f', [0.])
 
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
@@ -245,6 +246,9 @@ def loop_one_sample(iSample, iLocation):
     oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
     oTree.Branch("nElectrons", nElectrons, "nElectrons/I")
     oTree.Branch("nMuons", nMuons, "nMuons/I")
+    oTree.Branch("sampleName", sampleName, "sampleName[31]/C")
+    oTree.Branch("category", category, "category[31]/C")
+    oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
 
     if not isData:
         oTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
@@ -290,13 +294,30 @@ def loop_one_sample(iSample, iLocation):
     oTree.Branch("CSVJ2SoftLeptPt",CSVJ2SoftLeptPt,"CSVJ2SoftLeptPt/F")
     oTree.Branch("CSVJ2SoftLeptdR",CSVJ2SoftLeptdR,"CSVJ2SoftLeptdR/F")
 
+    oTree.Branch("initEvents",initEvents,"initEvents/I")
+    oTree.Branch("xs",xs,"xs/F")
+    sampleName[:31] = iSample
+    initEvents[0] = int(cutFlow.GetBinContent(1))
+    xs[0] = iXS
     counter = 0
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
+
+        if options.addFiles == 'True':
+            oTree.Fill()
+            counter += 1
+            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
+            continue
+
+        if options.cutLHEProduct:
+            if iChain.LHEProduct != 5:
+                continue
         if counter == int(options.nevents):
             break
         if iChain.svMass.size() == 0:
+            continue
+        if iChain.pt2.at(0) < 45:
             continue
 #         if not tool.calc(iChain):
 #             continue
@@ -321,10 +342,14 @@ def loop_one_sample(iSample, iLocation):
         if bb == -1:
             continue
 
+        category[:31] = findCategory(CSVJ1[0], CSVJ2[0])
+#         if iChain.LHEProduct != 5:
+#             continue
         #Gen Matching
         matchGenJet1Pt[0] = 0
         matchGenJet2Pt[0] = 0
         if not isData:
+            PUWeight[0] = getPUWeight(iChain.puTruth)
             if options.genMatch == 'jet':
                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenJet(j1Name, CSVJet1, j2Name, CSVJet2, iChain)
             else:
@@ -348,7 +373,8 @@ def loop_one_sample(iSample, iLocation):
             if matchGenMJJ[0] < 0:
                 matchGenMJJ[0] = 0
                 matchGenPtJJ[0] = 0
-
+        else:
+            PUWeight[0] = 1.0
         #Store values
         CSVJ1Pt[0] = CSVJet1.pt()
         CSVJ1Eta[0] = CSVJet1.eta()
@@ -359,8 +385,7 @@ def loop_one_sample(iSample, iLocation):
         CSVJ2Phi[0] = CSVJet2.phi()
         CSVJ2Mass[0] = CSVJet2.mass()
 
-        CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0] = getRegVars(j1Name, iChain)
-        CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j2Name, iChain)
+        CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0], CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j1Name, j2Name, iChain)
 
         if CSVJ1Vtx3dL[0] == -10:
             CSVJ1Vtx3dL[0] = 0
@@ -396,7 +421,6 @@ def loop_one_sample(iSample, iLocation):
 
         nElectrons[0] = iChain.nElectrons
         nMuons[0] = iChain.nMuons
-
 #         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
 #         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
 #         pZ_new2[0] = iChain.pZ/fullMass[0]
@@ -426,7 +450,6 @@ def loop_one_sample(iSample, iLocation):
         if chi2KinFit2[0] > 200:
             chi2KinFit2[0] = 200
 
-
         oTree.Fill()
         counter += 1
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
@@ -439,8 +462,9 @@ def loop_one_sample(iSample, iLocation):
 
 
 def go():
-    for iSample, iLocation in enVars.sampleLocations:
-        loop_one_sample(iSample, iLocation)
+    setupLumiReWeight()
+    for iSample, iLocation, xs in enVars.sampleLocations:
+        loop_one_sample(iSample, iLocation, float(xs))
 
 
 if __name__ == "__main__":

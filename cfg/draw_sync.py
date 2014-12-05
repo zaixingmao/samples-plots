@@ -2,36 +2,28 @@ import ROOT as r
 
 signal = '350'
 
-drawConfigs = {'script': 'drawVarsData_KS_CheckFlat2.py',
-               'sampleLocation': '/scratch/zmao/BDTStudy/8/%s/ClassApp_both_TMVARegApp_' %signal,
+drawConfigs = {'script': 'drawVarsData_KS_CheckFlat_sync.py',
+               'sampleLocation': '/scratch/zmao/forPlots/',
 #                'sampleLocation': '/scratch/zmao/newKinFit/8/350/ClassApp_both_TMVARegApp_',
                'signal': 'H%s' %signal}
 
 SamplePreFix = drawConfigs['sampleLocation']
 
-MCFileList = [('ZZ', SamplePreFix + 'ZZ_all.root', 2500, 5),
-              ('WZJetsTo2L2Q', SamplePreFix + 'WZJetsTo2L2Q_all.root', 2207, 5),
-              ('W1JetsToLNu', SamplePreFix + 'W1JetsToLNu_all.root', 5400000, r.kMagenta-9),
-              ('W2JetsToLNu', SamplePreFix + 'W2JetsToLNu_all.root', 1750000, r.kMagenta-9),
-              ('W3JetsToLNu', SamplePreFix + 'W3JetsToLNu_all.root', 519000, r.kMagenta-9),
-              ('DYJetsToLL', '/scratch/zmao/v4/DYJetsToLL_norm_all.root', 3504000, r.kGreen-7),
-#               ('DY1JetsToLL', SamplePreFix + 'DY1JetsToLL_all.root', 561000, r.kGreen-7),
-#               ('DY2JetsToLL', SamplePreFix + 'DY2JetsToLL_all.root', 181000, r.kGreen-7),
-#               ('DY3JetsToLL', SamplePreFix + 'DY3JetsToLL_all.root', 51100, r.kGreen-7),
-              ('tt_full_lep',SamplePreFix + 'tt_all.root', 26197.5, r.kBlue-5),
-              ('tt_semi_lep',SamplePreFix + 'tt_semi_all.root', 109281, r.kBlue-5),]
+MCFileList = [('Electroweak', SamplePreFix + 'Electroweak.root', r.TColor.GetColor(222, 90,106)),
+              ('DYJetsToLL', SamplePreFix + 'DYJetsToLL_all.root', r.TColor.GetColor(248,206,104)),
+              ('t#bar{t}',SamplePreFix + 'tt.root', r.TColor.GetColor(155,152,204))]
 
 singalPreFix = SamplePreFix
-signalDict = {'H260': (singalPreFix + 'H2hh260_all.root', 14.76),
-              'H270': (singalPreFix + 'H2hh270_all.root', 15.9),
-              'H280': (singalPreFix + 'H2hh280_all.root', 15.9),
-              'H290': (singalPreFix + 'H2hh290_all.root', 15.9),
-              'H300': (singalPreFix + 'H2hh300_all.root', 15.9),
-              'H310': (singalPreFix + 'H2hh310_all.root', 15.9),
-              'H320': (singalPreFix + 'H2hh320_all.root', 15.9),
-              'H330': (singalPreFix + 'H2hh330_all.root', 15.9),
-              'H340': (singalPreFix + 'H2hh340_all.root', 15.9),
-              'H350': (singalPreFix + 'H2hh350_all.root', 8.57)}
+signalDict = {'H260': (singalPreFix + 'H2hh260_all.root'),
+              'H270': (singalPreFix + 'H2hh270_all.root'),
+              'H280': (singalPreFix + 'H2hh280_all.root'),
+              'H290': (singalPreFix + 'H2hh290_all.root'),
+              'H300': (singalPreFix + 'H2hh300_all.root'),
+              'H310': (singalPreFix + 'H2hh310_all.root'),
+              'H320': (singalPreFix + 'H2hh320_all.root'),
+              'H330': (singalPreFix + 'H2hh330_all.root'),
+              'H340': (singalPreFix + 'H2hh340_all.root'),
+              'H350': (singalPreFix + 'H2hh350_all.root')}
 
 dataFile = SamplePreFix + 'dataTotal_all.root'
 
@@ -40,7 +32,7 @@ varsRange = {
 #             'fMass': (10, 200, 800, 30, 100, False, True),
 #            'nPairs': (5, 0, 5, 10000, 100, True, True, ''),
 
-#             'pt1': (20, 30, 150, 50000, 100, True, True, 'GeV'),
+#             'pt1': (20, 30, 150, 500000, 1, True, True, 'GeV'),
 #             'pt2': (20, 30, 150, 50000, 100, True, True, 'GeV'),
 #              'tightPt': (20, 0, 400, 10000, 100, True, True),
 #              'relaxPt': (20, 0, 400, 10000, 100, True, True),
@@ -54,7 +46,7 @@ varsRange = {
 #             'NBTags': (6, 0, 5, 2000, 100, True, True), 
 #             'J1CSVbtag': (12, 0, 1.2, 100000, 100, True, True),
 #             'CSVJ1Eta': (30, -3.14, 3.14, 50000, 100, True, True),
-#             'CSVJ1Pt': (20, 0, 400, 50000, 100, True, True),
+#             'CSVJ1Pt': (20, 0, 400, 500000, 1, True, True),
 #             'J2CSVbtag': (12, 0, 1.2, 100000, 100, True, True),
 #             'CSVJ2Eta': (30, -3.14, 3.14, 50000, 100, True, True),
 #             'CSVJ2Pt': (20, 0, 250, 50000, 100, True, True),
@@ -64,11 +56,11 @@ varsRange = {
 #             'J4CSVbtag':(12, 0, 1.2, 50000, 100, True, True),
 #             'J4Eta': (20, -3.14, 3.14, 10000, 100, True, True),
 #             'J4Pt': (15, 0, 250, 5000, 100, True, True),
-             'svMass': (20, 0, 300, 50000, 100, True, True),
+             'svMass': (30, 0, 450, 500000, 1, True, True),
 #             'svPt': (10, 0, 600, 50, 100, False, True),
-#              'mJJ': (20, 0, 300, 30000, 100, True, True),
+#              'mJJ': (20, 0, 300, 300000, 1, True, True),
 #              'mJJReg': (10, 50, 200, 20, 100, False, True),
-#              'met': (20, 0, 150, 5000, 100, False, True),
+#              'met': (20, 0, 150, 500000, 1, True, True),
 #             'ptJJ': (15, 0, 600, 5000, 100, True, True),
 #             'etaJJ': (20, -3.14, 3.14, 50000, 100, True, True),
 #             'dPhiMetTau1': (8, 0, 3.14, 60, 100, False, True),

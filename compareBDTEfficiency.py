@@ -24,6 +24,8 @@ fileList = [('_18.root','16 Variables + fullMassKinFit + chi2',r.kRed),
 #             ('_8.root', '%s met fMassKinFit metTauPairDPhi metJ2DPhi' %Vars,r.kOrange),
 #             ('_9.root', '%s met chi2KinFit fullMassKinFit metJ2DPhi svPt' %Vars, r.kOrange),
             ('_8_newKinFit2.root', '%s met chi2KinFit2 fullMassKinFit metJ2DPhi' %Vars2,r.kGreen+7),
+            ('_8_v3_1M.root', '%s met chi2KinFit2 fullMassKinFit metJ2DPhi' %Vars2,r.kMagenta-9),
+
 #             ('_8_newKinFit.root', '%s met chi2KinFit2 fullMassKinFit metJ2DPhi' %Vars, r.kMagenta-9),
 
 #             ('_7_newKinFit.root', '%s met chi2KinFit2 metJ2DPhi' %Vars, r.kMagenta-9),

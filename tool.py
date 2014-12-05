@@ -381,3 +381,53 @@ def addFakeTHStack(hist, stack, scale = 1.0):
             if a < b:
                 print a, b, currentValue
     return hist
+
+def nameEnDecoder(name, opt = 'encode'):
+    nameDict = {'H2hh260': 260,
+                'H2hh270': 270,
+                'H2hh280': 280,
+                'H2hh290': 290,
+                'H2hh300': 300,
+                'H2hh310': 310,
+                'H2hh320': 320,
+                'H2hh330': 330,
+                'H2hh340': 340,
+                'H2hh350': 350,
+                'H2hh500': 500,
+                'H2hh700': 700,
+                'H2hh1000': 1000,
+                'tt': 1,
+                'tt_semi': 2,
+                't': 3,
+                'tbar': 4,
+                'ZZ': 5,
+                'zzTo2L2Nu': 6,
+                'zzTo4L': 7,
+                'WJetsToLNu': 10,
+                'W1JetsToLNu': 11,
+                'W2JetsToLNu': 12,
+                'W3JetsToLNu': 13,
+                'W4JetsToLNu': 14,
+                'WZJetsTo2L2Q': 15,
+                'WW': 16,
+                'WZ3L': 17,
+                'DYJetsToLL': 20,
+                'DY1JetsToLL': 21,
+                'DY2JetsToLL': 22,
+                'DY3JetsToLL': 23,
+                'DY4JetsToLL': 24,
+                'GluGlu': 50,
+                'VBF': 60,
+                'dataOSRelax': 0
+                }
+
+    if opt == 'encode': 
+        start = name.rfind('TMVARegApp_')
+        if start != -1:
+            name = name[len(TMVARegApp_): name.find("_all")]
+        elif name.find("_all") != -1:
+            name = name[:name.find("_all")]
+        return nameDict[name]
+    else:
+        inv_nameDict = dict((nameDict[k], k) for k in nameDict)
+        return inv_nameDict[name]

@@ -29,6 +29,8 @@ def opts():
     parser.add_option("--predict", dest="predict", default = 'False', help="")
     parser.add_option("--predictPtBin", dest="predictPtBin", default = 'False', help="")
     parser.add_option("--region", dest="region", default = 'LL', help="")
+    parser.add_option("--thirdLeptonVeto", dest="thirdLeptonVeto", default = 'False', help="")
+
 
 
     options, args = parser.parse_args()
@@ -69,11 +71,13 @@ def bTagSelection(tree, bTag):
         passCut = 1
     if bTag == '2M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 >= 0.679):
         passCut = 1
-    if bTag == '1M' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 < 0.679):
+    if bTag == '1M1NonM' and (tree.CSVJ1 >= 0.679 and tree.CSVJ2 < 0.679):
+        passCut = 1
+    if bTag == '1M' and (tree.CSVJ1 > 0.679):
         passCut = 1
     return passCut
 
-def passCut(tree, bTag, region):
+def passCut(tree, bTag, region, thirdLeptonVeto):
 #     if tree.tauDecayMode1 != 10:
 #         return 0
 #         return 0
@@ -81,9 +85,11 @@ def passCut(tree, bTag, region):
 #         return 0
     isoCut = 3
     iso_count = 3
-
+    if thirdLeptonVeto == 'True':
+        if tree.nElectrons > 0 or tree.nMuons>0:
+            return 0
     if region == 'LL':
-        if  tree.iso1.at(0)>1.5  and tree.iso2.at(0)>1.5:
+        if  tree.iso1.at(0)>3  and tree.iso2.at(0)>3:
               iso_count = 2
         if  tree.iso1.at(0)>isoCut  and tree.iso2.at(0)<1.5:
               return 0
@@ -133,7 +139,7 @@ def findBin(x, nBins, xMin, xMax):
 def findPtScale(pt1, pt2, direction, region):
     scaleDictUp = {'LLTrue': 0.051, #0.352, #1.690, #0.051, #0.038, #  
                    'LL2M': 0.069, #0.352, #1.690, #0.051, #0.038, #  
-                   'LL1M': 0.053, #0.352, #1.690, #0.051, #0.038, #  
+                   'LL1M': 0.050, #0.352, #1.690, #0.051, #0.038, #  
                    'LT': 0.248, #0.221,
                    'TL': 0.229, #0.201
                   }  
@@ -181,7 +187,7 @@ def getAccuDist(hist, xMin, xMax, name):
     return accuDist
 
 
-def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, rangeMin, rangeMax, location, bTag, predict, predictPtBin, region):
+def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, rangeMin, rangeMax, location, bTag, predict, predictPtBin, region, thirdLeptonVeto):
     r.gStyle.SetOptStat(0)
     fileList = draw_cfg.MCFileList
     histList = []
@@ -217,7 +223,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     print 'Adding events from: %s ...' %dataName
     for iEntry in range(treeData.GetEntries()):
         treeData.GetEntry(iEntry)
-        select = passCut(treeData, bTag, region)
+        select = passCut(treeData, bTag, region, thirdLeptonVeto)
         if (select == 0) or (select == 1) or (select > 6):
             continue
         var_data[select-2].Fill(varsList.findVar(treeData, varName))
@@ -247,7 +253,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
         tmpTree.append(tmpFile[i].Get('eventTree'))
         for iEntry in range(tmpTree[i].GetEntries()):
             tmpTree[i].GetEntry(iEntry)
-            select = passCut(tmpTree[i], bTag, region)
+            select = passCut(tmpTree[i], bTag, region, thirdLeptonVeto)
             if (not select) or (select > 6):
                 continue
             histList[6*i+select-1].Fill(varsList.findVar(tmpTree[i], varName)*scaleMCPt, tmpTree[i].triggerEff)
@@ -307,6 +313,20 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
                 MCValue4KS += histList_4KS[6*k+1+i].GetBinContent(j+1)
             if dataValue4KS - MCValue4KS > 0:
                 QCDHistList_4KS[i].SetBinContent(j+1, dataValue4KS - MCValue4KS)
+    ss_t = QCDHistList[0].Integral()
+    ss_l = QCDHistList[2].Integral()
+
+    os_l = QCDHistList[1].Integral()
+    os_l_data = var_data[1].Integral()
+    print "QCD in SS_T: %.4f" %ss_t
+    print "QCD in SS_L: %.4f" %ss_l
+
+    print "QCD in OS_L: %.4f" %os_l
+    print "Data in OS_L:%.4f" %os_l_data
+
+    print "SF: %.4f" %(ss_t/ss_l)
+    print "SF qcd/data: %.4f" %(os_l/os_l_data)
+
 
     for i in range(4):
         QCDHistList_withScale.append(r.TH1F('QCD_withScale_%i' %(i),"", varRange[0], varRange[1], varRange[2]))
@@ -354,7 +374,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
             print 'Adding events from: %s ...' %(signalDict[signalSelection][0])
             for iEntry in range(treeSignal.GetEntries()):
                 treeSignal.GetEntry(iEntry)
-                select = passCut(treeSignal, bTag, region)
+                select = passCut(treeSignal, bTag, region, thirdLeptonVeto)
                 if (not select) or (select > 6):
                     continue
                 var_signal[select-1].Fill(varsList.findVar(treeSignal, varName), treeSignal.triggerEff)
@@ -460,7 +480,7 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     print 'KS Test 1: %.3f' %KS1
     print 'KS Test 2: %.3f' %KS2
 
-    psfile = '%s_%s_all.pdf' %(varName, fileName)
+    psfile = '%s_%s_%s.pdf' %(varName, fileName, signalSelection)
     c = r.TCanvas("c","Test", 800, 900)
     #ps = r.TPDF(psfile,112)
     c.Divide(2,3)
@@ -479,11 +499,14 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
     for k in range(6):
         c.cd(k+1)
         r.gPad.SetTicky()
-        if logY == 'True':
+        if k > 1 and logY == 'True':
             r.gPad.SetLogy()
         signSelection, iso = conditions(k+1)
         var_background[k].SetTitle('%s %s Events %s (%.1f fb^{-1}); %s; events / bin' %(signSelection, iso, titleName, Lumi,varName))
-        var_background[k].SetMaximum(max)
+        if k < 2:
+            var_background[k].SetMaximum(250)
+        else:
+            var_background[k].SetMaximum(max)
         var_background[k].SetMinimum(0.01)
         var_background[k].Draw()
         if predict == 'True' and k == 0:
@@ -586,5 +609,5 @@ def getHistos(varName, signalSelection, logY, sigBoost, nbins, useData, max, ran
 op = opts()
 if op.varName != 'test':
     getHistos(op.varName, op.signal, op.logy, float(op.sigBoost), int(op.nbins),
-           op.useData, float(op.max), float(op.rangeMin), float(op.rangeMax), op.location, op.bTag, op.predict, 'False', op.region)
+           op.useData, float(op.max), float(op.rangeMin), float(op.rangeMax), op.location, op.bTag, op.predict, 'False', op.region, op.thirdLeptonVeto)
 
