@@ -1,3 +1,5 @@
+# from https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions12/8TeV/Reprocessing/
+
 __fileName = "Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt"
 __certDict = eval(open(__fileName).readline())
 
