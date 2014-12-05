@@ -7,16 +7,23 @@
 
 
 #preFix0 = '/scratch/zmao/relaxed_regression4/'
-preFix0 = '/scratch/zmao/v4/'
-# preFix0 = '/scratch/zmao/jetPt20/'
-preFixTools = '/scratch/zmao/forPlots/'
+# preFix0 = '/scratch/zmao/v4/'
+preFixTools = '/nfs_scratch/zmao/fromLogin05/forPlots/'
 
 # preFix0 = '/scratch/zmao/BDTStudy/7_noDPhiMetJ2_mJJ/'
+scaleOption = ''
+# scaleOption = 'tauUp'
+scaleOption = 'tauDown'
+# scaleOption = 'jetUp'
+# scaleOption = 'jetDown'
+
+preFix0 = '/nfs_scratch/zmao/fromLogin05/forPlots/%s/' %scaleOption
 
 
-iso = 1.5
+iso = 1.0
 postFix = ''
-bTag = '2M'
+bTag = '1M'
+relaxed = 'INFN_relaxed'
 thirdLeptonVeto = True
 
 scaleFactors = {'bTag': 0.051,
@@ -32,59 +39,30 @@ if thirdLeptonVeto:
 
 WScale = 1.193
 
-sampleConfigs =[('H2hh260', 'H2hh260%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-
-                ('H2hh270', 'H2hh270%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-                ('H2hh280', 'H2hh280%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-                ('H2hh290', 'H2hh290%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-
-                ("H2hh300", "H2hh300%s_all.root" %postFix, 'OStight%s' %bTag, 15.9),
-
-                ('H2hh310', 'H2hh310%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-                ('H2hh320', 'H2hh320%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-                ('H2hh330', 'H2hh330%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-                ('H2hh340', 'H2hh340%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-
-                ('H2hh350', 'H2hh350%s_all.root' %postFix, 'OStight%s' %bTag, 8.57),
-
-#                 ('H2hh500', 'H2hh500_all.root', 'OStight%s' %bTag, 8.57),
-#                 ('H2hh700', 'H2hh700_all.root', 'OStight%s' %bTag, 8.57),
-#                 ('H2hh1000', 'H2hh1000_all.root', 'OStight%s' %bTag, 8.57),
-
-                ('ZZ','ZZ_all.root', 'OStight%s' %bTag, 2500),
-                ("tt_full","tt%s_all.root" %postFix, 'OStight%s' %bTag, 26197.5),
-                ("tt_semi","tt_semi%s_all.root" %postFix, 'OStight%s' %bTag, 109281),
-                ('WZJetsTo2L2Q', 'WZJetsTo2L2Q_all.root', 'OStight%s' %bTag, 2207),
-                ("DYJetsToLL","DYJetsToLL%s_all.root" %postFix, 'OStight%s' %bTag, 3504000),
-#                 ("DY1JetsToLL","DY1JetsToLL_all.root", 'OStight%s' %bTag, 561000),
-#                 ('DY2JetsToLL','DY2JetsToLL_all.root', 'OStight%s' %bTag, 181000),
-#                 ('DY3JetsToLL','DY3JetsToLL_all.root', 'OStight%s' %bTag, 51100),
-                ('W1JetsToLNu','W1JetsToLNu_all.root', 'OStight%s' %bTag, 5400000*WScale),
-                ('W2JetsToLNu','W2JetsToLNu_all.root', 'OStight%s' %bTag, 1750000*WScale),
-                ('W3JetsToLNu','W3JetsToLNu_all.root', 'OStight%s' %bTag, 519000*WScale),
-                ('dataOSRelax','dataTotal_all.root', 'OSrelaxed%s' %bTag, scaleFactors[bTag])]
-
-oFileName = 'combined%s_%s_iso%.1f.root' %(postFix, bTag, iso)
-trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
-
-# sampleConfigsTools =[('H2hh260', 'H2hh260_all.root', 'OStight%s' %bTag),
-#                 ('H2hh270', 'H2hh270_all.root', 'OStight%s' %bTag),
-#                 ('H2hh280', 'H2hh280_all.root', 'OStight%s' %bTag, 14.76),
-#                 ('H2hh290', 'H2hh290_all.root', 'OStight%s' %bTag, 14.76),
-#                 ("H2hh300", "H2hh300_all.root", 'OStight%s' %bTag, 15.9),
-#                 ('H2hh310', 'H2hh310_all.root', 'OStight%s' %bTag, 14.76),
-#                 ('H2hh320', 'H2hh320_all.root', 'OStight%s' %bTag, 14.76),
-#                 ('H2hh330', 'H2hh330_all.root', 'OStight%s' %bTag, 14.76),
-#                 ('H2hh340', 'H2hh340_all.root', 'OStight%s' %bTag, 14.76),
-#                 ('H2hh350', 'H2hh350_all.root', 'OStight%s' %bTag, 8.57),
+# sampleConfigs =[('H2hh260', 'H2hh260%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+# 
+#                 ('H2hh270', 'H2hh270%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+#                 ('H2hh280', 'H2hh280%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+#                 ('H2hh290', 'H2hh290%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+# 
+#                 ("H2hh300", "H2hh300%s_all.root" %postFix, 'OStight%s' %bTag, 15.9),
+# 
+#                 ('H2hh310', 'H2hh310%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+#                 ('H2hh320', 'H2hh320%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+#                 ('H2hh330', 'H2hh330%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+#                 ('H2hh340', 'H2hh340%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
+# 
+#                 ('H2hh350', 'H2hh350%s_all.root' %postFix, 'OStight%s' %bTag, 8.57),
+# 
 # #                 ('H2hh500', 'H2hh500_all.root', 'OStight%s' %bTag, 8.57),
 # #                 ('H2hh700', 'H2hh700_all.root', 'OStight%s' %bTag, 8.57),
 # #                 ('H2hh1000', 'H2hh1000_all.root', 'OStight%s' %bTag, 8.57),
+# 
 #                 ('ZZ','ZZ_all.root', 'OStight%s' %bTag, 2500),
-#                 ("tt_full","tt_all.root" , 'OStight%s' %bTag, 26197.5),
-#                 ("tt_semi","tt_semi_all.root", 'OStight%s' %bTag, 109281),
+#                 ("tt_full","tt%s_all.root" %postFix, 'OStight%s' %bTag, 26197.5),
+#                 ("tt_semi","tt_semi%s_all.root" %postFix, 'OStight%s' %bTag, 109281),
 #                 ('WZJetsTo2L2Q', 'WZJetsTo2L2Q_all.root', 'OStight%s' %bTag, 2207),
-#                 ("DYJetsToLL","DYJetsToLL_all.root", 'OStight%s' %bTag, 3504000),
+#                 ("DYJetsToLL","DYJetsToLL%s_all.root" %postFix, 'OStight%s' %bTag, 3504000),
 # #                 ("DY1JetsToLL","DY1JetsToLL_all.root", 'OStight%s' %bTag, 561000),
 # #                 ('DY2JetsToLL','DY2JetsToLL_all.root', 'OStight%s' %bTag, 181000),
 # #                 ('DY3JetsToLL','DY3JetsToLL_all.root', 'OStight%s' %bTag, 51100),
@@ -93,9 +71,20 @@ trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 #                 ('W3JetsToLNu','W3JetsToLNu_all.root', 'OStight%s' %bTag, 519000*WScale),
 #                 ('dataOSRelax','dataTotal_all.root', 'OSrelaxed%s' %bTag, scaleFactors[bTag])]
 
+sampleConfigs =[('signals', 'signal.root', 'OStight%s' %bTag),
+                ('Electroweak','Electroweak.root', 'OStight%s' %bTag),
+                ("DYJetsToLL","DYJetsToLL_all.root", 'OStight%s' %bTag),
+                ("t#bar{t}","tt_withHad.root", 'OStight%s' %bTag),
+                ('data','dataTotal_all.root', 'OSrelaxed%s' %bTag)]
+
+oFileName = 'combined%s_%s_iso%.1f_%s_%s_newCat_withHad.root' %(postFix, bTag, iso, relaxed, scaleOption)
+trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
+
+
+
 sampleConfigsTools =[('Electroweak', 'Electroweak.root'),
                      ('DYJetsToLL', 'DYJetsToLL_all.root'),
-                     ('t#bar{t}','tt.root'),
+                     ('t#bar{t}','tt_withHad.root'),
                      ('data','dataTotal_all.root')]
 
 

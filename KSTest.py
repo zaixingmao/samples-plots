@@ -99,9 +99,11 @@ def KSTest(ifile, ofile, name):
 
     c.Print('%s.pdf' %ofile)
 
-massPoints = ['260','270','280','290','300','310','320','330','340','350']
-nTreesList = ['160', '170', '180', '190', '200']#['50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150']
+# massPoints = ['260','270','280','290','300','310','320','330','340','350']
+massPoints = ['260','300','350']
+
+nTreesList = ['150']
 for nTrees in nTreesList:
     for iMass in massPoints:
-        postFix = '_8_n%s_1M' %nTrees
-        KSTest('/scratch/zmao/TMVA/new3/TMVA%s%s.root' %(iMass,postFix), '/scratch/zmao/TMVA/pdf/TMVA%s%s' %(iMass,postFix), 'H2hh%s_n%s' %(iMass, nTrees))
+        postFix = '_7_n%s_mJJ_1M' %nTrees
+        KSTest('/scratch/zmao/TMVA/newMethod/TMVA%s%s.root' %(iMass,postFix), '/scratch/zmao/TMVA/pdf/TMVA%s%s' %(iMass,postFix), 'H2hh%s_n%s' %(iMass, nTrees))
