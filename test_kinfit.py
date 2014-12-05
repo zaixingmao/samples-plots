@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 import os
+import subprocess
 import ROOT as r
 from kinfit import setup, fit
 
@@ -50,10 +51,11 @@ def select(tree):
     if tree.CSVJ2 < 0.244:
         return
 
-    #if not (90.0 < tree.svMass.at(0) < 150.0):
-    #    continue
-    #if not (90.0 < tree.mJJ < 150.0):
-    #    continue
+    if not (90.0 < tree.svMass.at(0) < 150.0):
+        return
+
+    if not (70.0 < tree.mJJ < 150.0):
+        return
 
     return True
 
@@ -237,6 +239,12 @@ def pdf(fileName="", histos={}):
     can.Print(fileName+"]")
 
 
+def output(command):
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    return {"stdout": stdout, "stderr": stderr, "returncode": p.returncode}
+
+
 if __name__ == "__main__":
     r.gROOT.SetBatch(True)
     r.gErrorIgnoreLevel = 2000
@@ -256,4 +264,8 @@ if __name__ == "__main__":
                                   ],
                        #nEventsMax=200,
                        )
-    pdf(fileName="kinfit.pdf", histos=histos)
+
+    tag = output("cd HHKinFit && git status | head -1")["stdout"]
+    tag = tag.replace("\n", "")
+    tag = tag.replace("# HEAD detached at ", "")
+    pdf(fileName="kinfit_%s.pdf" % tag, histos=histos)
