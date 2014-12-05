@@ -1,6 +1,7 @@
 __fileName = "Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt"
 __certDict = eval(open(__fileName).readline())
 
+
 def passes(tree, isData):
     if not isData:
         return True
@@ -36,7 +37,6 @@ def __test():
 
     tree.LUMI = 350
     assert passes(tree, True)
-
 
 
 if __name__ == "__main__":
