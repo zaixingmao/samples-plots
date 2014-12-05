@@ -111,16 +111,14 @@ def passCut(tree, bTag, region, thirdLeptonVeto, relaxedRegionOption = "relaxed"
         isoMax = 4.0
         isoCut = 1.0
         isoTight = 1.0
-    elif "very" in relaxedRegionOption:
-        isoMax = 10
+    if "very" in relaxedRegionOption:
         isoCut = 1.5
     if thirdLeptonVeto == 'True':
         if tree.nElectrons > 0 or tree.nMuons>0:
             return 0
     if bTagSelection(tree, bTag) and abs(tree.eta1.at(0))<2.1 and abs(tree.eta2.at(0))<2.1:
         sign_count = 0
-        maxIso = isoMax
-        if  tree.iso1.at(0) > maxIso  or tree.iso2.at(0) > maxIso:
+        if  tree.iso1.at(0) > isoMax  or tree.iso2.at(0) > isoMax:
             return 0
         elif tree.iso1.at(0)>isoCut and tree.iso2.at(0)>isoCut:
             iso_count = 1
@@ -148,8 +146,8 @@ def findBin(x, nBins, xMin, xMax):
         return bin
 
 def dontUnblind(tree):
-#     if 90 < tree.svMass.at(0) < 150:
-#         return True
+    if 90 < tree.svMass.at(0) < 150:
+        return True
 #     if 70 < tree.mJJ < 150:
 #         return True
 #     if tree.BDT > 0:
