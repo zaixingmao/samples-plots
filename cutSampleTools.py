@@ -4,6 +4,7 @@ from operator import itemgetter
 import varsList
 import FWCore.ParameterSet.Config as cms
 import math
+import os
 
 r.gSystem.Load("libFWCoreFWLite.so")
 r.AutoLibraryLoader.enable()
@@ -22,10 +23,11 @@ def findCategory(csv1, csv2):
         return '1M1NonM'
 
 def setupLumiReWeight():
-    location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/pileUp/"
+    location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
+#     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
     reWeight = r.edm.LumiReWeighting("%sMC_Summer12_PU_S10-600bins.root" %location,"%sData_Pileup_2012_ReReco-600bins.root" %location,"pileup","pileup")
-
+    
 def getPUWeight(npu = 0):
     return reWeight.weight(npu)
 
