@@ -20,7 +20,31 @@ def calcSysUnc(sf, num, denom, delta_num = 0, delta_denom = 0):
         delta_denom = math.sqrt(denom)
     return sf*math.sqrt((delta_num/num)**2 + (delta_denom/denom)**2)
 
+pair_0_counter = 0
+pairNot_0_counter = 0
+
+def findRightPair(tree, option):
+    if option == 'iso':
+        isoMin = 999.9
+        bestPair = 0
+        for iPair in range(len(tree.pt1)):
+            if (tree.iso1.at(iPair) + tree.iso2.at(iPair)) < isoMin:
+                isoMin = tree.iso1.at(iPair) + tree.iso2.at(iPair)
+                bestPair = iPair
+        return iPair
+    else:
+        return 0
+
 def passCut(tree, option, iso):
+    global pair_0_counter
+    global pairNot_0_counter
+
+    if findRightPair(tree, 'iso') == 0:
+        pair_0_counter += 1
+    else:
+        pairNot_0_counter += 1
+
+
     if tree.pt1.at(0) < 45 or tree.pt2.at(0) < 45:
         return 0
     passIso = 0
@@ -360,3 +384,6 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
 
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
+calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'INFN_tight','INFN_relaxed',True, True)
+print pair_0_counter
+print pairNot_0_counter
