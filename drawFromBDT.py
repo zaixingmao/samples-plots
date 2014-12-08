@@ -33,13 +33,13 @@ def getBinWdith(var, bins):
     return 1
 def varFromName(tree, varName):
     varsDict = {'svMass': tree.svMass,
-                'BDT': tree.BDT,
+#                 'BDT': tree.BDT,
                 }
     return varsDict[varName]
 
 def varFromName1(tree, varName):
     varsDict = {'svMass': tree.svMass1,
-                'BDT': tree.BDT,
+#                 'BDT': tree.BDT,
                 }
     return varsDict[varName]
 
@@ -57,6 +57,8 @@ def findBKGCategory(sampleName, mass):
             return None
         else:
             return 'signal'
+    elif 'MCOSRelax' in sampleName:
+        return 'MCOSRelax'
     else:
         if sampleName not in sampleNameList['Electroweak']:
             sampleNameList['Electroweak'].append(sampleName)
@@ -114,6 +116,9 @@ def buildHistDicts(bins1, bins2, name = ''):
             histDict1[ikey].SetFillColor(defaultColor[ikey])
             histDict2[ikey].SetFillColor(defaultColor[ikey])
 
+    histDict1['MCOSRelax'] = r.TH1F('MCOSRelax1M%s' %name, "", len(bins1)-1, bins1)
+    histDict2['MCOSRelax'] = r.TH1F('MCOSRelax2M%s' %name, "", len(bins2)-1, bins2)
+
     histDict1['signal'].SetLineStyle(2)
     histDict2['signal'].SetLineStyle(2)
     histDict1['signal'].SetLineWidth(2)
@@ -152,11 +157,7 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     predictTree = predictFile.Get('eventTree')
     observedTree = observedFile.Get('eventTree')
 
-    predictSF1MHist = predictFile.Get('L_to_T_1M')
-    predictSF2MHist = predictFile.Get('L_to_T_2M')
 
-    SF_1M = predictSF1MHist.GetBinContent(1)
-    SF_2M = predictSF2MHist.GetBinContent(1)
     predictTotal = predictTree.GetEntries()
     observedTotal = observedTree.GetEntries()
     signalName = ''
@@ -170,21 +171,51 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
         if sampleCat == None:
             continue
         if sampleCat == 'QCD' and 'OSRelax' in predictTree.sampleName:
-            weight1 = SF_1M
-            weight2 = SF_2M
+            weight1 = 1.0
+            weight2 = 1.0
         else:
             if sampleCat == 'signal':
                 signalName = predictTree.sampleName
             xs = predictTree.xs
             weight1 = (xs/predictTree.initEvents)*predictTree.triggerEff*predictTree.PUWeight*Lumi
             weight2 = weight1
-        if predictTree.NBTags == 1:
+        if predictTree.Category == '1M':
             histDict1M[sampleCat].Fill(varFromName(predictTree, varName), weight1)
             histDict1M_plot[sampleCat].Fill(varFromName(predictTree, varName), weight1)
-        elif predictTree.NBTags > 1:
+        elif predictTree.Category == '2M':
             histDict2M[sampleCat].Fill(varFromName(predictTree, varName), weight2)
             histDict2M_plot[sampleCat].Fill(varFromName(predictTree, varName), weight2)
-            
+
+    #Set QCD
+    predictSF1MHist_weight = predictFile.Get('L_to_T_1M')
+    predictSF1MHist = predictFile.Get('L_to_T_SF_1M')
+
+    predictSF2MHist_weight = predictFile.Get('L_to_T_2M')
+    predictSF2MHist = predictFile.Get('L_to_T_SF_2M')
+
+    SF_1M = predictSF1MHist.GetBinContent(1)
+    SF_2M = predictSF2MHist.GetBinContent(1)
+    weight_1M = predictSF1MHist_weight.GetBinContent(1)
+    weight_2M = predictSF2MHist_weight.GetBinContent(1)
+    print ''
+    print SF_1M, SF_2M
+    print weight_1M, weight_2M
+    print (histDict1M['QCD'].Integral(0, len(bins1))-histDict1M['MCOSRelax'].Integral(0, len(bins1)))*SF_1M, (histDict2M['QCD'].Integral(0, len(bins2))-histDict2M['MCOSRelax'].Integral(0, len(bins2)))*SF_2M
+    print histDict1M['QCD'].Integral(0, len(bins1))*weight_1M, histDict2M['QCD'].Integral(0, len(bins2))*weight_2M
+    print '1M: ', histDict1M['QCD'].Integral(0, len(bins1)), histDict1M['MCOSRelax'].Integral(0, len(bins1))
+    print '2M: ', histDict2M['QCD'].Integral(0, len(bins2)), histDict2M['MCOSRelax'].Integral(0, len(bins2))
+
+    histDict1M['QCD'].Add(histDict1M['MCOSRelax'],-1.0)
+    histDict1M['QCD'].Scale(SF_1M)
+    histDict2M['QCD'].Add(histDict2M['MCOSRelax'],-1.0)
+    histDict2M['QCD'].Scale(SF_2M)
+
+    histDict1M_plot['QCD'].Add(histDict1M_plot['MCOSRelax'],-1.0)
+    histDict1M_plot['QCD'].Scale(SF_1M)
+    histDict2M_plot['QCD'].Add(histDict2M_plot['MCOSRelax'],-1.0)
+    histDict2M_plot['QCD'].Scale(SF_2M)
+
+
     bkgStack1M = buildStackFromDict(histDict1M_plot, '1M', unit, option)
     bkgStack2M = buildStackFromDict(histDict2M_plot, '2M', unit, option)
     
@@ -274,9 +305,9 @@ varsDict = draw_cfg.varsRange
 scaleWeight_1M = 1.0
 scaleWeight_2M = 1.0
 
-masses = [str(int(x)) for x in range(260, 360, 10)]
+# masses = [str(int(x)) for x in range(260, 360, 10)]
 
-# masses = ['']
+masses = ['']
 
 for iMass in masses:
     predictLocation = '%s%s%s' %(draw_cfg.predictLocation_front, iMass, draw_cfg.predictLocation_back)
