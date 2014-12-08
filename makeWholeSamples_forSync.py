@@ -25,13 +25,14 @@ def getCorrectBDT(iTree, massPoint):
     return bdts[massPoint]
 scaleType = ''
 relaxed = 'INFN_relaxed'
+tail = 'newMethod_withMCOSRelax'
 iso = makeWholeSample_cfg.iso
-inputFiles = [('1M', 'combined_1M_iso%.1f_%s_%s_newCat_withHad.root' %(iso, relaxed, scaleType)),
-              ('2M', 'combined_2M_iso%.1f_%s_%s_newCat_withHad.root' %(iso, relaxed, scaleType)),
+inputFiles = [('1M', 'combined_1M_iso%.1f_%s_%s_%s.root' %(iso, relaxed, scaleType, tail)),
+              ('2M', 'combined_2M_iso%.1f_%s_%s_%s.root' %(iso, relaxed, scaleType, tail)),
 ]
 
 
-oFileName = 'combined_%.1f_%s_%s_newCat_withHad.root'  %(iso, relaxed, scaleType)
+oFileName = 'combined_%.1f_%s_%s_%s.root'  %(iso, relaxed, scaleType, tail)
 oFile = r.TFile(oFileName, 'RECREATE')
 oTree = r.TTree('eventTree', '')
 
@@ -84,12 +85,15 @@ MC_Data_svMass = []
 # initEvents = []
 finalEventsWithXS = []
 L2Ts = []
+L2T_SFs = []
 
 for ifile in range(len(inputFiles)):
     files.append(r.TFile(inputFiles[ifile][1]))
     trees.append(files[ifile].Get('eventTree'))
     L2Ts.append(files[ifile].Get('L2T'))
     L2Ts[ifile].SetName('L_to_T_%s' %inputFiles[ifile][0])
+    L2T_SFs.append(files[ifile].Get('L2T_SF'))
+    L2T_SFs[ifile].SetName('L_to_T_SF_%s' %inputFiles[ifile][0])
 #     MC_Data_svMass.append(files[ifile].Get('MC_Data_svMass'))
 #     MC_Data_svMass[ifile].SetName('MC_Data_svMass_%s' %inputFiles[ifile][0])
     finalEventsWithXS.append(files[ifile].Get('finalEventsWithXS'))
@@ -136,6 +140,8 @@ for i in range(len(inputFiles)):
 #     MC_Data_svMass[i].Write()
     finalEventsWithXS[i].Write()
     L2Ts[i].Write()
+    L2T_SFs[i].Write()
+
 oFile.Close()
 
 print 'Combined event saved at: %s' %oFileName

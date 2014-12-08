@@ -13,7 +13,7 @@ preFixTools = '/nfs_scratch/zmao/fromLogin05/forPlots/'
 # preFix0 = '/scratch/zmao/BDTStudy/7_noDPhiMetJ2_mJJ/'
 scaleOption = ''
 # scaleOption = 'tauUp'
-scaleOption = 'tauDown'
+# scaleOption = 'tauDown'
 # scaleOption = 'jetUp'
 # scaleOption = 'jetDown'
 
@@ -70,21 +70,31 @@ WScale = 1.193
 #                 ('W2JetsToLNu','W2JetsToLNu_all.root', 'OStight%s' %bTag, 1750000*WScale),
 #                 ('W3JetsToLNu','W3JetsToLNu_all.root', 'OStight%s' %bTag, 519000*WScale),
 #                 ('dataOSRelax','dataTotal_all.root', 'OSrelaxed%s' %bTag, scaleFactors[bTag])]
+data_bTag = '1L'
+if bTag == '2M':
+    data_bTag = '2L'
 
 sampleConfigs =[('signals', 'signal.root', 'OStight%s' %bTag),
-                ('Electroweak','Electroweak.root', 'OStight%s' %bTag),
+                ('Electroweak','Electroweak_new.root', 'OStight%s' %bTag),
                 ("DYJetsToLL","DYJetsToLL_all.root", 'OStight%s' %bTag),
-                ("t#bar{t}","tt_withHad.root", 'OStight%s' %bTag),
-                ('data','dataTotal_all.root', 'OSrelaxed%s' %bTag)]
+                ("t#bar{t}","tt_new.root", 'OStight%s' %bTag),
 
-oFileName = 'combined%s_%s_iso%.1f_%s_%s_newCat_withHad.root' %(postFix, bTag, iso, relaxed, scaleOption)
+                ('MCOSRelax','Electroweak_new.root', 'OSrelaxed%s' %data_bTag),
+                ("MCOSRelax","DYJetsToLL_all.root", 'OSrelaxed%s' %data_bTag),
+                ("MCOSRelax","tt_new.root", 'OSrelaxed%s' %data_bTag),
+                ('data','dataTotal_all.root', 'OSrelaxed%s' %data_bTag)]
+
+oFileName = 'combined%s_%s_iso%.1f_%s_%s_newMethod_withMCOSRelax.root' %(postFix, bTag, iso, relaxed, scaleOption)
 trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 
-
-
-sampleConfigsTools =[('Electroweak', 'Electroweak.root'),
+sampleConfigsTools =[('Electroweak', 'Electroweak_new.root'),
                      ('DYJetsToLL', 'DYJetsToLL_all.root'),
-                     ('t#bar{t}','tt_withHad.root'),
+                     ('t#bar{t}','tt_new.root'),
                      ('data','dataTotal_all.root')]
+
+# sampleConfigsTools =[('Electroweak', 'Electroweak.root'),
+#                      ('DYJetsToLL', 'DYJetsToLL_all.root'),
+#                      ('t#bar{t}','tt_withHad.root'),
+#                      ('data','dataTotal_all.root')]
 
 
