@@ -7,7 +7,7 @@ import optparse
 import os
 from array import array
 import makeWholeSample_cfg
-import makeWholeTools
+import makeWholeTools2
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 import cutSampleTools 
 
@@ -74,6 +74,7 @@ def findGenMatch(dR1_tau, dR2_tau, dR1_b, dR2_b, dR1_ele, dR2_ele, dR1_mu, dR2_m
 def passCut(tree, option, iso, relaxed):
     isoCut = 3.0
     isoMax = 10.0
+    CSVL = 0.244
     if relaxed == 'very_relaxed':
         isoCut = 1.5
     if 'INFN' in relaxed:
@@ -91,6 +92,11 @@ def passCut(tree, option, iso, relaxed):
         return 0
     if '1M' in option and (tree.NBTags != 1):
         return 0
+    if '2L' in option and (tree.CSVJ2 < CSVL):
+        return 0
+    if '1L' in option and ((tree.CSVJ1 < CSVL) or (tree.CSVJ2 > CSVL)):
+        return 0
+
     passIso = 0
     passSign = 0
     if (tree.iso1.at(0) > isoMax) or (tree.iso2.at(0) > isoMax):
@@ -145,6 +151,9 @@ fMassKinFit = array('f', [0.])
 chi2KinFit = array('f', [0.])
 chi2KinFit2 = array('f', [0.])
 PUWeight = array('f', [0.])
+iso1 = array('f', [0.])
+iso2 = array('f', [0.])
+
 CSVJ2 = array('f', [0.])
 NBTags = array('i', [0])
 
@@ -158,6 +167,7 @@ xsValues = {}
 initEventsValues = {}
 eventsSaved = {}
 L2T = r.TH1F('L2T', '', 1, 0, 1)
+L2T_SF = r.TH1F('L2T_SF', '', 1, 0, 1)
 
 
 svMassRange = [20, 0, 400]
@@ -175,7 +185,8 @@ oTree.Branch("NBTags", NBTags, "NBTags/I")
 
 oTree.Branch("svMass", svMass, "svMass/F")
 oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
-
+oTree.Branch("iso1", iso1, "iso1/F")
+oTree.Branch("iso2", iso2, "iso2/F")
 oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
 oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
 
@@ -199,7 +210,10 @@ for indexFile in range(nSamples):
         region = '1M'
     elif '2M' in option:
         region = '2M'
-
+    elif '1L' in option:
+        region = '1L'
+    elif '2L' in option:
+        region = '2L'
 
     for i in range(0, total):
         tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
@@ -215,6 +229,8 @@ for indexFile in range(nSamples):
         chi2KinFit[0] = iTree.chi2KinFit
         chi2KinFit2[0] = iTree.chi2KinFit2
         svMass[0] = iTree.svMass.at(0)
+        iso1[0] = iTree.iso1.at(0)
+        iso2[0] = iTree.iso2.at(0)
         CSVJ2[0] = iTree.CSVJ2
         NBTags[0] = int(iTree.NBTags)
         triggerEff[0] = iTree.triggerEff
@@ -230,6 +246,8 @@ for indexFile in range(nSamples):
             initEvents[0] = iTree.initEvents
             xs[0] = iTree.xs
             sampleName[:21] = tmpSampleName
+            if name == 'MCOSRelax':
+                sampleName[:21] = 'MCOSRelax'
         if tmpSampleName not in initEventsValues.keys():
             if 'data' not in tmpSampleName:
                 initEventsValues[tmpSampleName] = iTree.initEvents
@@ -246,7 +264,7 @@ for indexFile in range(nSamples):
             eventsSavedCounter += 1
         else:
             eventsSaved[tmpSampleName] += triggerEff[0]
-            eventsSavedCounter += triggerEff[0]*xsValues[tmpSampleName]/initEventsValues[tmpSampleName]*lumi
+            eventsSavedCounter += triggerEff[0]*xsValues[tmpSampleName]/initEventsValues[tmpSampleName]*PUWeight[0]*lumi
     print ' --- Events Saved: %.2f' %(eventsSavedCounter)
 
 
@@ -263,12 +281,20 @@ for iKey in initEventsValues.keys():
         finalEventsWithXS.Fill(iKey, eventsSaved[iKey]*xsValues[iKey]/initEventsValues[iKey]*lumi)
 
 
-weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', makeWholeSample_cfg.relaxed, True, True, iso)
+# weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', makeWholeSample_cfg.relaxed, True, True, iso)
+weights = makeWholeTools2.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SF12', 'tight', 'relax', True, 1.0)
 
-if region == "2M":
-    L2T.Fill(0.5, weights[2])
-elif region == "1M":
+print weights
+
+if region == "1M" or region == "1L":
+    L2T.Fill(0.5, weights[0])
+    L2T_SF.Fill(0.5, weights[2])
+
+elif region == "2M" or region == "2L":
     L2T.Fill(0.5, weights[1])
+    L2T_SF.Fill(0.5, weights[3])
+
+
 
 
 oFile.cd()
@@ -276,6 +302,7 @@ oFile.cd()
 initEvents.Write()
 xsHist.Write()
 L2T.Write()
+L2T_SF.Write()
 finalEventsWithXS.Write()
 oTree.Write()
 oFile.Close()
