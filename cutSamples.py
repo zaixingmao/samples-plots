@@ -10,6 +10,7 @@ import optparse
 import kinfit
 from cutSampleTools import *
 import trigger
+import data_certification
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
@@ -309,7 +310,8 @@ def loop_one_sample(iSample, iLocation, iXS):
             counter += 1
             tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
             continue
-
+        if not data_certification.passes(iChain, isData):
+            continue
         if options.cutLHEProduct:
             if iChain.LHEProduct != 5:
                 continue
