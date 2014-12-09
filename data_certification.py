@@ -44,3 +44,22 @@ def __test():
 if __name__ == "__main__":
     # print __certDict
     __test()
+    class vessel(object):
+        pass
+    tree = vessel()
+
+    tree.RUN = 190702
+    tree.LUMI = 148
+    print passes(tree, True)
+    tree.RUN = 190679
+    tree.LUMI = 18
+    print passes(tree, True)
+    tree.RUN = 190705
+    tree.LUMI = 218
+    print passes(tree, True)
+    tree.RUN = 190703
+    tree.LUMI = 203
+    print passes(tree, True)
+    tree.RUN = 190705
+    tree.LUMI = 127
+    print passes(tree, True)
