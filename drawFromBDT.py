@@ -205,16 +205,20 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     print '1M: ', histDict1M['QCD'].Integral(0, len(bins1)), histDict1M['MCOSRelax'].Integral(0, len(bins1))
     print '2M: ', histDict2M['QCD'].Integral(0, len(bins2)), histDict2M['MCOSRelax'].Integral(0, len(bins2))
 
-    histDict1M['QCD'].Add(histDict1M['MCOSRelax'],-1.0)
-    histDict1M['QCD'].Scale(SF_1M)
-    histDict2M['QCD'].Add(histDict2M['MCOSRelax'],-1.0)
-    histDict2M['QCD'].Scale(SF_2M)
+#     histDict1M['QCD'].Add(histDict1M['MCOSRelax'],-1.0)
+#     histDict1M['QCD'].Scale(SF_1M)
+#     histDict2M['QCD'].Add(histDict2M['MCOSRelax'],-1.0)
+#     histDict2M['QCD'].Scale(SF_2M)
 
-    histDict1M_plot['QCD'].Add(histDict1M_plot['MCOSRelax'],-1.0)
-    histDict1M_plot['QCD'].Scale(SF_1M)
-    histDict2M_plot['QCD'].Add(histDict2M_plot['MCOSRelax'],-1.0)
-    histDict2M_plot['QCD'].Scale(SF_2M)
+#     histDict1M_plot['QCD'].Add(histDict1M_plot['MCOSRelax'],-1.0)
+#     histDict1M_plot['QCD'].Scale(SF_1M)
+#     histDict2M_plot['QCD'].Add(histDict2M_plot['MCOSRelax'],-1.0)
+#     histDict2M_plot['QCD'].Scale(SF_2M)
 
+    histDict1M['QCD'].Scale(weight_1M)
+    histDict2M['QCD'].Scale(weight_2M)
+    histDict1M_plot['QCD'].Scale(weight_1M)
+    histDict2M_plot['QCD'].Scale(weight_2M)
 
     bkgStack1M = buildStackFromDict(histDict1M_plot, '1M', unit, option)
     bkgStack2M = buildStackFromDict(histDict2M_plot, '2M', unit, option)
