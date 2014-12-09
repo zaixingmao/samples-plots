@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import ROOT as r
+import tool
 from array import array
 from operator import itemgetter
 import math
@@ -82,6 +84,14 @@ def findBestPair(iTree):
                 bestPair = iPair
     return bestPair
 
+def passCut(iso1, iso2):
+    if (iso1 < 1.0) and (1.0 < iso2 < 4.0):
+        return 1
+    elif (iso2 < 1.0) and (1.0 < iso1 < 4.0):
+        return 1
+    else:
+        return 0
+
 def makeSyncNtuples(iLocation, cut, treepath):
 
     iTree = r.TChain(treepath)
@@ -91,12 +101,12 @@ def makeSyncNtuples(iLocation, cut, treepath):
 
     oFileName = iLocation[iLocation.rfind("/")+1:iLocation.find("-SUB-TT")]
 
-    oFile = r.TFile("%s.root" %oFileName,"recreate")
+    oFile = r.TFile("/nfs_scratch/zmao/fromLogin05/dataSync/%s.root" %oFileName,"recreate")
     oTree = r.TTree('TauCheck', 'TauCheck')
 
     run  = array('i', [0])
     lumi = array('i', [0])
-    evt = array('i', [0])
+    evt = array('I', [0])
     nTauPairs  = array('i', [0])
 
     npv = array('i', [0])
@@ -202,7 +212,7 @@ def makeSyncNtuples(iLocation, cut, treepath):
 
     oTree.Branch("run", run, "run/I")
     oTree.Branch("lumi", lumi, "lumi/I")
-    oTree.Branch("evt", evt, "evt/I")
+    oTree.Branch("evt", evt, "evt/i")
     oTree.Branch("nTauPairs", nTauPairs, "nTauPairs/I")
 
     oTree.Branch("npv", npv, "npv/I")
@@ -311,18 +321,37 @@ def makeSyncNtuples(iLocation, cut, treepath):
 
     iBestPair = 0
 
+
+    eventMask = [(152514184, 190895, 154),
+                (266852887, 193541, 419),
+                (1181285376, 191226, 883),
+                (7106427, 193334, 31)]
+
+    
     for iEntry in range(nEntries):
+        track = False
         iTree.GetEntry(iEntry)
+        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' % (oFileName))
         iBestPair = findBestPair(iTree)
+
+        if (iTree.EVENT, iTree.RUN, iTree.LUMI) in eventMask:
+            track = True
+
         if iTree.nElectrons > 0 or iTree.nMuons > 0:
+            if track:
+                print "Event: %i Run: %i Lumi: %i     failed at 3rdLeptVeto: nEle %i nMu %i" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.nElectrons, iTree.nMuons)
             continue
         if iTree.pt1.at(iBestPair)<45 or iTree.pt2.at(iBestPair)<45:
+            if track:
+                print "Event: %i Run: %i Lumi: %i     failed at tauPt: pt1 %.2f pt2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.pt1.at(iBestPair), iTree.pt2.at(iBestPair))
             continue
 #         if iTree.J1Pt < 30 or abs(iTree.J1Eta) > 4.7:
 #             continue
-        if iTree.iso1.at(iBestPair)>1 or iTree.iso2.at(iBestPair)>1:
-            continue
+#         if iTree.iso1.at(iBestPair)>1 or iTree.iso2.at(iBestPair)>1:
+#             continue
         if not (iTree.HLT_Any > 0):
+            if track:
+                print "Event: %i Run: %i Lumi: %i     failed at triggerMatch" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
             continue
 #         if iTree.eleTauPt1.size()>0:
 #             print 'eTauPairFound'
@@ -330,11 +359,27 @@ def makeSyncNtuples(iLocation, cut, treepath):
 #         if iTree.muTauPt1.size()>0:
 #             print 'muTauPairFound'
 #             continue
-#         if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
-#             continue
+        if iTree.charge1.at(iBestPair) != iTree.charge2.at(iBestPair):
+            if track:
+                print "Event: %i Run: %i Lumi: %i     failed at SS" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+            continue
 
-        trigweight_1[0] = trigger.correction_leg1(iTree, iBestPair)
-        trigweight_2[0] = trigger.correction_leg2(iTree, iBestPair)
+        if not passCut(iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair)):
+            if track:
+                print "Event: %i Run: %i Lumi: %i     failed at iso: iso1 %.2f iso2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair))
+            continue
+#         if iTree.iso1.at(iBestPair) < 1.0 and iTree.iso2.at(iBestPair) < 1.0:
+#             continue
+#         elif iTree.iso1.at(iBestPair) > 1.0 and iTree.iso2.at(iBestPair) > 1.0:
+#             continue
+#         elif iTree.iso1.at(iBestPair) > 4.0 or iTree.iso2.at(iBestPair) > 4.0:
+#             continue
+        if 'data' not in iLocation:
+            trigweight_1[0] = trigger.correction_leg1(iTree, iBestPair)
+            trigweight_2[0] = trigger.correction_leg2(iTree, iBestPair)
+        else:
+            trigweight_1[0] = 1.0
+            trigweight_2[0] = 1.0
         effweight[0] = trigweight_1[0] * trigweight_2[0]
         nTauPairs[0] = len(iTree.pt1)
 
@@ -354,8 +399,7 @@ def makeSyncNtuples(iLocation, cut, treepath):
                 continue
             if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
                 continue
-
-
+    
         run[0] = iTree.RUN
         evt[0] = iTree.EVENT
         npv[0] = iTree.vertices
@@ -463,27 +507,28 @@ def makeSyncNtuples(iLocation, cut, treepath):
     oFile.Close()
     print 'Saved file: %s.root' %oFileName
 
-def opts():
-    parser = optparse.OptionParser("Usage: %prog /path/to/ntuples/ [options]")
-    parser.add_option("--cut", dest="cut", default=False, action="store_true", help="apply cuts")
-    defTree = "ttTreeBeforeChargeCut/eventTree"
-    parser.add_option("--treepath", dest="treepath", default=defTree, help="TDirectory/name of TTree (default is %s)" % defTree)
-    options, args = parser.parse_args()
+# def opts():
+#     parser = optparse.OptionParser("Usage: %prog /path/to/ntuples/ [options]")
+#     parser.add_option("--cut", dest="cut", default=False, action="store_true", help="apply cuts")
+#     defTree = "ttTreeBeforeChargeCut/eventTree"
+#     parser.add_option("--treepath", dest="treepath", default=defTree, help="TDirectory/name of TTree (default is %s)" % defTree)
+#     options, args = parser.parse_args()
+# 
+#     if len(args) != 1:
+#         parser.print_help()
+#         exit()
+#     return args[0], options
+# location, options = opts()
 
-    if len(args) != 1:
-        parser.print_help()
-        exit()
-    return args[0], options
-
-location, options = opts()
-
-import ROOT as r
-import tool
 
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_NoType1-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newCalibMet-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newMET-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newPhilHMetCalib-SUB-TT', True, "TauCheck/eventTree")
+makeSyncNtuples('/hdfs/store/user/zmao/nt_tau_A__v5-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
+# makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_B_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
+# makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
+# makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_D_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
 
-makeSyncNtuples(location, options.cut, options.treepath)
+# makeSyncNtuples(location, options.cut, options.treepath)

@@ -25,7 +25,7 @@ def getCorrectBDT(iTree, massPoint):
     return bdts[massPoint]
 scaleType = ''
 relaxed = 'INFN_relaxed'
-tail = 'newMethod_withMCOSRelax'
+tail = 'newMethod_withMCOSRelax_Fix'
 iso = makeWholeSample_cfg.iso
 inputFiles = [('1M', 'combined_1M_iso%.1f_%s_%s_%s.root' %(iso, relaxed, scaleType, tail)),
               ('2M', 'combined_2M_iso%.1f_%s_%s_%s.root' %(iso, relaxed, scaleType, tail)),

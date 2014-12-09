@@ -62,7 +62,9 @@ def findIsoSelection(iso1, iso2, iso = 1.0):
         return None
     elif (iso1 < isoTight) and (iso2 < isoTight):
         return 'Tight'
-    elif (iso1 > isoCut) and (iso2 > isoCut):
+#     elif (iso1 > isoCut) and (iso2 > isoCut):
+#         return 'Relax'
+    elif ((iso1 > isoCut) and (iso2 < isoTight)) or ((iso2 > isoCut) and (iso1 < isoTight)):
         return 'Relax'
     else:
         return None
@@ -88,7 +90,7 @@ def findBTagSelection(CSVJ1, CSVJ2, NBTags):
         bTagSelection += '2M'
     return bTagSelection
 
-def findCategory(tree, iso):
+def findCategory(tree, iso, option):
     global pair_0_counter
     global pairNot_0_counter
 
@@ -96,7 +98,7 @@ def findCategory(tree, iso):
         pair_0_counter += 1
     else:
         pairNot_0_counter += 1
-    rightPair = findRightPair(tree, '')
+    rightPair = findRightPair(tree, option)
     if tree.pt1.at(rightPair) < 45 or tree.pt2.at(rightPair) < 45:
         return None, None, None
 
@@ -112,7 +114,7 @@ def findCategory(tree, iso):
     return signSelection, isoSelection, bTagSelection
         
 
-def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegionOption = 'relaxed', verbose = False, isoTight = 1.0):
+def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegionOption = 'relaxed', verbose = False, isoTight = 1.0, pairOption = 'pt'):
     files = []
     trees = []
     yields = {'MC': {},
@@ -151,7 +153,7 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
             else:
                 puWeight = 1.0
             if trees[len(trees)-1].nElectrons == 0 and trees[len(trees)-1].nMuons == 0:
-                signSelection, isoSelection, bTagSelection = findCategory(trees[len(trees)-1], isoTight)
+                signSelection, isoSelection, bTagSelection = findCategory(trees[len(trees)-1], isoTight, pairOption)
                 if (signSelection == None) or (isoSelection == None) or (bTagSelection == None):
                     continue
                 if isData:
@@ -298,6 +300,6 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
 
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
-calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','relaxed', True)
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','relaxed', True, 1.0, 'pt')
 print pair_0_counter
 print pairNot_0_counter
