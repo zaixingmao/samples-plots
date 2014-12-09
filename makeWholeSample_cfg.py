@@ -21,8 +21,10 @@ preFix0 = '/nfs_scratch/zmao/fromLogin05/forPlots/%s/' %scaleOption
 
 
 iso = 1.0
+pairOption = 'pt'
 postFix = ''
-bTag = '1M'
+bTag = '2M'
+tail = 'newMethod_withMCOSRelax_Fix'
 relaxed = 'INFN_relaxed'
 thirdLeptonVeto = True
 
@@ -82,15 +84,15 @@ sampleConfigs =[('signals', 'signal.root', 'OStight%s' %bTag),
                 ('MCOSRelax','Electroweak_new.root', 'OSrelaxed%s' %data_bTag),
                 ("MCOSRelax","DYJetsToLL_all.root", 'OSrelaxed%s' %data_bTag),
                 ("MCOSRelax","tt_new.root", 'OSrelaxed%s' %data_bTag),
-                ('data','dataTotal_all.root', 'OSrelaxed%s' %data_bTag)]
+                ('data','dataTotal_all_withLumiMask.root', 'OSrelaxed%s' %data_bTag)]
 
-oFileName = 'combined%s_%s_iso%.1f_%s_%s_newMethod_withMCOSRelax.root' %(postFix, bTag, iso, relaxed, scaleOption)
+oFileName = 'combined%s_%s_iso%.1f_%s_%s_%s.root' %(postFix, bTag, iso, relaxed, scaleOption, tail)
 trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 
 sampleConfigsTools =[('Electroweak', 'Electroweak_new.root'),
                      ('DYJetsToLL', 'DYJetsToLL_all.root'),
                      ('t#bar{t}','tt_new.root'),
-                     ('data','dataTotal_all.root')]
+                     ('data','dataTotal_all_withLumiMask.root')]
 
 # sampleConfigsTools =[('Electroweak', 'Electroweak.root'),
 #                      ('DYJetsToLL', 'DYJetsToLL_all.root'),

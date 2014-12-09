@@ -35,24 +35,28 @@ sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix
 #                    
 #                     ('dataA2', '/hdfs/store/user/elaird/nt_tau_A_test_rerun_jets-SUB-TT-data/', 1),
 
-                    ('dataA', '/hdfs/store/user/elaird/nt_tau_A_v3-SUB-TT-data/', 1),
-                    ('dataB', '/hdfs/store/user/elaird/nt_tauP_B_v3-SUB-TT-data/', 1),
-                    ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data/', 1),
-                    ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v3-SUB-TT-data/', 1),
+#                     ('dataA', '/hdfs/store/user/elaird/nt_tau_A_v3-SUB-TT-data/', 1),
+#                     ('dataB', '/hdfs/store/user/elaird/nt_tauP_B_v3-SUB-TT-data/', 1),
+#                     ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data/', 1),
+#                     ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v3-SUB-TT-data/', 1),
 
-                    ('dataA_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_A_emb_v4-SUB-TT-data/', 1),
-                    ('dataB_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_B_emb_v4-SUB-TT-data/', 1),
-                    ('dataC_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_C_emb_v4-SUB-TT-data/', 1),
-                    ('dataD_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_D_emb_v4-SUB-TT-data/', 1),
+# 
+#                     ('dataA_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_A_emb_v5-SUB-TT-data/', 1),
+#                     ('dataB_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_B_emb_v5-SUB-TT-data/', 1),
+#                     ('dataC_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_C_emb_v5-SUB-TT-data/', 1),
+#                     ('dataD_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_D_emb_v5-SUB-TT-data/', 1),
+# 
+                    ('ttjets_fulllept_emb_rerun', '/hdfs/store/user/elaird/nt_ttjets_fulllept_emb_emb_v5-SUB-TT/', 26197.5),
+#                     ('dataA_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_A_emb_v4_rerun-SUB-TT-data/', 1),
+#                     ('dataB_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_B_emb_v4_rerun-SUB-TT-data/', 1),
+#                     ('dataC_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_C_emb_v4_rerun-SUB-TT-data/', 1),
+#                     ('dataD_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_D_emb_v4_rerun-SUB-TT-data/', 1),
 
-                    ('ttjets_fulllept_emb_rerun', '/hdfs/store/user/elaird/nt_ttjets_fulllept_emb_emb_v3_rerun-SUB-TT/', 1),
-                    ('dataA_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_A_emb_v4-SUB-TT-data/', 1),
-                    ('dataB_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_B_emb_v4-SUB-TT-data/', 1),
-                    ('dataC_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_C_emb_v4-SUB-TT-data/', 1),
-                    ('dataD_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_D_emb_v4-SUB-TT-data/', 1),
 
+#                    ('dataTotal', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/data/', 1),
+#                    ('doublemu_emb_noRerun', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/doublemu_emb_noRerun/', 1),
+#                    ('doublemu_emb_rerun', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/doublemu_emb_rerun/', 1),
 
-#                    ('dataTotal', '/scratch/zmao/v3_2/data', 1),
 #                     ('DYJetsToLL%s' %postName, "%sdy%s" %(preFix, postFix), 3504000),
 #                     ('DY1JetsToLL%s' %postName, "%sdy1%s" %(preFix, postFix), 561000*dyScale1),
 #                     ('DY2JetsToLL%s' %postName, "%sdy2%s" %(preFix, postFix), 181000*dyScale2),
