@@ -99,7 +99,11 @@ def loop_one_sample(iSample, iLocation, iXS):
     else:
         isData = False
 #         varList = fullVarList
-
+    if 'emb' in iSample:
+        isEmbedded = True
+    else:
+        isEmbedded = False
+        
     cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
     if options.addFiles == 'True':
         tool.addHistFromFiles(dirName=iLocation, histName = "preselection", hist = cutFlow, xAxisLabels=xLabels)
@@ -310,6 +314,8 @@ def loop_one_sample(iSample, iLocation, iXS):
             counter += 1
             tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
             continue
+        if not (iChain.HLT_Any > 0):
+            continue
         if not data_certification.passes(iChain, isData):
             continue
         if options.cutLHEProduct:
@@ -435,8 +441,12 @@ def loop_one_sample(iSample, iLocation, iXS):
         metTau1DPhi[0], metTau2DPhi[0], metJ1DPhi[0], metJ2DPhi[0], metTauPairDPhi[0], metJetPairDPhi[0], metSvTauPairDPhi[0] = calcdPhiMetValues(iChain.phi1.at(0), iChain.phi2.at(0), CSVJet1.phi(), CSVJet2.phi(), iChain.metphi.at(0), (tau1+tau2).phi(), bb.phi(), iChain.svPhi.at(0))
 
         #Trigger Eff
-        eff1 = trigger.correction_leg1(iChain, 0)
-        eff2 = trigger.correction_leg2(iChain, 0)
+        if isEmbedded:
+            eff1 = trigger.dataEff_leg1(iChain, 0)
+            eff2 = trigger.dataEff_leg2(iChain, 0)
+        else:
+            eff1 = trigger.correction_leg1(iChain, 0)
+            eff2 = trigger.correction_leg2(iChain, 0)
 
         triggerEff1[0] = eff1
         triggerEff2[0] = eff2        

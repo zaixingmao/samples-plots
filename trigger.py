@@ -38,3 +38,10 @@ def correction_leg1(tree, iBestPair):
 
 def correction_leg2(tree, iBestPair):
     return __correction_one_leg(tree, tree.pt2.at(iBestPair), tree.eta2.at(iBestPair))
+
+def dataEff_leg1(tree, iBestPair):
+    return __DiTau_eff_tau_data(tree.pt1.at(iBestPair), tree.eta1.at(iBestPair))
+
+def dataEff_leg2(tree, iBestPair):
+    return __DiTau_eff_tau_data(tree.pt2.at(iBestPair), tree.eta2.at(iBestPair))
+
