@@ -27,7 +27,7 @@ def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
     p = "%0.2f"
     dashes = '------'
     title = 'Event: %i Difference: %s' %(varsList1[1], p)
-    title = title % abs(varsList1[3] - varsList2[3])
+    title = title % abs(varsList1[5] - varsList2[5])
     printedEvN.append(varsList1[1])
     nChar = max([len(x) for x in [name1, name2]])
     outline0 = ' ' * (nChar + 2)
@@ -77,7 +77,7 @@ def printSingleInfo(name, varsList):
     for i in range(2, len(varsList)/2):
         value = varsList[i*2+1]
         lineColor = bcolors.FAIL     
-        outline1 += '%s%0.3f\033[0m\t' %(lineColor,value)
+        outline1 += '%s%.0f\033[0m\t' %(lineColor,value)
         outline0 += '%s%s\033[0m\t' %(lineColor, varsList[i*2])
         dashes += '--------'
     print title
@@ -92,6 +92,8 @@ def addVars(iTree):
             'mvaMet', iTree.mvamet, 
 #             'mvaMet', iTree.mvamet, 
 #             'mvaPhi', iTree.mvametphi, 
+            'run', iTree.run, 
+            'lumi', iTree.lumi, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
 #             'iso1', iTree.iso_1, 
@@ -159,8 +161,10 @@ common events, it prints out the values of several variables.  If
 which the MVAMET agrees.  Likewise for --subset=diff.
 """
     parser = optparse.OptionParser(description=desc)
-    parser.add_option("--f1", dest="location1", default='/scratch/zmao/sync/H2hh300_newPhilHMetCalib.root', help="location of file 1")
-    parser.add_option("--f2", dest="location2", default='/afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root', help="location of file 2")
+    parser.add_option("--f1", dest="location1", default='/nfs_scratch/zmao/fromLogin05/dataSync/dataSync_SSRelax_D.root', help="location of file 1")
+#     parser.add_option("--f2", dest="location2", default='/afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root', help="location of file 2")
+    parser.add_option("--f2", dest="location2", default='/nfs_scratch/zmao/fromLogin05/dataSync/Tau_SS_AntiIso_A.root', help="location of file 2")
+
     parser.add_option("--n1", dest="name1", default='Brown: ', help="inst name of file 1")
     parser.add_option("--n2", dest="name2", default='INFN:  ', help="inst name of file 2")
 
@@ -217,16 +221,27 @@ def checkSyncDev(options):
     sameEvents = 0
     differentEvents = 0
 
+    runRanges = {'A': (0,193621),
+                'B': (193621,196531),
+                'C': (196531,203742),
+                'D': (203742,208686)}
+
+    runRange = runRanges['A']
+
     for i in range(total1):
+        if not (runRange[0] < varsList1[i][5] <= runRange[1]):
+            continue 
         for j in range(total2):
+            if not (runRange[0] < varsList2[j][5] <= runRange[1]):
+                continue 
             if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
-                diff = varsList1[i][3]/varsList2[j][3]
+                diff = varsList1[i][5]/varsList2[j][5]
                 printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
                 return 1
             elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
                 matchedEvents += 1
-                diff = varsList1[i][3]/varsList2[j][3]
+                diff = varsList1[i][5]/varsList2[j][5]
                 mvaMet2.Fill(diff)
                 indexFound2.append(j)
                 if diff != 1 and (options.style == 'diff' or options.style == 'all'):
@@ -247,10 +262,10 @@ def checkSyncDev(options):
         for i_1 in indexNotFound1:
             printSingleInfo(options.name1, varsList1[i_1])
         print ' '
-        print 'Extra events in %s **********' %options.name2
-        for i_2 in range(total2):
-            if i_2 not in indexFound2:
-                printSingleInfo(options.name2, varsList2[i_2])
+#         print 'Extra events in %s **********' %options.name2
+#         for i_2 in range(total2):
+#             if i_2 not in indexFound2:
+#                 printSingleInfo(options.name2, varsList2[i_2])
 
     print '%s %i events' %(options.name1, total1)
     print '%s %i events' %(options.name2, total2)
@@ -263,7 +278,7 @@ def checkSyncDev(options):
     if options.style == 'miss':
         print "%s has an extra of %i events" %(options.name1, len(indexNotFound1))
         print "%s has an extra of %i events" %(options.name2, total2 - len(indexFound2))
-
+    
     if eventNumber == -1:   
         return 1
     else:
