@@ -50,6 +50,7 @@ def opts():
     parser.add_option("-a", dest="addFiles", default="False", help="")
     parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
     parser.add_option("-c", dest="cutLHEProduct", default=False, action="store_true", help="cut to 0 jet")
+    parser.add_option("--separate", dest="separate", default="all", help="separate sample into ZTT and ZLL")
 
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     options, args = parser.parse_args()
@@ -118,8 +119,7 @@ def loop_one_sample(iSample, iLocation, iXS):
         iChain = r.TChain("%s/eventTree" %folderName)
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=enVars.corruptedROOTfiles)
     iChain.SetBranchStatus("*",1)
-#     for iVar in range(len(varList)):
-#         iChain.SetBranchStatus(varList[iVar],1)
+#     iChain.SetBranchStatus("mJJ",0)
     fullMass = array('f', [0.])
     mJJ = array('f', [0.])
     ptJJ = array('f', [0.])
@@ -314,8 +314,8 @@ def loop_one_sample(iSample, iLocation, iXS):
             counter += 1
             tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
             continue
-        if not (iChain.HLT_Any > 0):
-            continue
+#         if not (iChain.HLT_Any > 0):
+#             continue
         if not data_certification.passes(iChain, isData):
             continue
         if options.cutLHEProduct:
@@ -325,7 +325,9 @@ def loop_one_sample(iSample, iLocation, iXS):
             break
         if iChain.svMass.size() == 0:
             continue
-        if iChain.pt2.at(0) < 45:
+
+        #separate sample into ZLL and ZTT category:
+        if not passCategory(iChain, options.separate):
             continue
 #         if not tool.calc(iChain):
 #             continue
@@ -347,8 +349,8 @@ def loop_one_sample(iSample, iLocation, iXS):
         sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
         bb = lvClass()
         bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
-        if bb == -1:
-            continue
+#         if bb == -1:
+#             continue
 
         category[:31] = findCategory(CSVJ1[0], CSVJ2[0])
 #         if iChain.LHEProduct != 5:
@@ -358,29 +360,29 @@ def loop_one_sample(iSample, iLocation, iXS):
         matchGenJet2Pt[0] = 0
         if not isData:
             PUWeight[0] = getPUWeight(iChain.puTruth)
-            if options.genMatch == 'jet':
-                dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenJet(j1Name, CSVJet1, j2Name, CSVJet2, iChain)
-            else:
-                dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenBJet(CSVJet1, CSVJet2, iChain)                
-           
-            matchGenJet1Pt[0] = mGenJet1.pt()
-            matchGenJet1Eta[0] = mGenJet1.eta()
-            matchGenJet1Phi[0] = mGenJet1.phi()
-            matchGenJet1Mass[0] = mGenJet1.mass()
-
-            matchGenJet2Pt[0] = mGenJet2.pt()
-            matchGenJet2Eta[0] = mGenJet2.eta()
-            matchGenJet2Phi[0] = mGenJet2.phi()
-            matchGenJet2Mass[0] = mGenJet2.mass()
-
-            genJJ = mGenJet1 + mGenJet2
-            matchGenMJJ[0] = genJJ.mass()
-            matchGenPtJJ[0] = genJJ.pt()
-            matchGendRJJ[0] = r.Math.VectorUtil.DeltaR(mGenJet1, mGenJet2)
-
-            if matchGenMJJ[0] < 0:
-                matchGenMJJ[0] = 0
-                matchGenPtJJ[0] = 0
+#             if options.genMatch == 'jet':
+#                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenJet(j1Name, CSVJet1, j2Name, CSVJet2, iChain)
+#             else:
+#                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenBJet(CSVJet1, CSVJet2, iChain)                
+#            
+#             matchGenJet1Pt[0] = mGenJet1.pt()
+#             matchGenJet1Eta[0] = mGenJet1.eta()
+#             matchGenJet1Phi[0] = mGenJet1.phi()
+#             matchGenJet1Mass[0] = mGenJet1.mass()
+# 
+#             matchGenJet2Pt[0] = mGenJet2.pt()
+#             matchGenJet2Eta[0] = mGenJet2.eta()
+#             matchGenJet2Phi[0] = mGenJet2.phi()
+#             matchGenJet2Mass[0] = mGenJet2.mass()
+# 
+#             genJJ = mGenJet1 + mGenJet2
+#             matchGenMJJ[0] = genJJ.mass()
+#             matchGenPtJJ[0] = genJJ.pt()
+#             matchGendRJJ[0] = r.Math.VectorUtil.DeltaR(mGenJet1, mGenJet2)
+# 
+#             if matchGenMJJ[0] < 0:
+#                 matchGenMJJ[0] = 0
+#                 matchGenPtJJ[0] = 0
         else:
             PUWeight[0] = 1.0
         #Store values
@@ -393,7 +395,7 @@ def loop_one_sample(iSample, iLocation, iXS):
         CSVJ2Phi[0] = CSVJet2.phi()
         CSVJ2Mass[0] = CSVJet2.mass()
 
-        CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0], CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j1Name, j2Name, iChain)
+#         CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0], CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j1Name, j2Name, iChain)
 
         if CSVJ1Vtx3dL[0] == -10:
             CSVJ1Vtx3dL[0] = 0
@@ -422,10 +424,10 @@ def loop_one_sample(iSample, iLocation, iXS):
         etaJJ[0] = bb.eta()
         phiJJ[0] = bb.phi()
         mJJ[0] = bb.mass()
-        tau1.SetCoordinates(iChain.pt1.at(0), iChain.eta1.at(0), iChain.phi1.at(0), iChain.m1.at(0))
-        tau2.SetCoordinates(iChain.pt2.at(0), iChain.eta2.at(0), iChain.phi2.at(0), iChain.m2.at(0))
-        mTop1[0] = (CSVJet1 + tau1).mass()
-        mTop2[0] = (CSVJet2 + tau2).mass()
+#         tau1.SetCoordinates(iChain.pt1.at(0), iChain.eta1.at(0), iChain.phi1.at(0), iChain.m1.at(0))
+#         tau2.SetCoordinates(iChain.pt2.at(0), iChain.eta2.at(0), iChain.phi2.at(0), iChain.m2.at(0))
+#         mTop1[0] = (CSVJet1 + tau1).mass()
+#         mTop2[0] = (CSVJet2 + tau2).mass()
 
         nElectrons[0] = iChain.nElectrons
         nMuons[0] = iChain.nMuons
@@ -435,10 +437,10 @@ def loop_one_sample(iSample, iLocation, iXS):
 #         pZV_new2[0] = iChain.pZV/fullMass[0]
 
         dRTauTau[0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
-        dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
+#         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
 
         #Trigger Calc MetDPhiValues
-        metTau1DPhi[0], metTau2DPhi[0], metJ1DPhi[0], metJ2DPhi[0], metTauPairDPhi[0], metJetPairDPhi[0], metSvTauPairDPhi[0] = calcdPhiMetValues(iChain.phi1.at(0), iChain.phi2.at(0), CSVJet1.phi(), CSVJet2.phi(), iChain.metphi.at(0), (tau1+tau2).phi(), bb.phi(), iChain.svPhi.at(0))
+#         metTau1DPhi[0], metTau2DPhi[0], metJ1DPhi[0], metJ2DPhi[0], metTauPairDPhi[0], metJetPairDPhi[0], metSvTauPairDPhi[0] = calcdPhiMetValues(iChain.phi1.at(0), iChain.phi2.at(0), CSVJet1.phi(), CSVJet2.phi(), iChain.metphi.at(0), (tau1+tau2).phi(), bb.phi(), iChain.svPhi.at(0))
 
         #Trigger Eff
         if isEmbedded:
@@ -451,16 +453,17 @@ def loop_one_sample(iSample, iLocation, iXS):
         triggerEff1[0] = eff1
         triggerEff2[0] = eff2        
         triggerEff[0] = eff1*eff2
-        if isData:
+        if isData and not isEmbedded:
             triggerEff[0] = 1
             triggerEff1[0] = 1
             triggerEff2[0] = 1
 
         #Kinematic Fit
-        chi2KinFit[0], fMassKinFit[0], status = kinfit.fit(iChain, CSVJet1, CSVJet2)
-        chi2KinFit2[0] = chi2KinFit[0]
-        if chi2KinFit2[0] > 200:
-            chi2KinFit2[0] = 200
+        if not CSVJ1[0] == -1.0:
+            chi2KinFit[0], fMassKinFit[0], status = kinfit.fit(iChain, CSVJet1, CSVJet2)
+            chi2KinFit2[0] = chi2KinFit[0]
+            if chi2KinFit2[0] > 200:
+                chi2KinFit2[0] = 200
 
         oTree.Fill()
         counter += 1
