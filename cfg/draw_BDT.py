@@ -35,7 +35,8 @@ iso = 1.0
 # observedLocation_back = '/ClassApp_both_dataTotal_all_tightopposite1M3rdLepVeto.root'
 
 #########  None BDT ###########
-predictLocation_front = '/nfs_scratch/zmao/fromLogin05/cutBased/combined_'
-predictLocation_back = '%.1f_INFN_relaxed__newMethod_withMCOSRelax_Fix.root' %iso
+predictLocation_front = '/nfs_scratch/zmao/fromLogin05/MCBest/combined_'
+# predictLocation_back = '%.1f_INFN_relaxed__newMethod_withMCOSRelax_Fix.root' %iso
+predictLocation_back = '%.1f_INFN_relaxed___withDYEmbed_massWindow.root' %iso
 observedLocation_front = '/nfs_scratch/zmao/fromLogin05/forPlots/'
 observedLocation_back = 'dataTotal_all_tightopposite1M3rdLepVeto.root'

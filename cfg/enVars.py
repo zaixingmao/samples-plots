@@ -4,15 +4,17 @@ corruptedROOTfiles = []
 preFix = '/hdfs/store/user/zmao/nt_'
 preFix2 = '/hdfs/store/user/zmao/'
 
+# postFix = '_shift-SUB-TT'
 postFix = '_shift-SUB-TT'
 postName = ""
 wScale = 36257.0/30400.0
 dyScale = 3504.0/2950.0
 
-dyScale1 = 1.27919286816
-dyScale2 = 1.257076814
-dyScale3 = 1.29503655065
-dyScale4 = 1.30271888338
+dyScale1 = 1.14624922102
+dyScale2 = 1.19530260886
+dyScale3 = 1.25041471383
+dyScale4 = 1.27550090492
+
 sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix), 1000),
 #                     ("H2hh270%s" %postName,     "%sH2hh270%s" %(preFix, postFix), 1000),
 #                     ("H2hh280%s" %postName,     "%sH2hh280%s" %(preFix, postFix), 1000),
@@ -30,23 +32,24 @@ sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix
 #                     ("tt_semi%s" %postName, "%sttsemi%s" %(preFix, postFix), 109281),
 #                     ("tthad%s" %postName, "%stthad%s" %(preFix, postFix), 114021.5),
 #                     ("ZZ%s" %postName,      "%szz%s" %(preFix, postFix), 2500),
-# 
+                    ("tt",      "/nfs_scratch/zmao/fromLogin05/test" , 26197.5),
+
 # 
 #                    
 #                     ('dataA2', '/hdfs/store/user/elaird/nt_tau_A_test_rerun_jets-SUB-TT-data/', 1),
-
-#                     ('dataA', '/hdfs/store/user/elaird/nt_tau_A_v3-SUB-TT-data/', 1),
-#                     ('dataB', '/hdfs/store/user/elaird/nt_tauP_B_v3-SUB-TT-data/', 1),
-#                     ('dataC', '/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data/', 1),
-#                     ('dataD', '/hdfs/store/user/elaird/nt_tauP_D_v3-SUB-TT-data/', 1),
+# 
+#                     ('dataA', '/hdfs/store/user/zmao/nt_tau_A_v7-SUB-TT-data/', 1),
+#                     ('dataB', '/hdfs/store/user/zmao/nt_tauP_B_v7-SUB-TT-data/', 1),
+#                     ('dataC', '/hdfs/store/user/zmao/nt_tauP_C_v7-SUB-TT-data/', 1),
+#                     ('dataD', '/hdfs/store/user/zmao/nt_tauP_D_v7-SUB-TT-data/', 1),
 
 # 
-#                     ('dataA_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_A_emb_v5-SUB-TT-data/', 1),
-#                     ('dataB_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_B_emb_v5-SUB-TT-data/', 1),
-#                     ('dataC_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_C_emb_v5-SUB-TT-data/', 1),
-#                     ('dataD_doublemu_emb_noRerun', '/hdfs/store/user/elaird/nt_doublemu_emb_D_emb_v5-SUB-TT-data/', 1),
-# 
-                    ('ttjets_fulllept_emb_rerun', '/hdfs/store/user/elaird/nt_ttjets_fulllept_emb_emb_v5-SUB-TT/', 26197.5),
+#                     ('dataA_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_A_v7-SUB-TT-data/', 1),
+#                     ('dataB_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_B_v7-SUB-TT-data/', 1),
+#                     ('dataC_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_C_v7-SUB-TT-data/', 1),
+#                     ('dataD_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_D_v7-SUB-TT-data/', 1),
+#                     ('ttjets_fulllept_emb_rerun', '/hdfs/store/user/zmao/nt_ttjets_fulllept_emb_v7-SUB-TT/', 26197.5),
+
 #                     ('dataA_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_A_emb_v4_rerun-SUB-TT-data/', 1),
 #                     ('dataB_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_B_emb_v4_rerun-SUB-TT-data/', 1),
 #                     ('dataC_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_C_emb_v4_rerun-SUB-TT-data/', 1),

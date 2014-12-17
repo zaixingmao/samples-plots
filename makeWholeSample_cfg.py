@@ -8,7 +8,7 @@
 
 #preFix0 = '/scratch/zmao/relaxed_regression4/'
 # preFix0 = '/scratch/zmao/v4/'
-preFixTools = '/nfs_scratch/zmao/fromLogin05/forPlots/'
+preFixTools = '/nfs_scratch/zmao/fromLogin05/MCBest/'
 
 # preFix0 = '/scratch/zmao/BDTStudy/7_noDPhiMetJ2_mJJ/'
 scaleOption = ''
@@ -17,17 +17,19 @@ scaleOption = ''
 # scaleOption = 'jetUp'
 # scaleOption = 'jetDown'
 
-preFix0 = '/nfs_scratch/zmao/fromLogin05/forPlots/%s/' %scaleOption
+preFix0 = '/nfs_scratch/zmao/fromLogin05/MCBest/%s/' %scaleOption
 
 
 iso = 1.0
 pairOption = 'pt'
 postFix = ''
 bTag = '2M'
-tail = 'newMethod_withMCOSRelax_Fix'
+tail = '_withDYEmbed'
 relaxed = 'INFN_relaxed'
 thirdLeptonVeto = True
-
+massWindow = True
+if massWindow:
+    tail += '_massWindow'
 scaleFactors = {'bTag': 0.051,
                 '2M': 0.058,
                 '1M1NonM': 0.0523,
@@ -77,22 +79,27 @@ if bTag == '2M':
     data_bTag = '2L'
 
 sampleConfigs =[('signals', 'signal.root', 'OStight%s' %bTag),
-                ('Electroweak','Electroweak_new.root', 'OStight%s' %bTag),
-                ("DYJetsToLL","DYJetsToLL_all.root", 'OStight%s' %bTag),
-                ("t#bar{t}","tt_new.root", 'OStight%s' %bTag),
+                ('Electroweak','Electroweak.root', 'OStight%s' %bTag),
+                ("DY_inclusive","dy.root", 'OStight%s' %bTag),
+                ("t#bar{t}","TT.root", 'OStight%s' %bTag),
+                ("DY_embed","DY_embed_inclusive.root", 'OStight%s' %data_bTag),
+                ("tt_embed","tt_emb_inclusive.root", 'OStight%s' %data_bTag),
+#                 ("DY_inclusive","DY_inclusive.root", 'OStight%s' %data_bTag),
 
-                ('MCOSRelax','Electroweak_new.root', 'OSrelaxed%s' %data_bTag),
-                ("MCOSRelax","DYJetsToLL_all.root", 'OSrelaxed%s' %data_bTag),
-                ("MCOSRelax","tt_new.root", 'OSrelaxed%s' %data_bTag),
-                ('data','dataTotal_all_withLumiMask.root', 'OSrelaxed%s' %data_bTag)]
+                ('MCOSRelax','Electroweak.root', 'OSrelaxed%s' %data_bTag),
+                ("MCOSRelax","dy.root", 'OSrelaxed%s' %data_bTag),
+                ("MCOSRelax","TT.root", 'OSrelaxed%s' %data_bTag),
+                ('data','data_new.root', 'OSrelaxed%s' %data_bTag)]
 
 oFileName = 'combined%s_%s_iso%.1f_%s_%s_%s.root' %(postFix, bTag, iso, relaxed, scaleOption, tail)
 trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 
-sampleConfigsTools =[('Electroweak', 'Electroweak_new.root'),
-                     ('DYJetsToLL', 'DYJetsToLL_all.root'),
-                     ('t#bar{t}','tt_new.root'),
-                     ('data','dataTotal_all_withLumiMask.root')]
+sampleConfigsTools =[('Electroweak', 'Electroweak.root'),
+                     ('DYJetsToLL', 'dy.root'),
+                     ('t#bar{t}','TT.root'),
+                     ('data','data_new.root')]
+
+#                      ('data','dataTotal_all_withLumiMask.root')]
 
 # sampleConfigsTools =[('Electroweak', 'Electroweak.root'),
 #                      ('DYJetsToLL', 'DYJetsToLL_all.root'),
