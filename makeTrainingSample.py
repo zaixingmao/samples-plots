@@ -33,6 +33,8 @@ def opts():
     return options
 
 def passCut(iTree, cut):
+    if iTree.CSVJ1 < 0:
+        return False
     if 'none' in cut:
         return True
     if 'tight' in cut:
