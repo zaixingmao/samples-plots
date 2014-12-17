@@ -25,7 +25,7 @@ def getCorrectBDT(iTree, massPoint):
     return bdts[massPoint]
 scaleType = ''
 relaxed = 'INFN_relaxed'
-tail = 'newMethod_withMCOSRelax_Fix'
+tail = '_withDYEmbed_massWindow'
 iso = makeWholeSample_cfg.iso
 inputFiles = [('1M', 'combined_1M_iso%.1f_%s_%s_%s.root' %(iso, relaxed, scaleType, tail)),
               ('2M', 'combined_2M_iso%.1f_%s_%s_%s.root' %(iso, relaxed, scaleType, tail)),
@@ -87,11 +87,15 @@ finalEventsWithXS = []
 L2Ts = []
 L2T_SFs = []
 
+DY_SFs = []
+
 for ifile in range(len(inputFiles)):
     files.append(r.TFile(inputFiles[ifile][1]))
     trees.append(files[ifile].Get('eventTree'))
     L2Ts.append(files[ifile].Get('L2T'))
     L2Ts[ifile].SetName('L_to_T_%s' %inputFiles[ifile][0])
+    DY_SFs.append(files[ifile].Get('MC2Embed2Cat'))
+    DY_SFs[ifile].SetName('MC2Embed2Cat_%s' %inputFiles[ifile][0])
     L2T_SFs.append(files[ifile].Get('L2T_SF'))
     L2T_SFs[ifile].SetName('L_to_T_SF_%s' %inputFiles[ifile][0])
 #     MC_Data_svMass.append(files[ifile].Get('MC_Data_svMass'))
@@ -141,6 +145,7 @@ for i in range(len(inputFiles)):
     finalEventsWithXS[i].Write()
     L2Ts[i].Write()
     L2T_SFs[i].Write()
+    DY_SFs[i].Write()
 
 oFile.Close()
 
