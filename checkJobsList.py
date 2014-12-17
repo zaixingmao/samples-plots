@@ -4,7 +4,7 @@
 import checkJobs
 import os
 
-postFix = 'shift'
+postFix = 'v7'
 
 locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh270_%s-SUB-TT' %postFix,
@@ -27,16 +27,21 @@ locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_w2_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_w3_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_wz_%s-SUB-TT' %postFix, 
-#                 '/nfs_scratch/zmao/nt_dy_%s-SUB-TT' %postFix,
+                '/nfs_scratch/zmao/nt_dy_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy1_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy2_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy3_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_dy4_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_dy4_%s-SUB-TT' %postFix,
 
-#                 '/nfs_scratch/zmao/nt_tau_A_%s-SUB-TT-data' %postFix,
-#                 '/nfs_scratch/zmao/nt_tauP_B_%s-SUB-TT-data' %postFix,
-#                 '/nfs_scratch/zmao/nt_tauP_C_%s-SUB-TT-data' %postFix,
-#                 '/nfs_scratch/zmao/nt_tauP_D_%s-SUB-TT-data' %postFix,
+                '/nfs_scratch/zmao/nt_doublemu_emb_A_%s-SUB-TT-data' %postFix,
+                '/nfs_scratch/zmao/nt_doublemu_emb_B_%s-SUB-TT-data' %postFix,
+                '/nfs_scratch/zmao/nt_doublemu_emb_C_%s-SUB-TT-data' %postFix,
+                '/nfs_scratch/zmao/nt_doublemu_emb_D_%s-SUB-TT-data' %postFix,
+
+                '/nfs_scratch/zmao/nt_tau_A_%s-SUB-TT-data' %postFix,
+                '/nfs_scratch/zmao/nt_tauP_B_%s-SUB-TT-data' %postFix,
+                '/nfs_scratch/zmao/nt_tauP_C_%s-SUB-TT-data' %postFix,
+                '/nfs_scratch/zmao/nt_tauP_D_%s-SUB-TT-data' %postFix,
                 ]
 
 opt = checkJobs.opts()
