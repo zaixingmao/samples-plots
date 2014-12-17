@@ -33,31 +33,31 @@ relaxed = 'relaxed'
 
 massPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 
-for iMass in massPoints:
-    inputFile = preFix
-    inputFile += 'H2hh%i_all.root' %iMass
-    outputFile = inputFile[0:inputFile.rfind('.')]
-    command = "python makeTrainingSample.py --i "
-    command += "%s --o %s --c tightopposite%s" %(inputFile, outputFile, region)
-    os.system(command) 
+# for iMass in massPoints:
+#     inputFile = preFix
+#     inputFile += 'H2hh%i_all.root' %iMass
+#     outputFile = inputFile[0:inputFile.rfind('.')]
+#     command = "python makeTrainingSample.py --i "
+#     command += "%s --o %s --c tightopposite%s" %(inputFile, outputFile, region)
+#     os.system(command) 
+# 
+# for iMCSample in MC_Samples:
+#     inputFile = preFix+iMCSample
+#     outputFile = inputFile[0:inputFile.rfind('.')]
+#     command = "python makeTrainingSample.py --i "
+#     command += "%s --o %s --c tightopposite%s " %(inputFile, outputFile, region)
+#     os.system(command) 
+# 
+# weights = [1]
+# weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', relaxed, False, True)
+# command = "python makeTrainingSample.py --i "
+# inputFile = preFix+QCD_Sample
+# outputFile = inputFile[0:inputFile.rfind('.')]
+# command += "%s --o %s --c %sopposite%s --xs %.6f" %(inputFile, outputFile, region,relaxed, weights[0])
+# os.system(command)
 
-for iMCSample in MC_Samples:
-    inputFile = preFix+iMCSample
-    outputFile = inputFile[0:inputFile.rfind('.')]
-    command = "python makeTrainingSample.py --i "
-    command += "%s --o %s --c tightopposite%s " %(inputFile, outputFile, region)
-    os.system(command) 
-
-weights = [1]
-weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', relaxed, False, True)
 command = "python makeTrainingSample.py --i "
 inputFile = preFix+QCD_Sample
 outputFile = inputFile[0:inputFile.rfind('.')]
-command += "%s --o %s --c %sopposite%s --xs %.6f" %(inputFile, outputFile, region,relaxed, weights[0])
-os.system(command)
-
-command = "python makeTrainingSample.py --i "
-inputFile = preFix+QCD_Sample
-outputFile = inputFile[0:inputFile.rfind('.')]
-command += "%s --o %s --c tightopposite%s --xs %.6f" %(inputFile, outputFile, region, weights[0])
+command += "%s --o %s --c tightopposite%s --xs 1.0" %(inputFile, outputFile, region)
 os.system(command)
