@@ -84,24 +84,96 @@ def findBestPair(iTree):
                 bestPair = iPair
     return bestPair
 
-def passCut(iso1, iso2):
-    if (iso1 < 1.0) and (1.0 < iso2 < 4.0):
-        return 1
-    elif (iso2 < 1.0) and (1.0 < iso1 < 4.0):
-        return 1
-    else:
+def passTrigger(tree):
+    passTrigger = False
+    if tree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired > 0:
+        passTrigger = True
+    if tree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired > 0:
+        passTrigger = True
+    if tree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired > 0:
+        passTrigger = True
+    if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired > 0:
+        passTrigger = True
+    if tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired > 0:
+        passTrigger = True
+
+#     if passTrigger == False:
+#         print tree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired
+#         print tree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired
+#         print tree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired
+#         print tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired
+#         print tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired
+
+    return passTrigger
+
+def passIsoCut(iso1, iso2):
+    if iso1 > 1.0 or iso2 > 1.0:
         return 0
+    return 1
+
+def passCut(iTree, track, iBestPair):
+    if iTree.nElectrons > 0 or iTree.nMuons > 0:
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at 3rdLeptVeto: nEle %i nMu %i" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.nElectrons, iTree.nMuons)
+        return 0
+    if iTree.pt1.at(iBestPair)<45 or iTree.pt2.at(iBestPair)<45:
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at tauPt: pt1 %.2f pt2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.pt1.at(iBestPair), iTree.pt2.at(iBestPair))
+        return 0
+    if not passTrigger(iTree):
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at triggerPath" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+        return 0
+
+    if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at SS" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+        return 0
+
+    if not passIsoCut(iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair)):
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at iso: iso1 %.2f iso2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair))
+        return 0
+
+    if iTree.CSVJ1 < 0:
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at 2jets" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+        return 0
+
+    if iTree.svMass.at(iBestPair) < 90 or iTree.svMass.at(iBestPair) > 150 :
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at svMass: %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.svMass.at(iBestPair))
+        return 0
+
+    if iTree.mJJ < 70 or iTree.mJJ > 150 :
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at mJJ: %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.mJJ)
+        return 0
+
+    if iTree.fMassKinFit < 10 :
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at fMassKinFit: %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.fMassKinFit)
+        return 0
+    return 1
 
 def makeSyncNtuples(iLocation, cut, treepath):
 
-    iTree = r.TChain(treepath)
-    print iLocation
-    nEntries = tool.addFiles(ch=iTree, dirName=iLocation, knownEventNumber=0, maxFileNumber=-1, printTotalEvents = True)
+    if '.root' in iLocation:
+        iFile = r.TFile(iLocation)
+        iTree = iFile.Get(treepath)
+        nEntries = iTree.GetEntries()
+        oFileName = iLocation[iLocation.rfind("/")+1:iLocation.rfind(".root")]
+        oFileName += '_sync'
+    else:
+        iTree = r.TChain(treepath)
+        nEntries = tool.addFiles(ch=iTree, dirName=iLocation, knownEventNumber=0, maxFileNumber=-1, printTotalEvents = True)
+        oFileName = iLocation[iLocation.rfind("/")+1:iLocation.find("-SUB-TT")]
+
     iTree.SetBranchStatus("*",1)
+    print iLocation
 
-    oFileName = iLocation[iLocation.rfind("/")+1:iLocation.find("-SUB-TT")]
 
-    oFile = r.TFile("/nfs_scratch/zmao/fromLogin05/dataSync/%s.root" %oFileName,"recreate")
+    oFile = r.TFile("/nfs_scratch/zmao/fromLogin05/ttSync/%s.root" %oFileName,"recreate")
     oTree = r.TTree('TauCheck', 'TauCheck')
 
     run  = array('i', [0])
@@ -322,10 +394,26 @@ def makeSyncNtuples(iLocation, cut, treepath):
     iBestPair = 0
 
 
-    eventMask = [(152514184, 190895, 154),
-                (266852887, 193541, 419),
-                (1181285376, 191226, 883),
-                (7106427, 193334, 31)]
+    eventMask = [(668075, 1, 2228),
+                (1586684, 1, 5290),
+                (1861666, 1, 6207),
+                (4826191, 1, 16091),
+                (6209840, 1, 20704),
+                (6818699, 1, 22734),
+                (9449275, 1, 31504),
+                (13546346, 1, 45164),
+                (13981013, 1, 46613),
+                (22344043, 1, 74495),
+                (26959857, 1, 89884),
+
+                (26984078, 1, 89965),
+                (32523454, 1, 108434),
+                (35701206, 1, 119028),
+                (37513465, 1, 125070),
+                (37691461, 1, 125664),
+                (43144851, 1, 143845),
+
+                ]
 
     
     for iEntry in range(nEntries):
@@ -334,46 +422,13 @@ def makeSyncNtuples(iLocation, cut, treepath):
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' % (oFileName))
         iBestPair = findBestPair(iTree)
 
+
         if (iTree.EVENT, iTree.RUN, iTree.LUMI) in eventMask:
             track = True
 
-        if iTree.nElectrons > 0 or iTree.nMuons > 0:
-            if track:
-                print "Event: %i Run: %i Lumi: %i     failed at 3rdLeptVeto: nEle %i nMu %i" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.nElectrons, iTree.nMuons)
-            continue
-        if iTree.pt1.at(iBestPair)<45 or iTree.pt2.at(iBestPair)<45:
-            if track:
-                print "Event: %i Run: %i Lumi: %i     failed at tauPt: pt1 %.2f pt2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.pt1.at(iBestPair), iTree.pt2.at(iBestPair))
-            continue
-#         if iTree.J1Pt < 30 or abs(iTree.J1Eta) > 4.7:
-#             continue
-#         if iTree.iso1.at(iBestPair)>1 or iTree.iso2.at(iBestPair)>1:
-#             continue
-        if not (iTree.HLT_Any > 0):
-            if track:
-                print "Event: %i Run: %i Lumi: %i     failed at triggerMatch" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
-            continue
-#         if iTree.eleTauPt1.size()>0:
-#             print 'eTauPairFound'
-#             continue
-#         if iTree.muTauPt1.size()>0:
-#             print 'muTauPairFound'
-#             continue
-        if iTree.charge1.at(iBestPair) != iTree.charge2.at(iBestPair):
-            if track:
-                print "Event: %i Run: %i Lumi: %i     failed at SS" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+        if not passCut(iTree, track, iBestPair):
             continue
 
-        if not passCut(iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair)):
-            if track:
-                print "Event: %i Run: %i Lumi: %i     failed at iso: iso1 %.2f iso2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair))
-            continue
-#         if iTree.iso1.at(iBestPair) < 1.0 and iTree.iso2.at(iBestPair) < 1.0:
-#             continue
-#         elif iTree.iso1.at(iBestPair) > 1.0 and iTree.iso2.at(iBestPair) > 1.0:
-#             continue
-#         elif iTree.iso1.at(iBestPair) > 4.0 or iTree.iso2.at(iBestPair) > 4.0:
-#             continue
         if 'data' not in iLocation:
             trigweight_1[0] = trigger.correction_leg1(iTree, iBestPair)
             trigweight_2[0] = trigger.correction_leg2(iTree, iBestPair)
@@ -456,7 +511,7 @@ def makeSyncNtuples(iLocation, cut, treepath):
         pzetavis[0] = iTree.pZV
         pzetamiss[0] = iTree.pZetaMiss
 
-        pt_tt[0] = iTree.fullPt
+#         pt_tt[0] = iTree.fullPt
 
         njets[0] = int(iTree.njets)
         njetspt20[0] = int(iTree.njetspt20)
@@ -493,8 +548,8 @@ def makeSyncNtuples(iLocation, cut, treepath):
         jctm_2[0] = iTree.J2Ntot
         jpass_2[0] = bool(iTree.jpass_2)
 
-        m_bb[0] = iTree.mJJ
-        m_ttbb[0] = iTree.HMass
+#         m_bb[0] = iTree.mJJ
+#         m_ttbb[0] = iTree.HMass
 
         oTree.Fill()
         counter += 1
@@ -526,9 +581,11 @@ def makeSyncNtuples(iLocation, cut, treepath):
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newCalibMet-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newMET-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newPhilHMetCalib-SUB-TT', True, "TauCheck/eventTree")
-makeSyncNtuples('/hdfs/store/user/zmao/nt_tau_A__v5-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
-# makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_B_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
+# makeSyncNtuples('/hdfs/store/user/zmao/nt_H2hh300_up-SUB-TT', False, "ttTreeBeforeChargeCut/eventTree")
+makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/ttSync/tt_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/MCBest/tt_semi_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/MCBest/tthad_all.root', False, "eventTree")
+# makeSyncNtuples('/hdfs/store/user/zmao/nt_tauP_D_v7-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
 # makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
-# makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_D_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
 
 # makeSyncNtuples(location, options.cut, options.treepath)
