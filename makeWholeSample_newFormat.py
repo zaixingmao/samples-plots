@@ -14,6 +14,7 @@ import cutSampleTools
 dR_tauEleMu_max = 0.5
 dR_b_max = 0.5
 lumi = 19.7
+tt_semi_InitEvents = 12011428.
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen = lvClass()
@@ -41,6 +42,31 @@ def findRightPair(tree, option):
     else:
         return 0
 
+def passJetTrigger(tree):
+    return 1
+    etas = []
+    if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired or tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired:
+        return 1
+    else:
+        if tree.J1Pt < 50:
+            return 0
+        etas.append((abs(tree.J1Eta)))
+        if tree.J2Pt > 50:
+            etas.append((abs(tree.J2Eta)))
+        if tree.J3Pt > 50:
+            etas.append((abs(tree.J3Eta)))
+        if tree.J4Pt > 50:
+            etas.append((abs(tree.J4Eta)))
+        if tree.J5Pt > 50:
+            etas.append((abs(tree.J5Eta)))
+        if tree.J6Pt > 50:
+            etas.append((abs(tree.J6Eta)))
+        etas.sort()
+        if etas[0] < 3.0:
+            return 1
+        else:
+            return 0
+
 def findGenMatch(dR1_tau, dR2_tau, dR1_ele, dR2_ele, dR1_mu, dR2_mu, option = ''):
     #for leg1
     leg1 = sorted([('t',dR1_tau), ('e',dR1_ele), ('m',dR1_mu)], key=itemgetter(1))    
@@ -49,7 +75,10 @@ def findGenMatch(dR1_tau, dR2_tau, dR1_ele, dR2_ele, dR1_mu, dR2_mu, option = ''
 
     if (leg1[0][0] == 't') and (leg1[1][1] > dR_tauEleMu_max):
         leg1Match = leg1[0][0]
-    leg2Match = leg2[0][0]
+    if (leg2[0][0] == 't') and (leg2[1][1] > dR_tauEleMu_max):
+        leg2Match = leg2[0][0]
+
+    
 
     if leg1[0][1] > dR_tauEleMu_max:
         leg1Match = 'x'
@@ -87,15 +116,32 @@ def findGenMatch(dR1_tau, dR2_tau, dR1_ele, dR2_ele, dR1_mu, dR2_mu, option = ''
     stringList.sort()
     return '%s%s' %(stringList[0], stringList[1])
 
-def passCut(tree, option, iso, relaxed, rightPair):
-    isoCut = 3.0
-    isoMax = 10.0
+def passMassWindow(svMass, mJJ, fMassKinFit):
+    if 90.0 < svMass < 150.0:
+        if 70.0 < mJJ < 150.0:
+            if fMassKinFit > 10.0:
+                return 1
+    return 0
+
+def passCut(tree, option, iso, relaxed, rightPair, massWindow = False):
+    isoCut = 1.0
+    isoMax = 4.0
     CSVL = 0.244
+    if tree.CSVJ1 < 0:
+        return 0
+    if massWindow and (not passMassWindow(tree.svMass.at(rightPair), tree.mJJ, tree.fMassKinFit)):
+        return 0
     if relaxed == 'very_relaxed':
         isoCut = 1.5
-    if 'INFN' in relaxed:
-        isoMax = 4.0
+    if '1To10' in relaxed:
+        isoMax = 10.0
         isoCut = 1.0
+    if '3To10' in relaxed:
+        isoMax = 10.0
+        isoCut = 3.0
+
+    if tree.nElectrons > 0 or tree.nMuons > 0:
+        return 0
     if tree.pt1.at(rightPair) < 45 or tree.pt2.at(rightPair) < 45:
         return 0
     if 'bTag' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 < 0.244):
@@ -104,6 +150,9 @@ def passCut(tree, option, iso, relaxed, rightPair):
 #         return 0
 #     if '1M' in option and (tree.CSVJ1 < 0.679 or tree.CSVJ2 > 0.679):
 #         return 0
+    if ('M' in option) or ('L' in option):
+        if tree.CSVJ1 < 0:
+            return 0
     if '2M' in option and (tree.NBTags < 2):
         return 0
     if '1M' in option and (tree.NBTags != 1):
@@ -118,15 +167,18 @@ def passCut(tree, option, iso, relaxed, rightPair):
     if (tree.iso1.at(rightPair) > isoMax) or (tree.iso2.at(rightPair) > isoMax):
         return 0
     if 'tight' in option and (tree.iso1.at(rightPair) < iso and tree.iso2.at(rightPair) < iso):
-            passIso = 1
-#     if 'relaxed' in option and (tree.iso1.at(rightPair) > isoCut and tree.iso2.at(rightPair) > isoCut):
-#             passIso = 1
-    if 'relaxed' in option and ((tree.iso1.at(rightPair) > isoCut and tree.iso2.at(rightPair) < iso) or (tree.iso2.at(rightPair) > isoCut and tree.iso1.at(rightPair) < iso)):
-            passIso = 1
+        passIso = 1
+    if 'relaxed' in option:
+        if 'both' in relaxed:
+            if tree.iso1.at(rightPair) > isoCut and tree.iso2.at(rightPair) > isoCut:
+                passIso = 1
+        else:
+            if ((tree.iso1.at(rightPair) > isoCut and tree.iso2.at(rightPair) < iso) or (tree.iso2.at(rightPair) > isoCut and tree.iso1.at(rightPair) < iso)):
+                passIso = 1
     if 'SS' in option and (tree.charge1.at(rightPair) == tree.charge2.at(rightPair)):
-            passSign = 1
+        passSign = 1
     if 'OS' in option and (tree.charge1.at(rightPair) == -tree.charge2.at(rightPair)):
-            passSign = 1
+        passSign = 1
     return passIso*passSign
 
 def findMatch(iTree, isData, rightPair):
@@ -186,8 +238,10 @@ initEventsValues = {}
 eventsSaved = {}
 L2T = r.TH1F('L2T', '', 1, 0, 1)
 L2T_SF = r.TH1F('L2T_SF', '', 1, 0, 1)
+MC2Embed2Cat = r.TH1F('MC2Embed2Cat', '', 1, 0, 1)
 
-
+inclusiveYields = {}
+catYields = {}
 svMassRange = [20, 0, 400]
 L2T_value = 0
 
@@ -223,16 +277,31 @@ for indexFile in range(nSamples):
     if 'data' in name:
         isData = True
 
+    if 'emb' in name:
+        isEmbed = True
+    else:
+        isEmbed = False
+    if 'inclusive' in name:
+        isInclusive = True
+    else:
+        isInclusive = False
+    cat = ''
     region = 'bTag'
     if '1M' in option:
         region = '1M'
+
     elif '2M' in option:
         region = '2M'
     elif '1L' in option:
         region = '1L'
+        cat = '1M'
     elif '2L' in option:
         region = '2L'
+        cat = '2M'
 
+    categoryYield = 0.0
+    categoryYield2 = 0.0
+    inclusiveYield = 0.0
     for i in range(0, total):
         tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
         #Fill Histograms
@@ -243,7 +312,38 @@ for indexFile in range(nSamples):
 
         if makeWholeSample_cfg.thirdLeptonVeto and (iTree.nElectrons > 0 or iTree.nMuons > 0):
             continue
+
+        #calculate inclusiveYield
+        if isEmbed or isInclusive:
+            if iTree.HLT_Any == 0:
+                continue
+            if passCut(iTree, "OStight", iso, makeWholeSample_cfg.relaxed, rightPair):
+                if 'data' in iTree.sampleName:
+                    inclusiveYield += iTree.triggerEff
+                elif isEmbed:
+                    inclusiveYield += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+                else:
+                    if not passJetTrigger(iTree):
+                        continue
+                    inclusiveYield += iTree.triggerEff*iTree.xs*lumi/(iTree.initEvents+0.0)
+
+        #calculate category yield
+        if isEmbed and passCut(iTree, "OStight%s" %cat, iso, makeWholeSample_cfg.relaxed, rightPair, makeWholeSample_cfg.massWindow):
+            if 'data' in iTree.sampleName:
+                categoryYield += iTree.triggerEff
+            else:
+                categoryYield += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+
+        if isEmbed and passCut(iTree, option, iso, makeWholeSample_cfg.relaxed, rightPair, makeWholeSample_cfg.massWindow):
+            if 'data' in iTree.sampleName:
+                categoryYield2 += iTree.triggerEff
+            else:
+                categoryYield2 += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+
         if not passCut(iTree, option, iso, makeWholeSample_cfg.relaxed, rightPair):
+            continue      
+
+        if (not isEmbed) and (not passJetTrigger(iTree)) and (not isData):
             continue
         mJJ[0] = iTree.mJJ
         fMass[0] = iTree.fMass
@@ -260,34 +360,57 @@ for indexFile in range(nSamples):
             tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_')]
         else:
             tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_semi')+5]
-        if 'data' in tmpSampleName:
+        if 'data' in tmpSampleName and (not isEmbed):
             sampleName[:21] = 'dataOSRelax'
             initEvents[0] = 0
+            xs[0] = 1.0           
+        elif ('data' in tmpSampleName) and isEmbed:
+            sampleName[:21] = 'DY_embed'
+            initEvents[0] = 19.7
             xs[0] = 1.0            
-        else:
+        elif not isEmbed:
             initEvents[0] = iTree.initEvents
             xs[0] = iTree.xs
             sampleName[:21] = tmpSampleName
             if name == 'MCOSRelax':
                 sampleName[:21] = 'MCOSRelax'
+        else:
+            initEvents[0] = tt_semi_InitEvents
+            xs[0] = iTree.xs*0.983
+            sampleName[:21] = 'tt_embed'
+            
         if tmpSampleName not in initEventsValues.keys():
             if 'data' not in tmpSampleName:
                 initEventsValues[tmpSampleName] = iTree.initEvents
                 xsValues[tmpSampleName] = iTree.xs
             eventsSaved[tmpSampleName] = 0.0
-        genMatchName[:3] = findMatch(iTree, isData, rightPair)
+#         genMatchName[:3] = findMatch(iTree, isData, rightPair)
         if isData:
             PUWeight[0] = 1.0
         else:
             PUWeight[0] = iTree.PUWeight
         oTree.Fill()
+        if makeWholeSample_cfg.massWindow and (not passMassWindow(iTree.svMass.at(rightPair), iTree.mJJ, iTree.fMassKinFit)):
+            continue
         if isData:
             eventsSaved[tmpSampleName] += 1
             eventsSavedCounter += 1
-        else:
+        elif not isEmbed:
             eventsSaved[tmpSampleName] += triggerEff[0]
             eventsSavedCounter += triggerEff[0]*xsValues[tmpSampleName]/initEventsValues[tmpSampleName]*PUWeight[0]*lumi
+
     print ' --- Events Saved: %.2f' %(eventsSavedCounter)
+    if isEmbed:
+        print sampleName
+        inclusiveYields[str(sampleName)] =  inclusiveYield
+        catYields[str(sampleName)] = categoryYield
+        print 'inclusive yield for %s: %.2f' %(str(sampleName), inclusiveYield)
+        print 'Medium category yield for %s: %.2f' %(str(sampleName), categoryYield)
+        print 'Loose category yield for %s: %.2f' %(str(sampleName), categoryYield2)
+
+    elif isInclusive:
+        inclusiveYields['DY_MC'] = inclusiveYield
+        print 'inclusive yield for DY_MC: %.2f' %(inclusiveYield)
 
 
 
@@ -304,7 +427,7 @@ for iKey in initEventsValues.keys():
 
 
 # weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', makeWholeSample_cfg.relaxed, True, True, iso)
-weights = makeWholeTools2.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SF12', 'tight', 'relax', True, 1.0, makeWholeSample_cfg.pairOption)
+weights = makeWholeTools2.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SF12', 'tight', makeWholeSample_cfg.relaxed, True, 1.0, makeWholeSample_cfg.pairOption, makeWholeSample_cfg.massWindow)
 
 print weights
 
@@ -316,8 +439,11 @@ elif region == "2M" or region == "2L":
     L2T.Fill(0.5, weights[1])
     L2T_SF.Fill(0.5, weights[3])
 
+scaleFactor = inclusiveYields['DY_MC']*(catYields['DY_embed']-catYields['tt_embed'])/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed'])
 
+MC2Embed2Cat.Fill(0.5, scaleFactor)
 
+print scaleFactor
 
 oFile.cd()
 
@@ -325,6 +451,7 @@ initEvents.Write()
 xsHist.Write()
 L2T.Write()
 L2T_SF.Write()
+MC2Embed2Cat.Write()
 finalEventsWithXS.Write()
 oTree.Write()
 oFile.Close()
