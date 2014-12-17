@@ -24,6 +24,9 @@ defaultColor = {'Electroweak': r.TColor.GetColor(222, 90,106),
                 }
 sampleNameList= {}
 sampleNameList['Electroweak'] = []
+sampleNameList['tt'] = []
+
+tt_semi_InitEvents = 12011428.
 
 def getBinWdith(var, bins):
     for i in range(len(bins)):
@@ -44,13 +47,17 @@ def varFromName1(tree, varName):
     return varsDict[varName]
 
 def findBKGCategory(sampleName, mass):
-    if 'JetsToLNu' in sampleName:
-        return 'QCD'
+    if 'JetsToLL' in sampleName:
+        return None
+    if 'DY_emb' in sampleName:
+        return 'DY_embed'
     if 'data' in sampleName:
         return 'QCD'
-    elif 'DY' in sampleName:
-        return 'DY'
+    elif 'tt_emb' in sampleName:
+        return 'tt_embed'
     elif 'tt' in sampleName:
+        if sampleName not in sampleNameList['tt']:
+            sampleNameList['tt'].append(sampleName)
         return 't#bar{t}'
     elif 'H2hh' in sampleName:
         if mass == '' and sampleName != 'H2hh350':
@@ -69,6 +76,14 @@ def passCut(tree, iso):
         return 0
     else:
         return 1
+
+def setDY(histDict, dyScale):
+    total = histDict['DY_embed'].Integral(0, histDict['DY_embed'].GetNbinsX()+1) - histDict['tt_embed'].Integral(0, histDict['tt_embed'].GetNbinsX()+1)
+    histDict['DY_embed'].Scale(dyScale/total)
+    histDict['tt_embed'].Scale(dyScale/total)
+    histDict['DY'].Add(histDict['DY_embed'],1.0)
+    histDict['DY'].Add(histDict['tt_embed'], -1.0)
+    return  histDict
 
 def buildStackFromDict(histDict, region, unit, option):
     stack = r.THStack()
@@ -119,6 +134,11 @@ def buildHistDicts(bins1, bins2, name = ''):
     histDict1['MCOSRelax'] = r.TH1F('MCOSRelax1M%s' %name, "", len(bins1)-1, bins1)
     histDict2['MCOSRelax'] = r.TH1F('MCOSRelax2M%s' %name, "", len(bins2)-1, bins2)
 
+    histDict1['DY_embed'] = r.TH1F('DY_embed1M%s' %name, "", len(bins1)-1, bins1)
+    histDict1['tt_embed'] = r.TH1F('tt_embed1M%s' %name, "", len(bins1)-1, bins1)
+    histDict2['DY_embed'] = r.TH1F('DY_embed2M%s' %name, "", len(bins2)-1, bins2)
+    histDict2['tt_embed'] = r.TH1F('tt_embed2M%s' %name, "", len(bins2)-1, bins2)
+
     histDict1['signal'].SetLineStyle(2)
     histDict2['signal'].SetLineStyle(2)
     histDict1['signal'].SetLineWidth(2)
@@ -148,7 +168,12 @@ def dontUnblind(tree, varName):
         if tree.BDT > 0:
             return True
     return False
-    
+
+def passCutWindow(tree):
+    if (90 < tree.svMass < 150) and (70 < tree.mJJ < 150) and (tree.fMassKinFit > 10):
+        return True
+    else:
+        return False
 
 def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation, observedLocation, mass, Lumi = 19.7):
     predictFile = r.TFile(predictLocation)
@@ -167,12 +192,21 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     for iEvent in range(predictTotal):
         tool.printProcessStatus(iEvent, predictTotal, 'Looping file [%s]' % (predictLocation))
         predictTree.GetEntry(iEvent)
+        if not passCutWindow(predictTree):
+            continue
         sampleCat = findBKGCategory(predictTree.sampleName, mass)
         if sampleCat == None:
             continue
-        if sampleCat == 'QCD' and 'OSRelax' in predictTree.sampleName:
+        if sampleCat == 'QCD' and ('OSRelax' in predictTree.sampleName):
             weight1 = 1.0
             weight2 = 1.0
+        elif sampleCat == 'DY_embed':
+            weight1 = predictTree.triggerEff
+            weight2 = weight1
+        elif sampleCat == 'tt_embed':
+            xs = predictTree.xs
+            weight1 = (xs/tt_semi_InitEvents)*predictTree.triggerEff*Lumi
+            weight2 = weight1
         else:
             if sampleCat == 'signal':
                 signalName = predictTree.sampleName
@@ -185,6 +219,17 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
         elif predictTree.Category == '2M':
             histDict2M[sampleCat].Fill(varFromName(predictTree, varName), weight2)
             histDict2M_plot[sampleCat].Fill(varFromName(predictTree, varName), weight2)
+
+    #Set DY
+    dy1M_scale = predictFile.Get('MC2Embed2Cat_1M')
+    dy2M_scale = predictFile.Get('MC2Embed2Cat_2M')
+    dyScale1M = dy1M_scale.GetBinContent(1)
+    dyScale2M = dy2M_scale.GetBinContent(1)
+
+    histDict1M_plot = setDY(histDict1M_plot, dyScale1M)
+    histDict2M_plot = setDY(histDict2M_plot, dyScale2M)
+    histDict1M = setDY(histDict1M, dyScale1M)
+    histDict2M = setDY(histDict2M, dyScale2M)
 
     #Set QCD
     predictSF1MHist_weight = predictFile.Get('L_to_T_1M')
