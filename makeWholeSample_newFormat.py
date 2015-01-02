@@ -239,6 +239,14 @@ eventsSaved = {}
 L2T = r.TH1F('L2T', '', 1, 0, 1)
 L2T_SF = r.TH1F('L2T_SF', '', 1, 0, 1)
 MC2Embed2Cat = r.TH1F('MC2Embed2Cat', '', 1, 0, 1)
+singleTop = r.TH1F('singleTop', '', 1, 0, 1)
+VV = r.TH1F('VV', '', 1, 0, 1)
+yieldHistsInMediumCategory = []
+
+WPlusJets = r.TH1F('WPlusJets', '', 1, 0, 1)
+singleTopYield = 0.0
+WPlusJetsYield = 0.0
+VVYield = 0.0
 
 inclusiveYields = {}
 catYields = {}
@@ -328,21 +336,27 @@ for indexFile in range(nSamples):
                     inclusiveYield += iTree.triggerEff*iTree.xs*lumi/(iTree.initEvents+0.0)
 
         #calculate category yield
-        if isEmbed and passCut(iTree, "OStight%s" %cat, iso, makeWholeSample_cfg.relaxed, rightPair, makeWholeSample_cfg.massWindow):
-            if 'data' in iTree.sampleName:
-                categoryYield += iTree.triggerEff
-            else:
-                categoryYield += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
-
-        if isEmbed and passCut(iTree, option, iso, makeWholeSample_cfg.relaxed, rightPair, makeWholeSample_cfg.massWindow):
-            if 'data' in iTree.sampleName:
-                categoryYield2 += iTree.triggerEff
-            else:
-                categoryYield2 += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+        if isEmbed or name == 'singleT' or name =='Electroweak':
+            if passCut(iTree, "OStight%s" %cat, iso, makeWholeSample_cfg.relaxed, rightPair, makeWholeSample_cfg.massWindow):
+                if isEmbed:
+                    if 'data' in iTree.sampleName:
+                        categoryYield += iTree.triggerEff
+                    else:
+                        categoryYield += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+                elif name == 'singleT':
+                    singleTopYield += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
+                elif name == 'Electroweak':
+                    VVYield += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
+        if isEmbed:
+            if passCut(iTree, option, iso, makeWholeSample_cfg.relaxed, rightPair, makeWholeSample_cfg.massWindow):
+                if 'data' in iTree.sampleName:
+                    categoryYield2 += iTree.triggerEff
+                else:
+                    categoryYield2 += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+        
 
         if not passCut(iTree, option, iso, makeWholeSample_cfg.relaxed, rightPair):
-            continue      
-
+            continue
         if (not isEmbed) and (not passJetTrigger(iTree)) and (not isData):
             continue
         mJJ[0] = iTree.mJJ
@@ -442,8 +456,13 @@ elif region == "2M" or region == "2L":
 scaleFactor = inclusiveYields['DY_MC']*(catYields['DY_embed']-catYields['tt_embed'])/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed'])
 
 MC2Embed2Cat.Fill(0.5, scaleFactor)
+singleTop.Fill(0.5, singleTopYield)
+WPlusJets.Fill(0.5, WPlusJetsYield)
+VV.Fill(0.5, VVYield)
 
-print scaleFactor
+print 'Embed DY prediction: %.2f' %scaleFactor
+print 'Single Top prediction: %.2f' %singleTopYield
+print 'VV prediction: %.2f' %VVYield
 
 oFile.cd()
 
@@ -452,6 +471,9 @@ xsHist.Write()
 L2T.Write()
 L2T_SF.Write()
 MC2Embed2Cat.Write()
+VV.Write()
+singleTop.Write()
+WPlusJets.Write()
 finalEventsWithXS.Write()
 oTree.Write()
 oFile.Close()

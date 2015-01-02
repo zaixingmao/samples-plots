@@ -86,17 +86,18 @@ def findBestPair(iTree):
 
 def passTrigger(tree):
     passTrigger = False
-    if tree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired > 0:
+#     if tree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired > 0:
+#         passTrigger = True
+    if tree.HLT_Any > 0:
         passTrigger = True
-    if tree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired > 0:
-        passTrigger = True
-    if tree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired > 0:
-        passTrigger = True
-    if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired > 0:
-        passTrigger = True
-    if tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired > 0:
-        passTrigger = True
-
 #     if passTrigger == False:
 #         print tree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired
 #         print tree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired
@@ -173,7 +174,7 @@ def makeSyncNtuples(iLocation, cut, treepath):
     print iLocation
 
 
-    oFile = r.TFile("/nfs_scratch/zmao/fromLogin05/ttSync/%s.root" %oFileName,"recreate")
+    oFile = r.TFile("/nfs_scratch/zmao/fromLogin05/embedSync/%s.root" %oFileName,"recreate")
     oTree = r.TTree('TauCheck', 'TauCheck')
 
     run  = array('i', [0])
@@ -394,24 +395,17 @@ def makeSyncNtuples(iLocation, cut, treepath):
     iBestPair = 0
 
 
-    eventMask = [(668075, 1, 2228),
-                (1586684, 1, 5290),
-                (1861666, 1, 6207),
-                (4826191, 1, 16091),
-                (6209840, 1, 20704),
-                (6818699, 1, 22734),
-                (9449275, 1, 31504),
-                (13546346, 1, 45164),
-                (13981013, 1, 46613),
-                (22344043, 1, 74495),
-                (26959857, 1, 89884),
+    eventMask = [(986252, 1, 3288),
+                (6040961, 1, 20141),
+                (10509587, 1, 35039),
+                (13746663, 1, 45832),
+                (14629271, 1, 48774),
 
-                (26984078, 1, 89965),
-                (32523454, 1, 108434),
-                (35701206, 1, 119028),
-                (37513465, 1, 125070),
-                (37691461, 1, 125664),
-                (43144851, 1, 143845),
+                (17939731, 1, 59811),
+                (21638669, 1, 72144),
+                (23421267, 1, 78087),
+                (27961304, 1, 93223),
+                (34940043, 1, 116490),
 
                 ]
 
@@ -429,12 +423,15 @@ def makeSyncNtuples(iLocation, cut, treepath):
         if not passCut(iTree, track, iBestPair):
             continue
 
-        if 'data' not in iLocation:
-            trigweight_1[0] = trigger.correction_leg1(iTree, iBestPair)
-            trigweight_2[0] = trigger.correction_leg2(iTree, iBestPair)
-        else:
-            trigweight_1[0] = 1.0
-            trigweight_2[0] = 1.0
+        trigweight_1[0] = trigger.dataEff_leg1(iTree, iBestPair)
+        trigweight_2[0] = trigger.dataEff_leg2(iTree, iBestPair)
+
+#         if 'data' not in iLocation:
+#             trigweight_1[0] = trigger.correction_leg1(iTree, iBestPair)
+#             trigweight_2[0] = trigger.correction_leg2(iTree, iBestPair)
+#         else:
+#             trigweight_1[0] = 1.0
+#             trigweight_2[0] = 1.0
         effweight[0] = trigweight_1[0] * trigweight_2[0]
         nTauPairs[0] = len(iTree.pt1)
 
@@ -582,9 +579,14 @@ def makeSyncNtuples(iLocation, cut, treepath):
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newMET-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newPhilHMetCalib-SUB-TT', True, "TauCheck/eventTree")
 # makeSyncNtuples('/hdfs/store/user/zmao/nt_H2hh300_up-SUB-TT', False, "ttTreeBeforeChargeCut/eventTree")
-makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/ttSync/tt_all.root', False, "eventTree")
-# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/MCBest/tt_semi_all.root', False, "eventTree")
-# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/MCBest/tthad_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/embedSync/DY_embed_v9.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/tt_embed_v11_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/DY_embed_v12.root', False, "eventTree")
+
+makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/tt_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/dataA_doublemu_emb_v12_tauShift_all.root', False, "eventTree")
+makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/tt_semi_all.root', False, "eventTree")
+makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/tthad_all.root', False, "eventTree")
 # makeSyncNtuples('/hdfs/store/user/zmao/nt_tauP_D_v7-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
 # makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
 

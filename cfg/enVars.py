@@ -2,10 +2,12 @@ jetPtThreshold = 20
 corruptedROOTfiles = []
 
 preFix = '/hdfs/store/user/zmao/nt_'
-preFix2 = '/hdfs/store/user/zmao/'
+preFix2 = '/hdfs/store/user/elaird/nt_'
 
 # postFix = '_shift-SUB-TT'
-postFix = '_shift-SUB-TT'
+postFix = '_tauESOn_jetShift-SUB-TT'
+# postFix2 = '_tauESOff_tauShift-SUB-TT'
+
 postName = ""
 wScale = 36257.0/30400.0
 dyScale = 3504.0/2950.0
@@ -15,46 +17,45 @@ dyScale2 = 1.19530260886
 dyScale3 = 1.25041471383
 dyScale4 = 1.27550090492
 
-sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix), 1000),
-#                     ("H2hh270%s" %postName,     "%sH2hh270%s" %(preFix, postFix), 1000),
-#                     ("H2hh280%s" %postName,     "%sH2hh280%s" %(preFix, postFix), 1000),
-#                     ("H2hh290%s" %postName,     "%sH2hh290%s" %(preFix, postFix), 1000),
-#                     ("H2hh300%s" %postName,     "%sH2hh300%s" %(preFix, postFix), 1000),
-#                     ("H2hh310%s" %postName,     "%sH2hh310%s" %(preFix, postFix), 1000),
-#                     ("H2hh320%s" %postName,     "%sH2hh320%s" %(preFix, postFix), 1000),
-#                     ("H2hh330%s" %postName,     "%sH2hh330%s" %(preFix, postFix), 1000),
-#                     ("H2hh340%s" %postName,     "%sH2hh340%s" %(preFix, postFix), 1000),
-#                     ("H2hh350%s" %postName,     "%sH2hh350%s" %(preFix, postFix), 1000),
+sampleLocations = [("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix), 1000),
+                    ("H2hh270%s" %postName,     "%sH2hh270%s" %(preFix, postFix), 1000),
+                    ("H2hh280%s" %postName,     "%sH2hh280%s" %(preFix, postFix), 1000),
+                    ("H2hh290%s" %postName,     "%sH2hh290%s" %(preFix, postFix), 1000),
+                    ("H2hh300%s" %postName,     "%sH2hh300%s" %(preFix, postFix), 1000),
+                    ("H2hh310%s" %postName,     "%sH2hh310%s" %(preFix, postFix), 1000),
+                    ("H2hh320%s" %postName,     "%sH2hh320%s" %(preFix, postFix), 1000),
+                    ("H2hh330%s" %postName,     "%sH2hh330%s" %(preFix, postFix), 1000),
+                    ("H2hh340%s" %postName,     "%sH2hh340%s" %(preFix, postFix), 1000),
+                    ("H2hh350%s" %postName,     "%sH2hh350%s" %(preFix, postFix), 1000),
  #                    ("H2hh500%s" %postName,     "%sH2hh500_rad%s" %(preFix2, postFix), 1000),
 #                     ("H2hh700%s" %postName,     "%sH2hh700_rad%s" %(preFix2, postFix), 1000),
 #                     ("H2hh1000%s" %postName,     "%sH2hh1000_rad%s" %(preFix2, postFix), 1000),
-#                     ("tt%s" %postName,      "%sttfull%s" %(preFix, postFix), 26197.5),
+#                    ("tt%s" %postName,      "%sttfull%s" %(preFix, postFix), 26197.5),
 #                     ("tt_semi%s" %postName, "%sttsemi%s" %(preFix, postFix), 109281),
 #                     ("tthad%s" %postName, "%stthad%s" %(preFix, postFix), 114021.5),
-#                     ("ZZ%s" %postName,      "%szz%s" %(preFix, postFix), 2500),
-                    ("tt",      "/nfs_scratch/zmao/fromLogin05/test" , 26197.5),
+#                     ('tbar%s' %postName, "%stbar%s" %(preFix, postFix), 11100.0),
+#                     ('t%s' %postName, "%st%s" %(preFix, postFix), 11100.0),
 
 # 
 #                    
 #                     ('dataA2', '/hdfs/store/user/elaird/nt_tau_A_test_rerun_jets-SUB-TT-data/', 1),
 # 
-#                     ('dataA', '/hdfs/store/user/zmao/nt_tau_A_v7-SUB-TT-data/', 1),
-#                     ('dataB', '/hdfs/store/user/zmao/nt_tauP_B_v7-SUB-TT-data/', 1),
-#                     ('dataC', '/hdfs/store/user/zmao/nt_tauP_C_v7-SUB-TT-data/', 1),
-#                     ('dataD', '/hdfs/store/user/zmao/nt_tauP_D_v7-SUB-TT-data/', 1),
+#                     ('dataA', '/hdfs/store/user/zmao/nt_tau_A_rightGlobalTag-SUB-TT-data/', 1),
+#                     ('dataB', '/hdfs/store/user/zmao/nt_tauP_B_rightGlobalTag-SUB-TT-data/', 1),
+#                     ('dataC', '/hdfs/store/user/zmao/nt_tauP_C_rightGlobalTag-SUB-TT-data/', 1),
+#                     ('dataD', '/hdfs/store/user/zmao/nt_tauP_D_rightGlobalTag-SUB-TT-data/', 1),
 
 # 
-#                     ('dataA_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_A_v7-SUB-TT-data/', 1),
-#                     ('dataB_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_B_v7-SUB-TT-data/', 1),
-#                     ('dataC_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_C_v7-SUB-TT-data/', 1),
-#                     ('dataD_doublemu_emb', '/hdfs/store/user/zmao/nt_doublemu_emb_D_v7-SUB-TT-data/', 1),
-#                     ('ttjets_fulllept_emb_rerun', '/hdfs/store/user/zmao/nt_ttjets_fulllept_emb_v7-SUB-TT/', 26197.5),
+#                     ('dataA_doublemu_emb', '%sdoublemu_emb_A_tauESOff-SUB-TT-data/' %preFix, 1),
+#                     ('dataB_doublemu_emb', '%sdoublemu_emb_B_tauESOff-SUB-TT-data/' %preFix, 1),
+#                     ('dataC_doublemu_emb', '%sdoublemu_emb_C_tauESOff-SUB-TT-data/' %preFix, 1),
+#                     ('dataD_doublemu_emb', '%sdoublemu_emb_D_tauESOff-SUB-TT-data/' %preFix, 1),
+#                     ('tt_embed', '/hdfs/store/user/zmao/nt_ttjets_fulllept_emb%s/' %(postFix), 26197.5),
 
 #                     ('dataA_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_A_emb_v4_rerun-SUB-TT-data/', 1),
 #                     ('dataB_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_B_emb_v4_rerun-SUB-TT-data/', 1),
 #                     ('dataC_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_C_emb_v4_rerun-SUB-TT-data/', 1),
 #                     ('dataD_doublemu_emb_rerun', '/hdfs/store/user/elaird/nt_doublemu_emb_D_emb_v4_rerun-SUB-TT-data/', 1),
-
 
 #                    ('dataTotal', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/data/', 1),
 #                    ('doublemu_emb_noRerun', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/doublemu_emb_noRerun/', 1),
@@ -71,15 +72,14 @@ sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix
 #                     ('W3JetsToLNu%s' %postName, "%sw3%s" %(preFix, postFix), 519000*wScale),
 #                     ('W4JetsToLNu%s' %postName, "%sw4%s" %(preFix, postFix), 214000*wScale),
 # 
-#                     ('WZJetsTo2L2Q%s' %postName, "%swz%s" %(preFix, postFix), 2207),
-# 
-#                     ('wbbj%s' %postName, "%swbbj%s" %(preFix, postFix), 2207),
-#                     ('zzTo4L%s' %postName, "%szzTo4L%s" %(preFix, postFix), 181.0),
-#                     ('zzTo2L2Nu%s' %postName, "%szzTo2L2Nu%s" %(preFix, postFix), 716.0),
-#                     ('WW%s' %postName, "%sww%s" %(preFix, postFix), 5824.0),
-#                     ('WZ3L%s' %postName, "%swz3L%s" %(preFix, postFix), 1058.0),
-#                     ('tbar%s' %postName, "%stbar%s" %(preFix, postFix), 11100.0),
-#                     ('t%s' %postName, "%st%s" %(preFix, postFix), 11100.0),
+#                     ("ZZ%s" %postName,      "%szz%s" %(preFix, postFix2), 2500),
+#                     ('WZJetsTo2L2Q%s' %postName, "%swz%s" %(preFix, postFix2), 2207),
+#                     ('zzTo4L%s' %postName, "%szzTo4L%s" %(preFix, postFix2), 181.0),
+#                     ('zzTo2L2Nu%s' %postName, "%szzTo2L2Nu%s" %(preFix, postFix2), 716.0),
+#                     ('WW%s' %postName, "%sww%s" %(preFix, postFix2), 5824.0),
+#                     ('WZ3L%s' %postName, "%swz3L%s" %(preFix, postFix2), 1058.0),
+
+#                     ('wbbj%s' %postName, "%swbbj%s" %(preFix2, postFix), 0),
 
 
 # 

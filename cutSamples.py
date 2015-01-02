@@ -358,7 +358,7 @@ def loop_one_sample(iSample, iLocation, iXS):
         #Gen Matching
         matchGenJet1Pt[0] = 0
         matchGenJet2Pt[0] = 0
-        if not isData:
+        if (not isData) or (not isEmbedded):
             PUWeight[0] = getPUWeight(iChain.puTruth)
 #             if options.genMatch == 'jet':
 #                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenJet(j1Name, CSVJet1, j2Name, CSVJet2, iChain)

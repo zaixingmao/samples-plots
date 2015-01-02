@@ -177,7 +177,7 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
 
     for fileName, location, in fileList:
 
-        files.append(r.TFile(location0+location))
+        files.append(r.TFile(location))
         trees.append(files[len(files)-1].Get("eventTree"))
         total = trees[len(trees)-1].GetEntries()
         if 'data' in fileName:
@@ -344,6 +344,6 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
 
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
-calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','both3To10', True, 1.0, 'pt', True)
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','both3To10', True, 1.0, 'pt', True)
 print pair_0_counter
 print pairNot_0_counter

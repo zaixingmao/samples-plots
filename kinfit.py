@@ -59,6 +59,18 @@ def fit(tree, j1, j2):
     else:
         status = None
 
+    if tree.EVENT == 10179181 or tree.EVENT == 13087793 or tree.EVENT == 15632930:
+        print ''
+        print tree.EVENT
+        print 'b1: (%.1f, %.1f, %.1f, %.1f)' %(b1.Pt(), b1.Eta(), b1.Phi(), b1.E())
+        print 'b2: (%.1f, %.1f, %.1f, %.1f)' %(b2.Pt(), b2.Eta(), b2.Phi(), b2.E())
+        print 'tau1: (%.1f, %.1f, %.1f, %.1f)' %(tauvis1.Pt(), tauvis1.Eta(), tauvis1.Phi(), tauvis1.E())
+        print 'tau2: (%.1f, %.1f, %.1f, %.1f)' %(tauvis2.Pt(), tauvis2.Eta(), tauvis2.Phi(), tauvis2.E())
+        print 'met: (%.1f, %.1f, %.1f, %.1f)' %(ptmiss.Pt(), ptmiss.Eta(), ptmiss.Phi(), ptmiss.E())
+        print 'met: (%.1f, %.1f, %.1f, %.1f)' %(ptmiss.Pt(), ptmiss.Eta(), ptmiss.Phi(), ptmiss.E())
+        metcov.Print()
+        print 'status: ', status
+        print 'kinfit: ', mh
     #pair = kinFits.getBestHypoFullFit()
     #a = kinFits.getChi2FullFit()
     #print a.find(pair)
