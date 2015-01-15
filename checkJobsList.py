@@ -4,18 +4,18 @@
 import checkJobs
 import os
 
-postFix = 'tauESOn_tauShift'
+postFix = 'rightJetMVA' #'tauESOn_tauShift'
 
-locationList = ['/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh270_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh280_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh290_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh300_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh310_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh320_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh330_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh340_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_H2hh350_%s-SUB-TT' %postFix,
+locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh270_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh280_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh290_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh300_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh310_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh320_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh330_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh340_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_H2hh350_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/H2hh500_rad_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/H2hh700_rad_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/H2hh1000_rad_%s-SUB-TT' %postFix,
@@ -38,8 +38,8 @@ locationList = ['/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_doublemu_emb_B_%s-SUB-TT-data' %postFix,
 #                 '/nfs_scratch/zmao/nt_doublemu_emb_C_%s-SUB-TT-data' %postFix,
 #                 '/nfs_scratch/zmao/nt_doublemu_emb_D_%s-SUB-TT-data' %postFix,
-
-#                 '/nfs_scratch/zmao/nt_tau_A_%s-SUB-TT-data' %postFix,
+#                 '/nfs_scratch/zmao/nt_tauP_D_rightJetMVA2-SUB-TT-data'
+                '/nfs_scratch/zmao/nt_tauP_D_triggerFix-SUB-TT-data'
 #                 '/nfs_scratch/zmao/nt_tauP_B_%s-SUB-TT-data' %postFix,
 #                 '/nfs_scratch/zmao/nt_tauP_C_%s-SUB-TT-data' %postFix,
 #                 '/nfs_scratch/zmao/nt_tauP_D_%s-SUB-TT-data' %postFix,
@@ -52,4 +52,5 @@ for iLocation in locationList:
     checkJobs.checkJobs(opt)
     print '************************************************************************************'
     print ''
+
 

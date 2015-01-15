@@ -124,20 +124,28 @@ def passCategory(iChain, separate):
     elif separate == 'ZTT' and iChain.genTausFromZ < 2:
         return False
     dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2 = getDRs(iChain)
+    case = ''
     #check if any of the gen particles are within dR < 0.5
-    dRs = [dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2]
-    dRs.sort()
-    if dRs[0] < 0.5 and separate == 'ZTT':
-        return True
-    elif dRs[0] >= 0.5 and separate == 'ZTT':
-        return False
-    elif dRs[0] >= 0.5 and separate == 'ZLL':
-        return True
-    if separate == 'ZLL':
-        if iChain.genTausFromZ < 2:
+    dRs1 = [dR_tau_leg1, dR_ele_leg1, dR_mu_leg1]
+    dRs2 = [dR_tau_leg2, dR_ele_leg2, dR_mu_leg2]
+    dRs1.sort()
+    dRs2.sort()
+    if separate == 'ZTT':
+        if dRs1[0] < 0.5 and dRs2[0] < 0.5:
             return True
         else:
             return False
+
+    elif separate == 'ZLL':
+        #ZL+ZJ case
+        if iChain.genTausFromZ < 2:
+            return True
+        else:
+            if dRs1[0] > 0.5 or dRs2[0] > 0.5:
+                return True
+            else:
+                return False
+
     print 'If it got to this point, check separate option: %s' %separate
 
 

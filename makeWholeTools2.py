@@ -15,21 +15,22 @@ lumi = 19.7
 
 def passJetTrigger(tree):
     etas = []
+    jetPtThreshold = 50.0
     if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired or tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired:
         return 1
     else:
-        if tree.J1Pt < 50:
+        if tree.J1Pt < jetPtThreshold:
             return 0
         etas.append((abs(tree.J1Eta)))
-        if tree.J2Pt > 50:
+        if tree.J2Pt > jetPtThreshold:
             etas.append((abs(tree.J2Eta)))
-        if tree.J3Pt > 50:
+        if tree.J3Pt > jetPtThreshold:
             etas.append((abs(tree.J3Eta)))
-        if tree.J4Pt > 50:
+        if tree.J4Pt > jetPtThreshold:
             etas.append((abs(tree.J4Eta)))
-        if tree.J5Pt > 50:
+        if tree.J5Pt > jetPtThreshold:
             etas.append((abs(tree.J5Eta)))
-        if tree.J6Pt > 50:
+        if tree.J6Pt > jetPtThreshold:
             etas.append((abs(tree.J6Eta)))
         etas.sort()
         if etas[0] < 3.0:
@@ -86,7 +87,9 @@ def findIsoSelection(iso1, iso2, iso = 1.0, relaxedRegionOption = 'one'):
     if '3To10' in relaxedRegionOption:
         isoMax = 10.0
         isoCut = 3.0
-
+    if '1.5To10' in relaxedRegionOption:
+        isoMax = 10.0
+        isoCut = 1.5
     isoSelection = None
     if (iso1 > isoMax) or (iso2 > isoMax):
         return None
@@ -123,19 +126,15 @@ def findBTagSelection(CSVJ1, CSVJ2, NBTags):
         bTagSelection += '2M'
     return bTagSelection
 
-def findCategory(tree, iso, option, isData, relaxedRegionOption):
-    global pair_0_counter
-    global pairNot_0_counter
-
-    if findRightPair(tree, 'iso') == 0:
-        pair_0_counter += 1
-    else:
-        pairNot_0_counter += 1
+def findCategory(tree, iso, option, isData, relaxedRegionOption, isEmbed = False, usePassJetTrigger = False, nBtag=''):
     rightPair = findRightPair(tree, option)
-    if tree.pt1.at(rightPair) < 45 or tree.pt2.at(rightPair) < 45:
+    if tree.pt1.at(rightPair) < 45 or tree.pt2.at(rightPair) < 45 or tree.HLT_Any == 0:
         return None, None, None
-#     if (not isData) and (not passJetTrigger(tree)):
-#         return None, None, None
+    if abs(tree.eta1.at(rightPair)) > 2.1 or abs(tree.eta2.at(rightPair)) > 2.1:
+        return None, None, None
+    if (not isEmbed) and usePassJetTrigger:
+        if (not passJetTrigger(tree)):
+            return None, None, None
 
     #sign selection
     signSelection = findSignSelection(tree.charge1.at(rightPair), tree.charge2.at(rightPair))
@@ -144,7 +143,17 @@ def findCategory(tree, iso, option, isData, relaxedRegionOption):
     isoSelection = findIsoSelection(tree.iso1.at(rightPair), tree.iso2.at(rightPair), iso, relaxedRegionOption)
     
     #b-tag selections
-    bTagSelection = findBTagSelection(tree.CSVJ1, tree.CSVJ2, tree.NBTags)
+    if isData or nBtags == '':
+        nBTags = tree.NBTags
+    elif nBtags == 'sysUp':
+        nBTags = tree.NBTagsSysUp
+    elif nBtags == 'sysDown':
+        nBTags = tree.NBTagsSysDown
+    elif nBtags == 'misUp':
+        nBTags = tree.NBTagsMisUp
+    elif nBtags == 'misDown':
+        nBTags = tree.NBTagsMisDown
+    bTagSelection = findBTagSelection(tree.CSVJ1, tree.CSVJ2, nBTags)
 
     return signSelection, isoSelection, bTagSelection
 #         
@@ -155,7 +164,7 @@ def passCut(tree, option):
     else:
         return False
 
-def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegionOption = 'relaxed', verbose = False, isoTight = 1.0, pairOption = 'pt', massWindow = False):
+def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1to3', verbose = False, isoTight = 1.0, pairOption = 'pt', massWindow = False, usePassJetTrigger = False, nBtag = ''):
     files = []
     trees = []
     yields = {'MC': {},
@@ -197,7 +206,7 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
                 if not passCut(trees[len(trees)-1], pairOption):
                     continue
             if trees[len(trees)-1].nElectrons == 0 and trees[len(trees)-1].nMuons == 0:
-                signSelection, isoSelection, bTagSelection = findCategory(trees[len(trees)-1], isoTight, pairOption, isData, relaxedRegionOption)
+                signSelection, isoSelection, bTagSelection = findCategory(trees[len(trees)-1], isoTight, pairOption, isData, relaxedRegionOption, False, usePassJetTrigger, nBtag)
                 if (signSelection == None) or (isoSelection == None) or (bTagSelection == None):
                     continue
                 if isData:
@@ -273,8 +282,15 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
             SF['data2QCD'][region] = addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'L')/addYieldInRegion(yields['Data']['OS']['Relax'], region + 'L')
         else:
             SF['data2QCD'][region] = 0
-        SF['weight'][region] = SF['relax2tight'][region]*SF['loose2medium'][region]*SF['data2QCD'][region]
-        
+        if region != '0':
+            SF['weight'][region] = SF['relax2tight'][region]*SF['loose2medium'][region]*SF['data2QCD'][region]
+        else:
+            if addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M') != 0:
+                SF['relax2tight'][region] = addYieldInRegion(yields['QCD']['SS']['Tight'], region + 'M')/addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M')
+            else:
+                SF['relax2tight'][region] = 0
+            SF['weight'][region] = SF['relax2tight'][region]*SF['data2QCD'][region]
+
         #calculate uncertainties factors
         SF_unc['relax2tight'][region] = calcSysUnc(sf = SF['relax2tight'][region], 
                                                    num = addYieldInRegion(yields['QCD']['SS']['Tight'], region + 'L'), 
@@ -339,11 +355,10 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
     output.append(SF['weight']['2'])
     output.append(SF['relax2tight']['1']*SF['loose2medium']['1']) 
     output.append(SF['relax2tight']['2']*SF['loose2medium']['2']) 
-
+    output.append(SF['relax2tight']['0']) 
     return output
 
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SF12', 'Tight', makeWholeSample_cfg.Relax, True, 1.0, 'pt', makeWholeSample_cfg.massWindow)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','both3To10', True, 1.0, 'pt', True)
-print pair_0_counter
-print pairNot_0_counter

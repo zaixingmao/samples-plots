@@ -12,10 +12,10 @@ bdt_bins_array = array('d',bdt_bins)
 varsRange = { 
 
 #             'J4Pt': (15, 0, 250, 5000, 100, True, True),
-             'svMass': (bins_1M_array, bins_2M_array,'(GeV)', 6, 1, 'width'),
+#              'svMass': (bins_1M_array, bins_2M_array,'(GeV)', 6, 1, 'width'),
 #             'svPt': (10, 0, 600, 50, 100, False, True),
 
-#              'BDT': (bdt_bins_array, bdt_bins_array, '', 250, 50, ''),
+             'BDT': (bdt_bins_array, bdt_bins_array, '', 250, 50, ''),
 #             'nTauPairs': (5, 0, 5, 10000, 100, True, True),
 #             'CSVJ1': (20, 0.5, 1.0, 50000, 100, True, True),
 #             'CSVJ2': (20, 0.0, 1.0, 50000, 100, True, True),
@@ -35,8 +35,13 @@ iso = 1.0
 # observedLocation_back = '/ClassApp_both_dataTotal_all_tightopposite1M3rdLepVeto.root'
 
 #########  None BDT ###########
-predictLocation_front = '/nfs_scratch/zmao/fromLogin05/MCBest/combined_'
+predictLocation_front = '/nfs_scratch/zmao/fromLogin05/CMSSW_5_3_15/src/samples-plots/combined_iso'
+predictLocation_front = '/nfs_scratch/zmao/samples/forDataCard/combined_iso'
+predictLocation_front = '/nfs_scratch/zmao/samples/forDataCard/combined_'
+
 # predictLocation_back = '%.1f_INFN_relaxed__newMethod_withMCOSRelax_Fix.root' %iso
-predictLocation_back = '%.1f_INFN_relaxed___withDYEmbed_massWindow.root' %iso
-observedLocation_front = '/nfs_scratch/zmao/fromLogin05/forPlots/'
-observedLocation_back = 'dataTotal_all_tightopposite1M3rdLepVeto.root'
+predictLocation_back = '%.1f_one1To4_pt_normal__withDYEmbed.root' %iso
+predictLocation_back = 'H300.root'
+massWindowCut = False
+drawWhichDY = 'DY_Embed'#'DY+ttLep'
+method = 'method1'

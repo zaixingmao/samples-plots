@@ -15,17 +15,21 @@ from cfg import draw_BDT as draw_cfg
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
-defaultOrder = ['DY', 'Electroweak', 'QCD', 't#bar{t}', 'signal']
+defaultOrder = ['DY_Embed','DY_MC','DY+ttLep', 'VV', 'QCD', 't#bar{t}', 't#bar{t}-ttLep', 'signal', 'Electroweak', 'singleT']
 
-defaultColor = {'Electroweak': r.TColor.GetColor(222, 90,106),
-                'DY': r.TColor.GetColor(248,206,104),
+defaultColor = {'VV': r.TColor.GetColor(222, 90,106),
+                'singleT': r.TColor.GetColor(222, 90,106),
+                'Electroweak': r.TColor.GetColor(222, 90,106),
+                'DY_Embed': r.TColor.GetColor(248,206,104),
+                'DY_MC': r.TColor.GetColor(248,206,104),
+                'DY+ttLep': r.TColor.GetColor(248,206,104),
                 't#bar{t}': r.TColor.GetColor(155,152,204),
+                't#bar{t}-ttLep': r.TColor.GetColor(155,152,204),
                 'QCD': r.TColor.GetColor(250,202,255),
                 }
 sampleNameList= {}
 sampleNameList['Electroweak'] = []
 sampleNameList['tt'] = []
-
 tt_semi_InitEvents = 12011428.
 
 def getBinWdith(var, bins):
@@ -36,22 +40,20 @@ def getBinWdith(var, bins):
     return 1
 def varFromName(tree, varName):
     varsDict = {'svMass': tree.svMass,
-#                 'BDT': tree.BDT,
+                'BDT': tree.BDT,
                 }
     return varsDict[varName]
 
 def varFromName1(tree, varName):
     varsDict = {'svMass': tree.svMass1,
-#                 'BDT': tree.BDT,
+                'BDT': tree.BDT,
                 }
     return varsDict[varName]
 
 def findBKGCategory(sampleName, mass):
-    if 'JetsToLL' in sampleName:
-        return None
     if 'DY_emb' in sampleName:
         return 'DY_embed'
-    if 'data' in sampleName:
+    if 'dataOSRelax' in sampleName:
         return 'QCD'
     elif 'tt_emb' in sampleName:
         return 'tt_embed'
@@ -60,17 +62,23 @@ def findBKGCategory(sampleName, mass):
             sampleNameList['tt'].append(sampleName)
         return 't#bar{t}'
     elif 'H2hh' in sampleName:
-        if mass == '' and sampleName != 'H2hh350':
+        if mass == '' and sampleName != 'H2hh300':
             return None
         else:
             return 'signal'
+    elif 'DY' in sampleName and 'JetsToLL' in sampleName:
+        return 'DY_MC'
     elif 'MCOSRelax' in sampleName:
         return 'MCOSRelax'
+    elif 'OSTight' in sampleName:
+        return 'Observed'
+    elif sampleName == 't' or sampleName == 'tbar':
+        return 'singleT'
     else:
         if sampleName not in sampleNameList['Electroweak']:
             sampleNameList['Electroweak'].append(sampleName)
         return 'Electroweak'
-    
+
 def passCut(tree, iso):
     if tree.iso1_1 > iso or tree.iso2_1 > iso:
         return 0
@@ -81,26 +89,44 @@ def setDY(histDict, dyScale):
     total = histDict['DY_embed'].Integral(0, histDict['DY_embed'].GetNbinsX()+1) - histDict['tt_embed'].Integral(0, histDict['tt_embed'].GetNbinsX()+1)
     histDict['DY_embed'].Scale(dyScale/total)
     histDict['tt_embed'].Scale(dyScale/total)
-    histDict['DY'].Add(histDict['DY_embed'],1.0)
-    histDict['DY'].Add(histDict['tt_embed'], -1.0)
+    histDict['DY_Embed'].Add(histDict['DY_embed'],1.0)
+    histDict['DY_Embed'].Add(histDict['tt_embed'], -1.0)
     return  histDict
 
-def buildStackFromDict(histDict, region, unit, option):
+def buildStackFromDict(histDict, region, unit, option, drawWhichDY = 'DY_MC'):
     stack = r.THStack()
     order = reversed(defaultOrder)
     for ikey in order:
-        if ikey != 'signal':
-            histDict[ikey].Scale(1, option)
-            stack.Add(histDict[ikey])
+        if ikey == 'signal' or ikey == 'Electroweak' or ikey == 'singleT':
+            continue
+        if 'DY' in ikey and ikey != drawWhichDY:
+            continue
+        if drawWhichDY == 'DY+ttLep':
+            if ikey == 't#bar{t}':
+                continue
+        else:
+            if ikey == 't#bar{t}-ttLep':
+                continue
+        histDict[ikey].Scale(1, option)
+        stack.Add(histDict[ikey])
     stack.SetTitle('CMS Preliminary 19.7 fb^{-1} at 8 TeV  %s; ; events / %s' %(region, unit))
     return stack
 
-def buildDelta(deltaName, histDict, observed, bins, varName, unit):
+def buildDelta(deltaName, histDict, observed, bins, varName, unit, drawWhichDY):
     bkg = r.TH1F('bkg', '', len(bins)-1, bins)
     delta = r.TH1F(deltaName, deltaName, len(bins)-1, bins)
     for ikey in defaultOrder:
-        if ikey != 'signal':
-            bkg.Add(histDict[ikey])
+        if ikey == 'signal' or ikey == 'Electroweak' or ikey == 'singleT':
+            continue
+        if 'DY' in ikey and ikey != drawWhichDY:
+            continue
+        if drawWhichDY == 'DY+ttLep':
+            if ikey == 't#bar{t}':
+                continue
+        else:
+            if ikey == 't#bar{t}-ttLep':
+                continue
+        bkg.Add(histDict[ikey])
     delta.Add(observed)
     delta.Sumw2()
     bkg.Sumw2()
@@ -146,7 +172,7 @@ def buildHistDicts(bins1, bins2, name = ''):
 
     return histDict1, histDict2
 
-def setLegend(position, histDict, observed, bins, signalName):
+def setLegend(position, histDict, observed, bins, signalName, drawWhichDY = 'DY_MC'):
     histList = []
     histList.append((observed, 'Observed'))
     keyList = defaultOrder
@@ -155,6 +181,16 @@ def setLegend(position, histDict, observed, bins, signalName):
         if ikey == 'signal':
             histList.append((histDict[ikey], '%s (%.2f)' %(signalName, histDict[ikey].Integral(0, nbins+1))))
         else:
+            if (ikey == 'Electroweak' or ikey == 'singleT'):
+                continue
+            if 'DY' in ikey and ikey != drawWhichDY:
+                continue
+            if drawWhichDY == 'DY+ttLep':
+                if ikey == 't#bar{t}':
+                    continue
+            else:
+                if ikey == 't#bar{t}-ttLep':
+                    continue
             histList.append((histDict[ikey], '%s (%.2f)' %(ikey, histDict[ikey].Integral(0, nbins+1))))
 
     return tool.setMyLegend(position, histList)
@@ -162,7 +198,7 @@ def setLegend(position, histDict, observed, bins, signalName):
 
 def dontUnblind(tree, varName):
     if 'svMass' in varName:
-        if 90 < tree.svMass1 < 150:
+        if 90 < tree.svMass < 150:
             return True
     elif 'BDT' in varName:
         if tree.BDT > 0:
@@ -175,26 +211,37 @@ def passCutWindow(tree):
     else:
         return False
 
-def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation, observedLocation, mass, Lumi = 19.7):
-    predictFile = r.TFile(predictLocation)
-    observedFile = r.TFile(observedLocation)
-    
+def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation, mass, massWindowCut, drawWhichDY, Lumi = 19.7):
+    predictFile = r.TFile(predictLocation)    
     predictTree = predictFile.Get('eventTree')
-    observedTree = observedFile.Get('eventTree')
-
 
     predictTotal = predictTree.GetEntries()
-    observedTotal = observedTree.GetEntries()
     signalName = ''
     histDict1M, histDict2M = buildHistDicts(bins1, bins2)
     histDict1M_plot, histDict2M_plot = buildHistDicts(bins1, bins2, '_plot')
+    observed1M = buildObserved('observed1M', bins1)
+    observed2M = buildObserved('observed2M', bins2)
+    observed1M_plot = buildObserved('observed1M_plot', bins1)
+    observed2M_plot = buildObserved('observed2M_plot', bins2)
 
     for iEvent in range(predictTotal):
         tool.printProcessStatus(iEvent, predictTotal, 'Looping file [%s]' % (predictLocation))
         predictTree.GetEntry(iEvent)
-        if not passCutWindow(predictTree):
+        if massWindowCut and (not passCutWindow(predictTree)):
             continue
         sampleCat = findBKGCategory(predictTree.sampleName, mass)
+        if sampleCat == 'Observed':
+            if dontUnblind(predictTree, varName):
+                continue
+            if predictTree.NBTags == 1:
+                observed1M.Fill(varFromName(predictTree, varName))
+                observed1M_plot.Fill(varFromName(predictTree, varName))
+
+            elif predictTree.NBTags > 1:
+                observed2M.Fill(varFromName(predictTree, varName))
+                observed2M_plot.Fill(varFromName(predictTree, varName))
+            continue
+
         if sampleCat == None:
             continue
         if sampleCat == 'QCD' and ('OSRelax' in predictTree.sampleName):
@@ -216,9 +263,33 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
         if predictTree.Category == '1M':
             histDict1M[sampleCat].Fill(varFromName(predictTree, varName), weight1)
             histDict1M_plot[sampleCat].Fill(varFromName(predictTree, varName), weight1)
+            if (sampleCat == 't#bar{t}') and (predictTree.sampleName != 'tt'):
+                histDict1M['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight1)
+                histDict1M_plot['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight1)
         elif predictTree.Category == '2M':
             histDict2M[sampleCat].Fill(varFromName(predictTree, varName), weight2)
             histDict2M_plot[sampleCat].Fill(varFromName(predictTree, varName), weight2)
+            if (sampleCat == 't#bar{t}') and (predictTree.sampleName != 'tt'):
+                histDict2M['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight2)
+                histDict2M_plot['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight2)
+        if draw_cfg.method == 'method1' and sampleCat == 'DY_embed':
+            if predictTree.NBTags > 1:
+                histDict2M['DY+ttLep'].Fill(varFromName(predictTree, varName), weight2/0.9)
+                histDict2M_plot['DY+ttLep'].Fill(varFromName(predictTree, varName), weight2/0.9)
+            if predictTree.NBTags == 1:
+                histDict1M['DY+ttLep'].Fill(varFromName(predictTree, varName), weight1/0.9)
+                histDict1M_plot['DY+ttLep'].Fill(varFromName(predictTree, varName), weight1/0.9)
+
+    #Set DY + tt_lep    
+    if draw_cfg.method != 'method1':
+        dyWithTT1M_scale = predictFile.Get('DYwithTTScale_1M')
+        dyWithTT2M_scale = predictFile.Get('DYwithTTScale_2M')
+        dyWithTT1M = dyWithTT1M_scale.GetBinContent(1)
+        dyWithTT2M = dyWithTT2M_scale.GetBinContent(1)
+        histDict1M['DY+ttLep'].Add(histDict1M['DY_embed'], dyWithTT1M/histDict1M['DY_embed'].Integral(0, len(bins1)))
+        histDict1M_plot['DY+ttLep'].Add(histDict1M_plot['DY_embed'], dyWithTT1M/histDict1M_plot['DY_embed'].Integral(0, len(bins1)))
+        histDict2M['DY+ttLep'].Add(histDict2M['DY_embed'], dyWithTT2M/histDict2M['DY_embed'].Integral(0, len(bins2)))
+        histDict2M_plot['DY+ttLep'].Add(histDict2M_plot['DY_embed'], dyWithTT2M/histDict2M_plot['DY_embed'].Integral(0, len(bins2)))
 
     #Set DY
     dy1M_scale = predictFile.Get('MC2Embed2Cat_1M')
@@ -242,6 +313,36 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     SF_2M = predictSF2MHist.GetBinContent(1)
     weight_1M = predictSF1MHist_weight.GetBinContent(1)
     weight_2M = predictSF2MHist_weight.GetBinContent(1)
+
+    #Set VV
+    electroweakWeightHist1M = predictFile.Get('VV_1M')
+    electroweakWeightHist2M = predictFile.Get('VV_2M')
+    eScale1M = electroweakWeightHist1M.GetBinContent(1)
+    eScale2M = electroweakWeightHist2M.GetBinContent(1)
+
+    singleTWeightHist1M = predictFile.Get('singleT_1M')
+    singleTWeightHist2M = predictFile.Get('singleT_2M')
+    sScale1M = singleTWeightHist1M.GetBinContent(1)
+    sScale2M = singleTWeightHist2M.GetBinContent(1)
+
+    tmpElectroIntegral = histDict1M_plot['Electroweak'].Integral(0, len(bins1))
+    tmpSingleTIntegral = histDict1M_plot['singleT'].Integral(0, len(bins1))
+    histDict1M_plot['Electroweak'].Scale(eScale1M/tmpElectroIntegral)
+    histDict1M['Electroweak'].Scale(eScale1M/tmpElectroIntegral)
+    histDict1M_plot['singleT'].Scale(sScale1M/tmpSingleTIntegral)
+    histDict1M['singleT'].Scale(sScale1M/tmpSingleTIntegral)
+    tmpElectroIntegral = histDict2M_plot['Electroweak'].Integral(0, len(bins2))
+    tmpSingleTIntegral = histDict2M_plot['singleT'].Integral(0, len(bins2))
+    histDict2M_plot['Electroweak'].Scale(eScale2M/tmpElectroIntegral)
+    histDict2M_plot['singleT'].Scale(sScale2M/tmpSingleTIntegral)
+    histDict2M['Electroweak'].Scale(eScale2M/tmpElectroIntegral)
+    histDict2M['singleT'].Scale(sScale2M/tmpSingleTIntegral)
+    histDict1M['VV'].Add(histDict1M['Electroweak'], histDict1M['singleT'])
+    histDict2M['VV'].Add(histDict2M['Electroweak'], histDict2M['singleT'])
+    histDict1M_plot['VV'].Add(histDict1M_plot['Electroweak'], histDict1M_plot['singleT'])
+    histDict2M_plot['VV'].Add(histDict2M_plot['Electroweak'], histDict2M_plot['singleT'])
+
+    print histDict1M['QCD'].Integral(0, len(bins1))
     print ''
     print SF_1M, SF_2M
     print weight_1M, weight_2M
@@ -265,36 +366,17 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     histDict1M_plot['QCD'].Scale(weight_1M)
     histDict2M_plot['QCD'].Scale(weight_2M)
 
-    bkgStack1M = buildStackFromDict(histDict1M_plot, '1M', unit, option)
-    bkgStack2M = buildStackFromDict(histDict2M_plot, '2M', unit, option)
+    bkgStack1M = buildStackFromDict(histDict1M_plot, '1M', unit, option, drawWhichDY)
+    bkgStack2M = buildStackFromDict(histDict2M_plot, '2M', unit, option, drawWhichDY)
     
-    observed1M = buildObserved('observed1M', bins1)
-    observed2M = buildObserved('observed2M', bins2)
-    observed1M_plot = buildObserved('observed1M_plot', bins1)
-    observed2M_plot = buildObserved('observed2M_plot', bins2)
-
     print ''
-    for iEvent in range(observedTotal):
-        tool.printProcessStatus(iEvent, observedTotal, 'Looping file [%s]' % (observedLocation))
-        observedTree.GetEntry(iEvent)
-        if dontUnblind(observedTree, varName):
-            continue
-        if not passCut(observedTree, iso):
-            continue
-        if observedTree.NBTags == 1:
-            observed1M.Fill(varFromName1(observedTree, varName))
-            observed1M_plot.Fill(varFromName1(observedTree, varName))
 
-        elif observedTree.NBTags > 1:
-            observed2M.Fill(varFromName1(observedTree, varName))
-            observed2M_plot.Fill(varFromName1(observedTree, varName))
-    print ''
     position = (0.47, 0.9 - 0.06*6, 0.87, 0.9)
 
-    legend1M = setLegend(position, histDict1M, observed1M, bins1, signalName)
-    legend2M = setLegend(position, histDict2M, observed2M, bins2, signalName)
+    legend1M = setLegend(position, histDict1M, observed1M, bins1, signalName, drawWhichDY)
+    legend2M = setLegend(position, histDict2M, observed2M, bins2, signalName, drawWhichDY)
 
-    psfile = '%s_%s_%s.pdf' %(varName, mass, iso)
+    psfile = '%s_%s_%s_%s_%s.pdf' %(varName, mass, iso, drawWhichDY, draw_cfg.method)
     c = r.TCanvas("c","Test", 600, 800)
 
     p1 = r.TPad("p1","p1",0.,1,1.,0.4)
@@ -317,7 +399,7 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     r.gPad.SetTicky()
     r.gPad.SetTickx()
     p1_r.SetGridy(1)
-    delta1M = buildDelta('delta1M', histDict1M, observed1M, bins1, varName, unit)
+    delta1M = buildDelta('delta1M', histDict1M, observed1M, bins1, varName, unit, drawWhichDY)
     delta1M.Draw()
     c.Update()
     c.Print('%s(' %psfile)
@@ -342,13 +424,12 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     r.gPad.SetTicky()
     r.gPad.SetTickx()
     p2_r.SetGridy(1)
-    delta2M = buildDelta('delta2M', histDict2M, observed2M, bins2, varName, unit)
+    delta2M = buildDelta('delta2M', histDict2M, observed2M, bins2, varName, unit, drawWhichDY)
     delta2M.Draw()    
     c.Print('%s)' %psfile)
     print "Plot saved at %s" %(psfile)
     c.Close()
     print sampleNameList
-
 varsDict = draw_cfg.varsRange
 
 scaleWeight_1M = 1.0
@@ -360,7 +441,6 @@ masses = ['']
 
 for iMass in masses:
     predictLocation = '%s%s%s' %(draw_cfg.predictLocation_front, iMass, draw_cfg.predictLocation_back)
-    observedLocation = '%s%s%s' %(draw_cfg.observedLocation_front, iMass, draw_cfg.observedLocation_back)
     for ikey in varsDict:
         configs = varsDict[ikey]
         draw(varName = ikey,
@@ -372,7 +452,8 @@ for iMass in masses:
              option = configs[5],
              iso = draw_cfg.iso, 
              predictLocation = predictLocation, 
-             observedLocation = observedLocation, 
              mass = iMass,
+             massWindowCut = draw_cfg.massWindowCut,
+             drawWhichDY = draw_cfg.drawWhichDY,
              Lumi = 19.7)
 

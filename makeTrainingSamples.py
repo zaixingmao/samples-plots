@@ -1,63 +1,84 @@
 #!/usr/bin/env python
 import os as os
-import makeWholeTools
+import makeWholeTools2
 import makeWholeSample_cfg
 
 # preFix = "/scratch/zmao/BDTStudy/8/260/ClassApp_both_TMVARegApp_"
 # preFix = "/scratch/zmao/v3/TMVARegApp_"
-preFix = "/nfs_scratch/zmao/fromLogin05/forPlots/"
-
+# preFix = "/nfs_scratch/zmao/fromLogin05/forPlots/"
+preFixTauOn = "/nfs_scratch/zmao/samples/tauESOn/normal/"
+preFixTauOff = "/nfs_scratch/zmao/samples/tauESOff/normal/"
+preFixData = "/nfs_scratch/zmao/samples/data/"
+outputFileDir = "/nfs_scratch/zmao/samples/BDT_1.0/"
 postFix = ""
-# MC_Samples = [('ZZ_all%s.root' %postFix, 2.500), 
-#               ('WZJetsTo2L2Q_all.root', 2.207), 
-#               ('W1JetsToLNu_all.root', 5400), 
-#               ('W2JetsToLNu_all.root', 1750), 
-#               ('W3JetsToLNu_all.root', 519), 
-#               ('DY1JetsToLL_all.root', 561), 
-#               ('DY2JetsToLL_all.root', 181), 
-#               ('DY3JetsToLL_all.root', 51.1), 
-#               ('tt_all%s.root' %postFix, 26.1975), 
-#               ('tt_semi_all%s.root' %postFix, 109.281), 
-#               ]
 
-MC_Samples = [('Electroweak.root'), 
-              ('signal.root'),
-              ('DYJetsToLL_all.root'),
-              ('tt.root')]
+MC_Samples = [#('%s/Electroweak_withSingleTop.root' %preFixTauOff), 
+              ('%s/dy.root' %preFixTauOn),
+              #('%s/TT.root' %preFixTauOff)
+             ]
 
-QCD_Sample = "dataTotal_all%s.root" %postFix
+SamplesForRerunning = [('%s/DY_embed.root' %preFixTauOn), 
+                       ('%s/tt_embed_all.root' %preFixTauOff)]
 
-region = '1M3rdLepVeto'
-relaxed = 'relaxed'
+QCD_Sample = "%s/data.root" %preFixData
 
+iso = 'Tight'
+sign = 'OS'
+relaxedRegion = 'one1To4'
+bRegion = 'M'
 
 massPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 
-# for iMass in massPoints:
-#     inputFile = preFix
-#     inputFile += 'H2hh%i_all.root' %iMass
-#     outputFile = inputFile[0:inputFile.rfind('.')]
-#     command = "python makeTrainingSample.py --i "
-#     command += "%s --o %s --c tightopposite%s" %(inputFile, outputFile, region)
+for iMass in massPoints:
+    inputFile = preFixTauOn
+    inputFile += 'H2hh%i_all.root' %iMass
+    outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
+    command = "python makeTrainingSample.py --i "
+    command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion)
 #     os.system(command) 
-# 
-# for iMCSample in MC_Samples:
-#     inputFile = preFix+iMCSample
-#     outputFile = inputFile[0:inputFile.rfind('.')]
-#     command = "python makeTrainingSample.py --i "
-#     command += "%s --o %s --c tightopposite%s " %(inputFile, outputFile, region)
-#     os.system(command) 
-# 
-# weights = [1]
-# weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', relaxed, False, True)
-# command = "python makeTrainingSample.py --i "
-# inputFile = preFix+QCD_Sample
-# outputFile = inputFile[0:inputFile.rfind('.')]
-# command += "%s --o %s --c %sopposite%s --xs %.6f" %(inputFile, outputFile, region,relaxed, weights[0])
+
+for iMCSample in MC_Samples:
+    inputFile = iMCSample
+    outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
+    command = "python makeTrainingSample.py --i "
+    command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion)
+#     command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion L --useLooseForShape 1" %(inputFile, outputFile, iso, sign, relaxedRegion)
+    os.system(command)
+
+inputFile = "%s/data.root" %preFixData
+outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
+command = "python makeTrainingSample.py --i "
+command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion)
 # os.system(command)
 
-command = "python makeTrainingSample.py --i "
-inputFile = preFix+QCD_Sample
-outputFile = inputFile[0:inputFile.rfind('.')]
-command += "%s --o %s --c tightopposite%s --xs 1.0" %(inputFile, outputFile, region)
-os.system(command)
+iso = 'Tight'
+sign = 'OS'
+bRegion = 'L'
+
+for iRerunSample in SamplesForRerunning:
+    inputFile = iRerunSample
+    outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
+    command = "python makeTrainingSample.py --i "
+    command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion)
+#     os.system(command) 
+
+iso = 'Relax'
+sign = 'OS'
+bRegion = 'L'
+
+for iRerunMCSample in MC_Samples:
+    inputFile = iRerunMCSample
+    outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
+    command = "python makeTrainingSample.py --i "
+    command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion)
+#     os.system(command) 
+
+# iso = 'Relax'
+# weights = makeWholeTools2.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SF12', 'Tight', relaxedRegion, True, 1.0, makeWholeSample_cfg.pairOption, False)
+# 
+# command = "python makeTrainingSample.py --i "
+# inputFile = QCD_Sample
+# outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
+# command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s --weightOne %.6f --weightTwo %.6f" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion, weights[0], weights[1])
+# 
+# os.system(command)

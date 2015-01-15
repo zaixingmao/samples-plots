@@ -362,7 +362,7 @@ def makeWhole(iFileName, iLocation, weight0, weight1, weight2, sample):
     oTree.Write()
     oFile.Close()
 
-weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', 'relaxed', True)
+# weights = makeWholeTools.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012', 'tight', 'relaxed', True)
 # massPoints = ['260','270','280','290','300','310','320','330','340','350']
 massPoints = ['260', '300', '350']
 nTreesList = ['150']

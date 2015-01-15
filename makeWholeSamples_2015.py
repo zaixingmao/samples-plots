@@ -9,7 +9,8 @@ from array import array
 import makeWholeSample_cfg
 import makeWholeTools2
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
-import cutSampleTools 
+import embedDYYieldCalculator
+import cProfile
 
 dR_tauEleMu_max = 0.5
 dR_b_max = 0.5
@@ -41,31 +42,6 @@ def findRightPair(tree, option):
         return iPair
     else:
         return 0
-
-def passJetTrigger(tree):
-    return 1
-    etas = []
-    if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired or tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired:
-        return 1
-    else:
-        if tree.J1Pt < 50:
-            return 0
-        etas.append((abs(tree.J1Eta)))
-        if tree.J2Pt > 50:
-            etas.append((abs(tree.J2Eta)))
-        if tree.J3Pt > 50:
-            etas.append((abs(tree.J3Eta)))
-        if tree.J4Pt > 50:
-            etas.append((abs(tree.J4Eta)))
-        if tree.J5Pt > 50:
-            etas.append((abs(tree.J5Eta)))
-        if tree.J6Pt > 50:
-            etas.append((abs(tree.J6Eta)))
-        etas.sort()
-        if etas[0] < 3.0:
-            return 1
-        else:
-            return 0
 
 def findGenMatch(dR1_tau, dR2_tau, dR1_ele, dR2_ele, dR1_mu, dR2_mu, option = ''):
     #for leg1
@@ -163,317 +139,343 @@ def getRightBTagCatName(bTagSelection):
         return '0L', '0M'
     return bTagSelection[0:2], bTagSelection[2:4]
 
-fileList = []
+def run():
+    fileList = []
+    for i in range(len(makeWholeSample_cfg.sampleConfigs)):
+        #configs name, location, selection, useMediumForYield
+        fileList.append((makeWholeSample_cfg.sampleConfigs[i][0], 
+                        makeWholeSample_cfg.sampleConfigs[i][1], 
+                        makeWholeSample_cfg.sampleConfigs[i][2],
+                        makeWholeSample_cfg.sampleConfigs[i][3]))
 
-for i in range(len(makeWholeSample_cfg.sampleConfigs)):
-    #configs name, location, selection, useMediumForYield
-    fileList.append((makeWholeSample_cfg.sampleConfigs[i][0], 
-                    makeWholeSample_cfg.sampleConfigs[i][1], 
-                    makeWholeSample_cfg.sampleConfigs[i][2],
-                    makeWholeSample_cfg.sampleConfigs[i][3]))
+    oFileName = makeWholeSample_cfg.oFileName
+    oFile = r.TFile(oFileName, 'RECREATE')
+    oTree = r.TTree('eventTree', '')
+    iso = makeWholeSample_cfg.iso
+    nSamples = len(fileList)
 
-oFileName = makeWholeSample_cfg.oFileName
-oFile = r.TFile(oFileName, 'RECREATE')
-oTree = r.TTree('eventTree', '')
-iso = makeWholeSample_cfg.iso
-nSamples = len(fileList)
+    mJJ = array('f', [0.])
+    svMass = array('f', [0.])
+    fMass = array('f', [0.])
+    fMassKinFit = array('f', [0.])
+    chi2KinFit = array('f', [0.])
+    chi2KinFit2 = array('f', [0.])
+    PUWeight = array('f', [0.])
+    iso1 = array('f', [0.])
+    iso2 = array('f', [0.])
+    CSVJ2 = array('f', [0.])
+    NBTags = array('i', [0])
+    triggerEff = array('f', [0.])
+    sampleName = bytearray(20)
+    genMatchName = bytearray(3)
+    xs = array('f', [0.])
+    initEvents = array('f', [0.])
+    Category = bytearray(5)
 
-mJJ = array('f', [0.])
-svMass = array('f', [0.])
-fMass = array('f', [0.])
-fMassKinFit = array('f', [0.])
-chi2KinFit = array('f', [0.])
-chi2KinFit2 = array('f', [0.])
-PUWeight = array('f', [0.])
-iso1 = array('f', [0.])
-iso2 = array('f', [0.])
-CSVJ2 = array('f', [0.])
-NBTags = array('i', [0])
-triggerEff = array('f', [0.])
-sampleName = bytearray(20)
-genMatchName = bytearray(3)
-xs = array('f', [0.])
-initEvents = array('f', [0.])
-Category = bytearray(5)
-
-xsValues = {}
-initEventsValues = {}
-eventsSaved = {}
-
-
-yieldForMediumCat = {}
-yieldForLooseCat = {}
-inclusiveYields = {}
-
-inclusiveYields = {}
-catYields = {}
-svMassRange = [20, 0, 400]
-L2T_value = 0
+    xsValues = {}
+    initEventsValues = {}
+    eventsSaved = {}
 
 
-oTree.Branch("mJJ", mJJ, "mJJ/F")
-oTree.Branch("fMass", fMass, "fMass/F")
-oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
-oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
-oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
-oTree.Branch("xs", xs, "xs/F")
-oTree.Branch("initEvents", initEvents, "initEvents/F")
-oTree.Branch("NBTags", NBTags, "NBTags/I")
-oTree.Branch("Category", Category, "Category[21]/C")
+    yieldForMediumCat = {}
+    inclusiveYields = {}
 
-oTree.Branch("svMass", svMass, "svMass/F")
-oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
-oTree.Branch("iso1", iso1, "iso1/F")
-oTree.Branch("iso2", iso2, "iso2/F")
-oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
-oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
+    inclusiveYields = {}
+    catYields = {}
+    svMassRange = [20, 0, 400]
+    L2T_value = 0
 
-oTree.Branch("sampleName", sampleName, "sampleName[21]/C")
-oTree.Branch("genMatchName", genMatchName, "genMatchName[21]/C")
 
-for indexFile in range(nSamples):
-    eventsSavedCounter_1M = 0.0
-    eventsSavedCounter_2M = 0.0
+    oTree.Branch("mJJ", mJJ, "mJJ/F")
+    oTree.Branch("fMass", fMass, "fMass/F")
+    oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
+    oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
+    oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
+    oTree.Branch("xs", xs, "xs/F")
+    oTree.Branch("initEvents", initEvents, "initEvents/F")
+    oTree.Branch("NBTags", NBTags, "NBTags/I")
+    oTree.Branch("Category", Category, "Category[21]/C")
 
-    name = fileList[indexFile][0]
-    option = fileList[indexFile][2]
-    iFile =  r.TFile(fileList[indexFile][1])
-    iTree = iFile.Get('eventTree')
-    useMediumCat4Yield = fileList[indexFile][3]
-    if useMediumCat4Yield:
-        yieldForMediumCat[name+'_1M'] = 0.0
-        yieldForMediumCat[name+'_2M'] = 0.0
-        yieldForLooseCat[name+'_1L'] = 0.0
-        yieldForLooseCat[name+'_2L'] = 0.0
+    oTree.Branch("svMass", svMass, "svMass/F")
+    oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
+    oTree.Branch("iso1", iso1, "iso1/F")
+    oTree.Branch("iso2", iso2, "iso2/F")
+    oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
+    oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
 
-    total = iTree.GetEntries()
-    isData = False
-    if 'data' in name:
-        isData = True
-    if 'emb' in name:
-        isEmbed = True
-        inclusiveYields[name] = 0.0
-    else:
-        isEmbed = False
-    if 'inclusive' in name:
-        isInclusive = True
-        inclusiveYields[name] = 0.0
-    else:
-        isInclusive = False
-    cat = ''
-    region = 'bTag'
-    if '1M' in option:
-        region = '1M'
-    elif '2M' in option:
-        region = '2M'
-    elif '1L' in option:
-        region = '1L'
-        cat = '1M'
-    elif '2L' in option:
-        region = '2L'
-        cat = '2M'
+    oTree.Branch("sampleName", sampleName, "sampleName[21]/C")
+    oTree.Branch("genMatchName", genMatchName, "genMatchName[21]/C")
 
-    for i in range(0, total):
-        tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
-        #Fill Histograms
-        iTree.GetEntry(i)
+    for indexFile in range(nSamples):
+        eventsSavedCounter_1M = 0.0
+        eventsSavedCounter_2M = 0.0
 
-        #get the right pair of taus based on isoMin or ptMax
-        rightPair = findRightPair(iTree, makeWholeSample_cfg.pairOption)
+        name = fileList[indexFile][0]
+        option = fileList[indexFile][2]
+        iFile =  r.TFile(fileList[indexFile][1])
+        iTree = iFile.Get('eventTree')
+        useMediumCat4Yield = fileList[indexFile][3]
+        if useMediumCat4Yield:
+            yieldForMediumCat[name+'_1M'] = 0.0
+            yieldForMediumCat[name+'_2M'] = 0.0
 
-        if makeWholeSample_cfg.thirdLeptonVeto and (iTree.nElectrons > 0 or iTree.nMuons > 0):
-            continue
+        total = iTree.GetEntries()
+        isData = False
+        if 'data' in name:
+            isData = True
+        if 'emb' in name:
+            isEmbed = True
+            inclusiveYields[name] = 0.0
+        else:
+            isEmbed = False
+        if 'inclusive' in name:
+            isInclusive = True
+            inclusiveYields[name] = 0.0
+        else:
+            isInclusive = False
+        cat = ''
+        region = 'bTag'
+        if '1M' in option:
+            region = '1M'
+        elif '2M' in option:
+            region = '2M'
+        elif '1L' in option:
+            region = '1L'
+            cat = '1M'
+        elif '2L' in option:
+            region = '2L'
+            cat = '2M'
 
-        #get event category
-        signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, makeWholeSample_cfg.iso, makeWholeSample_cfg.pairOption, isData, makeWholeSample_cfg.Relax)
-        if signSelection == None or isoSelection == None:
-            continue
-        looseTag, mediumTag = getRightBTagCatName(bTagSelection)
+        for i in range(0, total):
+            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
+            #Fill Histograms
+            iTree.GetEntry(i)
 
-        #calculate inclusiveYield
-        if isEmbed or isInclusive:
+            #get the right pair of taus based on isoMin or ptMax
+            rightPair = findRightPair(iTree, makeWholeSample_cfg.pairOption)
+
+            if makeWholeSample_cfg.thirdLeptonVeto and (iTree.nElectrons > 0 or iTree.nMuons > 0):
+                continue
             if iTree.HLT_Any == 0:
                 continue
-            if (signSelection == "OS") and (isoSelection == "Tight"):
-                if 'data' in iTree.sampleName:
-                    inclusiveYields[name] += iTree.triggerEff
-                elif isEmbed:
-                    inclusiveYields[name] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
-                else:
-                    if not passJetTrigger(iTree):
-                        continue
-                    inclusiveYields[name] += iTree.triggerEff*iTree.xs*lumi/(iTree.initEvents+0.0)
 
-        #calculate category yield
-        if useMediumCat4Yield:
-            if (signSelection == "OS") and (isoSelection == "Tight") and (mediumTag != '0M'):
-                if  makeWholeSample_cfg.massWindow and not passMassWindow(iTree.svMass.at(rightPair),iTree.mJJ, iTree.fMassKinFit):
-                    continue
-                if isEmbed:
-                    if 'data' in iTree.sampleName:
-                        yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff
-                    else:
-                        yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
-                else:
-                    yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
+            #get event category
+            signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(tree = iTree, 
+                                                                                      iso = makeWholeSample_cfg.iso, 
+                                                                                      option = makeWholeSample_cfg.pairOption,
+                                                                                      isData = isData,
+                                                                                      relaxedRegionOption = makeWholeSample_cfg.Relax,
+                                                                                      isEmbed = isEmbed,
+                                                                                      usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
+                                                                                      nBtag = makeWholeSample_cfg.bTagShift)
+
+            if signSelection == None or isoSelection == None:
+                continue
+            looseTag, mediumTag = getRightBTagCatName(bTagSelection)
+
+            if isEmbed and iTree.ZTT == 0:
+                continue
+            if name == 'ZLL' and iTree.ZLL == 0:
+                continue
+            if name == 'ZTT' and iTree.ZTT == 0:
+                continue
+            #calculate category yield
+            if useMediumCat4Yield:
+                if (not makeWholeSample_cfg.massWindow) or (makeWholeSample_cfg.massWindow and passMassWindow(iTree.svMass.at(rightPair),iTree.mJJ, iTree.fMassKinFit)):
+                    if (signSelection == "OS") and (isoSelection == "Tight") and (mediumTag != '0M'):
+                        if isEmbed:
+                            if 'data' in iTree.sampleName:
+                                yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff
+                            else:
+                                yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+                        else:
+                            yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
         
 
-        passSelection, bRegion = passCut(option, signSelection, isoSelection, looseTag, mediumTag)
-        if not passSelection:
-            continue
+            passSelection, bRegion = passCut(option, signSelection, isoSelection, looseTag, mediumTag)
 
-        #calculate loose cat yield for embed samples
-        if isEmbed:
-            if makeWholeSample_cfg.massWindow and not passMassWindow(iTree.svMass.at(rightPair),iTree.mJJ, iTree.fMassKinFit):
+            if option[:len(option)-1] != signSelection+isoSelection:
                 continue
-            if 'data' in iTree.sampleName:
-                yieldForLooseCat["%s_%s" %(name, looseTag)] += iTree.triggerEff
+            mJJ[0] = iTree.mJJ
+            fMass[0] = iTree.fMass
+            fMassKinFit[0] = iTree.fMassKinFit
+            chi2KinFit[0] = iTree.chi2KinFit
+            chi2KinFit2[0] = iTree.chi2KinFit2
+            svMass[0] = iTree.svMass.at(rightPair)
+            iso1[0] = iTree.iso1.at(rightPair)
+            iso2[0] = iTree.iso2.at(rightPair)
+            CSVJ2[0] = iTree.CSVJ2
+            NBTags[0] = int(iTree.NBTags)
+            triggerEff[0] = iTree.triggerEff
+            if '_semi' not in iTree.sampleName:
+                tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_')]
             else:
-                yieldForLooseCat["%s_%s" %(name, looseTag)] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
-
-        if (not isEmbed) and (not passJetTrigger(iTree)) and (not isData):
-            continue
-        mJJ[0] = iTree.mJJ
-        fMass[0] = iTree.fMass
-        fMassKinFit[0] = iTree.fMassKinFit
-        chi2KinFit[0] = iTree.chi2KinFit
-        chi2KinFit2[0] = iTree.chi2KinFit2
-        svMass[0] = iTree.svMass.at(rightPair)
-        iso1[0] = iTree.iso1.at(rightPair)
-        iso2[0] = iTree.iso2.at(rightPair)
-        CSVJ2[0] = iTree.CSVJ2
-        NBTags[0] = int(iTree.NBTags)
-        triggerEff[0] = iTree.triggerEff
-        Category[:21] = bRegion
-        if '_semi' not in iTree.sampleName:
-            tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_')]
-        else:
-            tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_semi')+5]
-        if 'data' in tmpSampleName and (not isEmbed):
-            sampleName[:21] = 'dataOSRelax'
-            initEvents[0] = 0
-            xs[0] = 1.0           
-        elif ('data' in tmpSampleName) and isEmbed:
-            sampleName[:21] = 'DY_embed'
-            initEvents[0] = 19.7
-            xs[0] = 1.0            
-        elif not isEmbed:
-            initEvents[0] = iTree.initEvents
-            xs[0] = iTree.xs
-            sampleName[:21] = tmpSampleName
-            if name == 'MCOSRelax':
-                sampleName[:21] = 'MCOSRelax'
-        else:
-            initEvents[0] = tt_semi_InitEvents
-            xs[0] = iTree.xs*0.983
-            sampleName[:21] = 'tt_embed'
+                tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_semi')+5]
+            if 'data' in tmpSampleName and (not isEmbed):
+                sampleName[:21] = name
+                initEvents[0] = 1.0
+                xs[0] = 1.0           
+            elif ('data' in tmpSampleName) and isEmbed:
+                sampleName[:21] = 'DY_embed'
+                initEvents[0] = 19.7
+                xs[0] = 1.0            
+            elif not isEmbed:
+                initEvents[0] = iTree.initEvents
+                xs[0] = iTree.xs
+                sampleName[:21] = tmpSampleName
+                if name == 'MCOSRelax':
+                    sampleName[:21] = 'MCOSRelax'
+                elif name == 'ZLL':
+                    sampleName[:21] = 'ZLL'
+                elif name == 'ZTT':
+                    sampleName[:21] = 'ZTT'
+            else:
+                initEvents[0] = tt_semi_InitEvents
+                xs[0] = iTree.xs*0.983
+                sampleName[:21] = 'tt_embed'
             
-        if tmpSampleName not in initEventsValues.keys():
-            if 'data' not in tmpSampleName:
-                initEventsValues[tmpSampleName] = iTree.initEvents
-                xsValues[tmpSampleName] = iTree.xs
-            eventsSaved[tmpSampleName] = 0.0
-#         genMatchName[:3] = findMatch(iTree, isData, rightPair)
-        if isData:
-            PUWeight[0] = 1.0
-        else:
-            PUWeight[0] = iTree.PUWeight
-        oTree.Fill()
-        if makeWholeSample_cfg.massWindow and (not passMassWindow(iTree.svMass.at(rightPair), iTree.mJJ, iTree.fMassKinFit)):
-            continue
-        if isData:
-            eventsSaved[tmpSampleName] += 1
-            if bRegion == '1M':
-                eventsSavedCounter_1M += 1
-            elif bRegion == '2M':
-                eventsSavedCounter_2M += 1
-        elif not isEmbed:
-            eventsSaved[tmpSampleName] += triggerEff[0]
-            if bRegion == '1M':
-                eventsSavedCounter_1M += triggerEff[0]*xsValues[tmpSampleName]/initEventsValues[tmpSampleName]*PUWeight[0]*lumi
-            elif bRegion == '2M':
-                eventsSavedCounter_2M += triggerEff[0]*xsValues[tmpSampleName]/initEventsValues[tmpSampleName]*PUWeight[0]*lumi
+            if str(sampleName) not in initEventsValues.keys():
+                if 'data' not in str(sampleName):
+                    initEventsValues[str(sampleName)] = iTree.initEvents
+                    xsValues[str(sampleName)] = iTree.xs
+                eventsSaved[str(sampleName)] = 0.0
+    #         genMatchName[:3] = findMatch(iTree, isData, rightPair)
+            if isData:
+                PUWeight[0] = 1.0
+            else:
+                PUWeight[0] = iTree.PUWeight
 
-    print ' --- Events Saved: (1M) %.2f    (2M) %.2f' %(eventsSavedCounter_1M, eventsSavedCounter_2M)
-    if isEmbed:
-        print name
-        print 'inclusive yield for %s: %.2f' %(name, inclusiveYields[name])
-        print '1-Medium category yield for %s: %.2f' %(name, yieldForMediumCat[name+'_1M'])
-        print '1-Loose category yield for %s: %.2f' %(name, yieldForLooseCat[name+'_1L'])
-        print '2-Medium category yield for %s: %.2f' %(name, yieldForMediumCat[name+'_2M'])
-        print '2-Loose category yield for %s: %.2f' %(name, yieldForLooseCat[name+'_2L'])
+            if mediumTag == '0M':
+                Category[:21] = '0M'
+                oTree.Fill()
+            if passSelection:
+                Category[:21] = bRegion
+                oTree.Fill()
+            else:
+                continue
 
-    elif isInclusive:
-        print 'inclusive yield for %s: %.2f' %(name, inclusiveYields[name])
+            if makeWholeSample_cfg.massWindow and (not passMassWindow(iTree.svMass.at(rightPair), iTree.mJJ, iTree.fMassKinFit)):
+                continue
+            if isData:
+                eventsSaved[str(sampleName)] += 1
+                if bRegion == '1M':
+                    eventsSavedCounter_1M += 1
+                elif bRegion == '2M':
+                    eventsSavedCounter_2M += 1
+            elif not isEmbed:
+                eventsSaved[str(sampleName)] += triggerEff[0]
+                if bRegion == '1M':
+                    eventsSavedCounter_1M += triggerEff[0]*xsValues[str(sampleName)]/initEventsValues[str(sampleName)]*PUWeight[0]*lumi
+                elif bRegion == '2M':
+                    eventsSavedCounter_2M += triggerEff[0]*xsValues[str(sampleName)]/initEventsValues[str(sampleName)]*PUWeight[0]*lumi
 
+        print ' --- Events Saved: (1M) %.2f    (2M) %.2f' %(eventsSavedCounter_1M, eventsSavedCounter_2M)
+        if isEmbed:
+            print name
+            print 'inclusive yield for %s: %.2f' %(name, inclusiveYields[name])
+            print '1-Medium category yield for %s: %.2f' %(name, yieldForMediumCat[name+'_1M'])
+            print '2-Medium category yield for %s: %.2f' %(name, yieldForMediumCat[name+'_2M'])
 
-
-nSamples = len(initEventsValues.keys())
-initEvents = r.TH1F('initEvents', '', nSamples, 0, nSamples)
-xsHist = r.TH1F('xs', '', nSamples, 0, nSamples)
-finalEventsWithXS = r.TH1F('finalEventsWithXS', '', nSamples, 0, nSamples)
-
-for iKey in initEventsValues.keys():
-    if 'data' not in iKey:
-        initEvents.Fill(iKey, initEventsValues[iKey])
-        xsHist.Fill(iKey, xsValues[iKey])
-        finalEventsWithXS.Fill(iKey, eventsSaved[iKey]*xsValues[iKey]/initEventsValues[iKey]*lumi)
-
-
-weights = makeWholeTools2.calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SF12', 'Tight', makeWholeSample_cfg.Relax, True, 1.0, makeWholeSample_cfg.pairOption, makeWholeSample_cfg.massWindow)
-
-print weights
-
-#define histograms
-L_to_T_1M = r.TH1F('L_to_T_1M', '', 1, 0, 1)
-L_to_T_SF_1M = r.TH1F('L_to_T_SF_1M', '', 1, 0, 1)
-MC2Embed2Cat_1M = r.TH1F('MC2Embed2Cat_1M', '', 1, 0, 1)
-
-L_to_T_2M = r.TH1F('L_to_T_2M', '', 1, 0, 1)
-L_to_T_SF_2M = r.TH1F('L_to_T_SF_2M', '', 1, 0, 1)
-MC2Embed2Cat_2M = r.TH1F('MC2Embed2Cat_2M', '', 1, 0, 1)
-
-yieldForMediumCatHists = {}
-
-
-#save histograms
-L_to_T_1M.Fill(0.5, weights[0])
-L_to_T_SF_1M.Fill(0.5, weights[2])
-L_to_T_2M.Fill(0.5, weights[1])
-L_to_T_SF_2M.Fill(0.5, weights[3])
-
-preScaleFactor = inclusiveYields['DY_inclusive']/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed'])
-scaleFactor_1M = preScaleFactor*(yieldForMediumCat['DY_embed_1M']-yieldForMediumCat['tt_embed_1M'])
-scaleFactor_2M = preScaleFactor*(yieldForMediumCat['DY_embed_2M']-yieldForMediumCat['tt_embed_2M'])
-
-MC2Embed2Cat_1M.Fill(0.5, scaleFactor_1M)
-MC2Embed2Cat_2M.Fill(0.5, scaleFactor_2M)
-
-print 'Embed DY prediction (1M): %.2f' %scaleFactor_1M
-print 'Embed DY prediction (2M): %.2f' %scaleFactor_2M
-
-oFile.cd()
-
-initEvents.Write()
-xsHist.Write()
-L_to_T_1M.Write()
-L_to_T_SF_1M.Write()
-L_to_T_2M.Write()
-L_to_T_SF_2M.Write()
-MC2Embed2Cat_1M.Write()
-MC2Embed2Cat_2M.Write()
-
-finalEventsWithXS.Write()
-
-for iKey in yieldForMediumCat.keys():
-    yieldForMediumCatHists[iKey] = r.TH1F(iKey, '', 1, 0, 1)
-    yieldForMediumCatHists[iKey].Fill(0.5, yieldForMediumCat[iKey])
-    print '%s prediction: %.2f' %(iKey, yieldForMediumCat[iKey])
-    yieldForMediumCatHists[iKey].Write()
-oTree.Write()
-oFile.Close()
-
-print 'Combined event saved at: %s' %oFileName
+        elif isInclusive:
+            print 'inclusive yield for %s: %.2f' %(name, inclusiveYields[name])
 
 
 
+    nSamples = len(initEventsValues.keys())
+    initEvents = r.TH1F('initEvents', '', nSamples, 0, nSamples)
+    xsHist = r.TH1F('xs', '', nSamples, 0, nSamples)
+
+    for iKey in initEventsValues.keys():
+        if 'data' not in iKey:
+            initEvents.Fill(iKey, initEventsValues[iKey])
+            xsHist.Fill(iKey, xsValues[iKey])
+
+    weights = makeWholeTools2.calculateSF(fileList = makeWholeSample_cfg.sampleConfigsTools,
+                                          sigRegionOption = 'Tight', 
+                                          relaxedRegionOption = makeWholeSample_cfg.Relax, 
+                                          verbose = True,
+                                          isoTight = 1.0, 
+                                          pairOption = makeWholeSample_cfg.pairOption,
+                                          massWindow = makeWholeSample_cfg.massWindow,
+                                          usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
+                                          nBtag = makeWholeSample_cfg.bTagShift)
+
+    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '/nfs_scratch/zmao/samples/tauESOn/%s/dy.root' %makeWholeSample_cfg.scaleOption, 
+                                                                            tt_full_mc = '/nfs_scratch/zmao/samples/tauESOff/%s/tt_all.root' %makeWholeSample_cfg.scaleOption,
+                                                                            dy_embed = '/nfs_scratch/zmao/samples/tauESOn/%s/DY_embed.root' %makeWholeSample_cfg.scaleOption, 
+                                                                            tt_embed = '/nfs_scratch/zmao/samples/tauESOff/%s/tt_embed_all.root' %makeWholeSample_cfg.scaleOption, 
+                                                                            massWindow = makeWholeSample_cfg.massWindow,
+                                                                            pairOption = makeWholeSample_cfg.pairOption)
+
+
+    print weights
+
+    #define histograms
+    L_to_T_SF_0M = r.TH1F('L_to_T_SF_0M', '', 1, 0, 1)
+    MC2Embed2Cat_0M = r.TH1F('MC2Embed2Cat_0M', '', 1, 0, 1)
+
+    L_to_T_1M = r.TH1F('L_to_T_1M', '', 1, 0, 1)
+    L_to_T_SF_1M = r.TH1F('L_to_T_SF_1M', '', 1, 0, 1)
+    MC2Embed2Cat_1M = r.TH1F('MC2Embed2Cat_1M', '', 1, 0, 1)
+    EmbedWithTTLep_1M = r.TH1F('EmbedWithTTLep_1M', '', 1, 0, 1)
+    DYwithTTScale_1M = r.TH1F('DYwithTTScale_1M', '', 1, 0, 1)
+
+    L_to_T_2M = r.TH1F('L_to_T_2M', '', 1, 0, 1)
+    L_to_T_SF_2M = r.TH1F('L_to_T_SF_2M', '', 1, 0, 1)
+    MC2Embed2Cat_2M = r.TH1F('MC2Embed2Cat_2M', '', 1, 0, 1)
+    EmbedWithTTLep_2M = r.TH1F('EmbedWithTTLep_2M', '', 1, 0, 1)
+    DYwithTTScale_2M = r.TH1F('DYwithTTScale_2M', '', 1, 0, 1)
+
+    yieldForMediumCatHists = {}
+
+
+    #save histograms
+    L_to_T_1M.Fill(0.5, weights[0])
+    L_to_T_SF_1M.Fill(0.5, weights[2])
+    L_to_T_2M.Fill(0.5, weights[1])
+    L_to_T_SF_2M.Fill(0.5, weights[3])
+    L_to_T_SF_0M.Fill(0.5, weights[4])
+
+    # preScaleFactor = inclusiveYields['DY_inclusive']/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed'])
+    # scaleFactor_1M = preScaleFactor*(yieldForMediumCat['DY_embed_1M']-yieldForMediumCat['tt_embed_1M'])
+    # scaleFactor_2M = preScaleFactor*(yieldForMediumCat['DY_embed_2M']-yieldForMediumCat['tt_embed_2M'])
+    MC2Embed2Cat_0M.Fill(0.5, preScaleFactor)
+    MC2Embed2Cat_1M.Fill(0.5, scaleFactor_1M)
+    MC2Embed2Cat_2M.Fill(0.5, scaleFactor_2M)
+    DYwithTTScale_1M.Fill(0.5, scaleFactor_1M2)
+    DYwithTTScale_2M.Fill(0.5, scaleFactor_2M2)
+
+    print 'Embed DY prediction (1M): %.2f' %scaleFactor_1M
+    print 'Embed DY prediction (2M): %.2f' %scaleFactor_2M
+
+    oFile.cd()
+
+    initEvents.Write()
+    xsHist.Write()
+    L_to_T_1M.Write()
+    L_to_T_SF_1M.Write()
+    L_to_T_2M.Write()
+    L_to_T_SF_2M.Write()
+    L_to_T_SF_0M.Write()
+    MC2Embed2Cat_0M.Write()
+    MC2Embed2Cat_1M.Write()
+    MC2Embed2Cat_2M.Write()
+    DYwithTTScale_1M.Write()
+    DYwithTTScale_2M.Write()
+
+    for iKey in yieldForMediumCat.keys():
+        yieldForMediumCatHists[iKey] = r.TH1F(iKey, '', 1, 0, 1)
+        yieldForMediumCatHists[iKey].Fill(0.5, yieldForMediumCat[iKey])
+        print '%s prediction: %.2f' %(iKey, yieldForMediumCat[iKey])
+        yieldForMediumCatHists[iKey].Write()
+    oTree.Write()
+    oFile.Close()
+
+    print 'Combined event saved at: %s' %oFileName
+
+
+if __name__ == "__main__":
+    if makeWholeSample_cfg.checkSpeed:
+        cProfile.run("run()", sort="time")
+    else:
+        run()

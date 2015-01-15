@@ -398,11 +398,12 @@ def nameEnDecoder(name, opt = 'encode'):
                 'H2hh1000': 1000,
                 'tt': 1,
                 'tt_semi': 2,
-                't': 3,
-                'tbar': 4,
-                'ZZ': 5,
-                'zzTo2L2Nu': 6,
-                'zzTo4L': 7,
+                'tthad': 3,
+                't': 4,
+                'tbar': 5,
+                'ZZ': 6,
+                'zzTo2L2Nu': 7,
+                'zzTo4L': 8,
                 'WJetsToLNu': 10,
                 'W1JetsToLNu': 11,
                 'W2JetsToLNu': 12,
@@ -418,7 +419,9 @@ def nameEnDecoder(name, opt = 'encode'):
                 'DY4JetsToLL': 24,
                 'GluGlu': 50,
                 'VBF': 60,
-                'dataOSRelax': 0
+                'dataOSRelax': 0,
+                'tt_embed': 2001,
+                'DY_embed': 2002
                 }
 
     if opt == 'encode': 

@@ -50,7 +50,6 @@ def opts():
     parser.add_option("-a", dest="addFiles", default="False", help="")
     parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
     parser.add_option("-c", dest="cutLHEProduct", default=False, action="store_true", help="cut to 0 jet")
-    parser.add_option("--separate", dest="separate", default="all", help="separate sample into ZTT and ZLL")
 
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     options, args = parser.parse_args()
@@ -60,38 +59,6 @@ def opts():
 options = opts()
 
 r.gStyle.SetOptStat(0)
-
-
-# preVarList = ['EVENT', 'HMass', 'svMass', 'svPt', 'svEta', 'svPhi', 'J1Pt', 'J1Eta','J1Phi', 'J1Mass', 'NBTags', 'iso1', 'iso2', 'mJJ', 'J2Pt', 'J2Eta','J2Phi', 'J2Mass','pZeta', 'pZ', 'm1', 'm2',
-#            'pZV', 'J3Pt', 'J3Eta','J3Phi', 'J3Mass', 'J4Pt', 'J4Eta','J4Phi', 'J4Mass', 'J5Pt', 'J5Eta','J5Phi', 'J5Mass', 'J6Pt', 'J6Eta','J6Phi', 'J6Mass', 
-#            'J1CSVbtag', 'J2CSVbtag', 'J3CSVbtag', 'J4CSVbtag', 'J5CSVbtag', 'J6CSVbtag', 'pt1', 'eta1', 'phi1', 'pt2', 'eta2', 'phi2', 'met', 
-#            'charge1', 'charge2',  'metphi',  
-#            'J1PtUncorr', 'J1VtxPt', 'J1Vtx3dL', 'J1Vtx3deL', 'J1ptLeadTrk', 'J1vtxMass', 'J1vtxPt', 'J1Ntot', 
-#            'J1SoftLepPt', 'J1SoftLepEta', 'J1SoftLepPhi', 'J1SoftLepPID', 'J1JECUnc', 'J1Et', 'J1Mt',
-#            'J2PtUncorr', 'J2VtxPt', 'J2Vtx3dL', 'J2Vtx3deL', 'J2ptLeadTrk', 'J2vtxMass', 'J2vtxPt', 'J2Ntot', 
-#            'J2SoftLepPt', 'J2SoftLepEta', 'J2SoftLepPhi', 'J2SoftLepPID', 'J2JECUnc', 'J2Et', 'J2Mt',
-#            'J3PtUncorr', 'J3VtxPt', 'J3Vtx3dL', 'J3Vtx3deL', 'J3ptLeadTrk', 'J3vtxMass', 'J3vtxPt', 'J3Ntot', 
-#            'J3SoftLepPt', 'J3SoftLepEta', 'J3SoftLepPhi', 'J3SoftLepPID', 'J3JECUnc', 'J3Et', 'J3Mt',
-#            'J4PtUncorr', 'J4VtxPt', 'J4Vtx3dL', 'J4Vtx3deL', 'J4ptLeadTrk', 'J4vtxMass', 'J4vtxPt', 'J4Ntot', 
-#            'J4SoftLepPt', 'J4SoftLepEta', 'J4SoftLepPhi', 'J4SoftLepPID', 'J4JECUnc', 'J4Et', 'J4Mt', 
-#            'J5PtUncorr', 'J5VtxPt', 'J5Vtx3dL', 'J5Vtx3deL', 'J5ptLeadTrk', 'J5vtxMass', 'J5vtxPt', 'J5Ntot', 
-#            'J5SoftLepPt', 'J5SoftLepEta', 'J5SoftLepPhi', 'J5SoftLepPID', 'J5JECUnc', 'J5Et', 'J5Mt', 
-#            'J6PtUncorr', 'J6VtxPt', 'J6Vtx3dL', 'J6Vtx3deL', 'J6ptLeadTrk', 'J6vtxMass', 'J6vtxPt', 'J6Ntot', 
-#            'J6SoftLepPt', 'J6SoftLepEta', 'J6SoftLepPhi', 'J6SoftLepPID', 'J6JECUnc', 'J6Et', 'J6Mt', 
-#             'tauDecayMode1', 'tauDecayMode2',
-#            'mvacov00','mvacov01','mvacov10','mvacov11', 'byIsolationMVA2raw_1', 'byIsolationMVA2raw_2'
-#           ]
-# genVarList = ['genBPt', 'genBEta', 'genBPhi','genBMass', 'genTauPt', 'genTauEta', 'genTauPhi', 'genElePt', 'genEleEta', 
-#               'genElePhi', 'genMuPt', 'genMuEta', 'genMuPhi','J1GenPt', 'J1GenEta', 'J1GenPhi', 'J1GenMass',
-#               'J2GenPt', 'J2GenEta', 'J2GenPhi', 'J2GenMass', 'J3GenPt', 'J3GenEta', 'J3GenPhi', 'J3GenMass',
-#               'J4GenPt', 'J4GenEta', 'J4GenPhi', 'J4GenMass']
-# 
-# fullVarList = []
-# for iVar in preVarList:
-#     fullVarList.append(iVar)
-# for iVar in genVarList:
-#     fullVarList.append(iVar)
-
 
 def loop_one_sample(iSample, iLocation, iXS):
     if 'data' in iSample:
@@ -205,6 +172,8 @@ def loop_one_sample(iSample, iLocation, iXS):
     category = bytearray(30)
     PUWeight = array('f', [0.])
     initEvents = array('i', [0])
+    ZTT = array('i', [0])
+    ZLL = array('i', [0])
     xs = array('f', [0.])
 
     iChain.LoadTree(0)
@@ -251,6 +220,8 @@ def loop_one_sample(iSample, iLocation, iXS):
     oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
     oTree.Branch("nElectrons", nElectrons, "nElectrons/I")
     oTree.Branch("nMuons", nMuons, "nMuons/I")
+    oTree.Branch("ZTT", ZTT, "ZTT/I")
+    oTree.Branch("ZLL", ZLL, "ZLL/I")
     oTree.Branch("sampleName", sampleName, "sampleName[31]/C")
     oTree.Branch("category", category, "category[31]/C")
     oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
@@ -327,8 +298,13 @@ def loop_one_sample(iSample, iLocation, iXS):
             continue
 
         #separate sample into ZLL and ZTT category:
-        if not passCategory(iChain, options.separate):
-            continue
+        ZTT[0] = 0
+        ZLL[0] = 0
+        if isEmbedded or ('DY' in iSample) or ('dy' in iSample):
+            if passCategory(iChain, 'ZTT'):
+                ZTT[0] = 1
+            if passCategory(iChain, 'ZLL'):
+                ZLL[0] = 1
 #         if not tool.calc(iChain):
 #             continue
 #         if iChain.charge1.at(0) - iChain.charge2.at(0) == 0: #sign requirement
@@ -424,8 +400,8 @@ def loop_one_sample(iSample, iLocation, iXS):
         etaJJ[0] = bb.eta()
         phiJJ[0] = bb.phi()
         mJJ[0] = bb.mass()
-#         tau1.SetCoordinates(iChain.pt1.at(0), iChain.eta1.at(0), iChain.phi1.at(0), iChain.m1.at(0))
-#         tau2.SetCoordinates(iChain.pt2.at(0), iChain.eta2.at(0), iChain.phi2.at(0), iChain.m2.at(0))
+        tau1.SetCoordinates(iChain.pt1.at(0), iChain.eta1.at(0), iChain.phi1.at(0), iChain.m1.at(0))
+        tau2.SetCoordinates(iChain.pt2.at(0), iChain.eta2.at(0), iChain.phi2.at(0), iChain.m2.at(0))
 #         mTop1[0] = (CSVJet1 + tau1).mass()
 #         mTop2[0] = (CSVJet2 + tau2).mass()
 
