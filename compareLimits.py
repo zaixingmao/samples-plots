@@ -3,6 +3,7 @@ import ROOT as r
 import optparse
 
 r.gStyle.SetOptStat(0)
+r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
 def opts():
     parser = optparse.OptionParser()
