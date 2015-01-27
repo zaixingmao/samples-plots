@@ -6,7 +6,7 @@ preFix2 = '/hdfs/store/user/elaird/nt_'
 
 # postFix = '_shift-SUB-TT'
 # postFix = '_tauESOff_tauShift-SUB-TT'
-postFix = '_tauESOn_tauShift-SUB-TT'
+postFix = '_tauESOff_tauShift_final-SUB-TT'
 
 postName = ""
 wScale = 36257.0/30400.0
@@ -40,10 +40,10 @@ sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix
 #                    
 #                     ('dataA2', '/hdfs/store/user/elaird/nt_tau_A_test_rerun_jets-SUB-TT-data/', 1),
 # 
-                    ('dataA', '/hdfs/store/user/zmao/nt_tau_A_triggerFix-SUB-TT-data/', 1),
-#                     ('dataB', '/hdfs/store/user/zmao/nt_tauP_B_rightJetMVA-SUB-TT-data/', 1),
-#                     ('dataC', '/hdfs/store/user/zmao/nt_tauP_C_rightJetMVA-SUB-TT-data/', 1),
-#                     ('dataD', '/hdfs/store/user/zmao/nt_tauP_D_rightJetMVA2-SUB-TT-data/', 1),
+#                     ('dataA', '/hdfs/store/user/zmao/nt_tau_A_triggerFix-SUB-TT-data/', 1),
+#                     ('dataB', '/hdfs/store/user/zmao/nt_tauP_B_triggerFix-SUB-TT-data/', 1),
+#                     ('dataC', '/hdfs/store/user/zmao/nt_tauP_C_triggerFix-SUB-TT-data/', 1),
+#                     ('dataD', '/hdfs/store/user/zmao/nt_tauP_D_triggerFix-SUB-TT-data/', 1),
 
 # 
 #                     ('dataA_doublemu_emb', '%sdoublemu_emb_A%s-data' %(preFix,postFix), 1),
@@ -60,24 +60,25 @@ sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix
 #                    ('dataTotal', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/data/', 1),
 #                    ('doublemu_emb_noRerun', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/doublemu_emb_noRerun/', 1),
 #                    ('doublemu_emb_rerun', '/nfs_scratch/zmao/fromLogin05/dataWithLumiMask/doublemu_emb_rerun/', 1),
-
+# 
 #                     ('DYJetsToLL%s' %postName, "%sdy%s" %(preFix, postFix), 3504000),
 #                     ('DY1JetsToLL%s' %postName, "%sdy1%s" %(preFix, postFix), 561000*dyScale1),
 #                     ('DY2JetsToLL%s' %postName, "%sdy2%s" %(preFix, postFix), 181000*dyScale2),
 #                     ('DY3JetsToLL%s' %postName, "%sdy3%s" %(preFix, postFix), 51100*dyScale3),
 #                     ('DY4JetsToLL%s' %postName, "%sdy4%s" %(preFix, postFix), 23000*dyScale4),
-# 
+# # 
+#                     ('WJetsToLNu%s' %postName, "%swjets%s" %(preFix, postFix), 36257000),
 #                     ('W1JetsToLNu%s' %postName, "%sw1%s" %(preFix, postFix), 5400000*wScale),
 #                     ('W2JetsToLNu%s' %postName, "%sw2%s" %(preFix, postFix), 1750000*wScale),
 #                     ('W3JetsToLNu%s' %postName, "%sw3%s" %(preFix, postFix), 519000*wScale),
 #                     ('W4JetsToLNu%s' %postName, "%sw4%s" %(preFix, postFix), 214000*wScale),
 # 
-#                     ("ZZ%s" %postName,      "%szz%s" %(preFix, postFix), 2500),
-#                     ('WZJetsTo2L2Q%s' %postName, "%swz%s" %(preFix, postFix), 2207),
-#                     ('zzTo4L%s' %postName, "%szzTo4L%s" %(preFix, postFix), 181.0),
-#                     ('zzTo2L2Nu%s' %postName, "%szzTo2L2Nu%s" %(preFix, postFix), 716.0),
-#                     ('WW%s' %postName, "%sww%s" %(preFix, postFix), 5824.0),
-#                     ('WZ3L%s' %postName, "%swz3L%s" %(preFix, postFix), 1058.0),
+                    ("ZZ%s" %postName,      "%szz%s" %(preFix, postFix), 2500),
+                    ('WZJetsTo2L2Q%s' %postName, "%swz%s" %(preFix, postFix), 2207),
+                    ('zzTo4L%s' %postName, "%szzTo4L%s" %(preFix, postFix), 181.0),
+                    ('zzTo2L2Nu%s' %postName, "%szzTo2L2Nu%s" %(preFix, postFix), 716.0),
+                    ('WW%s' %postName, "%sww%s" %(preFix, postFix), 5824.0),
+                    ('WZ3L%s' %postName, "%swz3L%s" %(preFix, postFix), 1058.0),
 
 #                     ('wbbj%s' %postName, "%swbbj%s" %(preFix2, postFix), 0),
 

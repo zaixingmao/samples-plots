@@ -65,6 +65,12 @@ def addYieldInRegion(dict, name):
     ignoreKeys = ['0L1M', '0L2M', '1L2M']
     ignoreKeys = []
     for ikey in dict.keys():
+        if name == "*":
+            out += dict[ikey]
+            continue
+        if (name == "1M2M") and ('0M' not in ikey):
+            out += dict[ikey]
+            continue
         if ikey in ignoreKeys:
             continue
         if name in ikey:
@@ -143,15 +149,16 @@ def findCategory(tree, iso, option, isData, relaxedRegionOption, isEmbed = False
     isoSelection = findIsoSelection(tree.iso1.at(rightPair), tree.iso2.at(rightPair), iso, relaxedRegionOption)
     
     #b-tag selections
-    if isData or nBtags == '':
+    nBTags = tree.NBTags
+    if isData or nBtag == '':
         nBTags = tree.NBTags
-    elif nBtags == 'sysUp':
+    elif nBtag == 'bSysUp':
         nBTags = tree.NBTagsSysUp
-    elif nBtags == 'sysDown':
+    elif nBtag == 'bSysDown':
         nBTags = tree.NBTagsSysDown
-    elif nBtags == 'misUp':
+    elif nBtag == 'bMisUp':
         nBTags = tree.NBTagsMisUp
-    elif nBtags == 'misDown':
+    elif nBtag == 'bMisDown':
         nBTags = tree.NBTagsMisDown
     bTagSelection = findBTagSelection(tree.CSVJ1, tree.CSVJ2, nBTags)
 
@@ -196,7 +203,7 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
         if 'H2hh' in fileName:
             continue
         for i in range(total):
-            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %fileName)
+            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %fileName, iPrevious = i)
             trees[len(trees)-1].GetEntry(i)
             if not isData:
                 puWeight = trees[len(trees)-1].PUWeight
@@ -261,13 +268,23 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
           'loose2medium': {},
           'data2QCD': {},
           'weight': {},
+          'SS2OS': {}
          }
     SF_unc = {'relax2tight': {},
               'loose2medium': {},
               'data2QCD': {},
               'weight': {},
+              'SS2OS': {}
              }
 
+    if addYieldInRegion(yields['QCD']['SS']['Relax'], "*") != 0:
+        SF['SS2OS']['*'] = addYieldInRegion(yields['QCD']['OS']['Relax'], '*')/addYieldInRegion(yields['QCD']['SS']['Relax'], '*')
+    else:
+        SF['SS2OS']['*'] = 0
+    if addYieldInRegion(yields['QCD']['SS']['Relax'], "1M2M") != 0:
+        SF['SS2OS']['1M2M'] = addYieldInRegion(yields['QCD']['OS']['Relax'], '1M2M')/addYieldInRegion(yields['QCD']['SS']['Relax'], '1M2M')
+    else:
+        SF['SS2OS']['1M2M'] = 0
     for region in ['0', '1', '2']:
         #calculate scale factors
         if addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'L') != 0:
@@ -290,6 +307,10 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
             else:
                 SF['relax2tight'][region] = 0
             SF['weight'][region] = SF['relax2tight'][region]*SF['data2QCD'][region]
+        if addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M') != 0:
+            SF['SS2OS'][region] = addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'M')/addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M')
+        else:
+            SF['SS2OS'][region] = 0
 
         #calculate uncertainties factors
         SF_unc['relax2tight'][region] = calcSysUnc(sf = SF['relax2tight'][region], 
@@ -311,7 +332,15 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
                                               denom = SF['data2QCD'][region],
                                               delta_num = unc_weight1,
                                               delta_denom = SF_unc['data2QCD'][region])
-                                
+        SF_unc['SS2OS'][region] = calcSysUnc(sf = SF['SS2OS'][region], 
+                                             num = addYieldInRegion(yields['QCD']['OS']['Relax'], region), 
+                                             denom = addYieldInRegion(yields['QCD']['SS']['Relax'], region))
+    SF_unc['SS2OS']['*'] = calcSysUnc(sf = SF['SS2OS']['*'], 
+                                      num = addYieldInRegion(yields['QCD']['OS']['Relax'], '*'), 
+                                      denom = addYieldInRegion(yields['QCD']['SS']['Relax'], '*'))
+    SF_unc['SS2OS']['1M2M'] = calcSysUnc(sf = SF['SS2OS']['1M2M'], 
+                                      num = addYieldInRegion(yields['QCD']['OS']['Relax'], '1M2M'), 
+                                      denom = addYieldInRegion(yields['QCD']['SS']['Relax'], '1M2M'))
 
     if verbose:
         for region in ['1M', '2M', '1L', '2L']:
@@ -350,6 +379,12 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
         print 'MC in 1M: %.2f' %(addYieldInRegion(yields['MC']['OS']['Tight'], '1M'))
         print 'MC in 2M: %.2f' %(addYieldInRegion(yields['MC']['OS']['Tight'], '2M'))
 
+        print 'OS/SS all:       %.3f +/- %.3f' %(SF['SS2OS']['*'], SF_unc['SS2OS']['*'])
+        print 'OS/SS (0M):       %.3f +/- %.3f' %(SF['SS2OS']['0'], SF_unc['SS2OS']['0'])
+        print 'OS/SS (1M+2M):   %.3f +/- %.3f' %(SF['SS2OS']['1M2M'], SF_unc['SS2OS']['1M2M'])
+        print 'OS/SS 1M:        %.3f +/- %.3f' %(SF['SS2OS']['1'], SF_unc['SS2OS']['1'])
+        print 'OS/SS 2M:        %.3f +/- %.3f' %(SF['SS2OS']['2'], SF_unc['SS2OS']['2'])
+
     output = []
     output.append(SF['weight']['1']) 
     output.append(SF['weight']['2'])
@@ -358,7 +393,7 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
     output.append(SF['relax2tight']['0']) 
     return output
 
-# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'SF12', 'Tight', makeWholeSample_cfg.Relax, True, 1.0, 'pt', makeWholeSample_cfg.massWindow)
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, 'Tight', makeWholeSample_cfg.Relax, True, 1.0, 'pt', False, usePassJetTrigger = True, nBtag = '')
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','both3To10', True, 1.0, 'pt', True)

@@ -11,23 +11,33 @@
 preFixTools = '/nfs_scratch/zmao/fromLogin05/looseCSV2/'
 # preFix0 = '/scratch/zmao/BDTStudy/7_noDPhiMetJ2_mJJ/'
 scaleOption = 'normal'
-scaleOption = 'tauUp'
 scaleOption = 'tauDown'
-# scaleOption = 'jetUp'
-# scaleOption = 'jetDown'
-preFixTauESOff = '/nfs_scratch/zmao/samples/tauESOff/normal/'
-preFixTauESOn = '/nfs_scratch/zmao/samples/tauESOn/normal/'
-preFixData = '/nfs_scratch/zmao/samples/data'
-preFixEmbed = '/nfs_scratch/zmao/samples/ZTT/'
-preFixTauESOffTauShift = '/nfs_scratch/zmao/samples/tauESOff/%s/' %scaleOption
-preFixTauESOnTauShift = '/nfs_scratch/zmao/samples/tauESOn/%s/' %scaleOption
-bTagShift = '' # ,sysUp, sysDown, misUp, misDown 
-usePassJetTrigger = False
+# scaleOption = 'tauDown'
+scaleOption = 'jetUp'
+scaleOption = 'jetDown'
+bTagShift = '' # bMisDown,sysUp, sysDown, misUp, misDown 
 
-# preFixTauESOff = '/nfs_scratch/zmao/fromLogin05/looseCSV2/%s/' %scaleOption
-# preFixTauESOn = '/nfs_scratch/zmao/fromLogin05/looseCSV2/%s/' %scaleOption
-# preFixData = '/nfs_scratch/zmao/fromLogin05/looseCSV2/%s/' %scaleOption
-# preFixDataEmbed = '/nfs_scratch/zmao/fromLogin05/looseCSV2/%s/' %scaleOption
+preFixTauESOff = '/nfs_scratch/zmao/samples_new/tauESOff/normal/'
+preFixTauESOn = '/nfs_scratch/zmao/samples_new/tauESOn/normal/'
+preFixData = '/nfs_scratch/zmao/samples_new/data/'
+
+if bTagShift != '':
+    if 'Sys' in bTagShift:
+        scaleOption = 'bSys'
+    else:
+        scaleOption = 'bMis'
+        
+if scaleOption == 'normal' or 'tau' in scaleOption:
+    preFixTauESOnDYEmbed = '/nfs_scratch/zmao/samples_new/tauESOn/%s/' %scaleOption
+else:
+    preFixTauESOnDYEmbed = '/nfs_scratch/zmao/samples_new/tauESOn/normal/'
+preFixTauESOn = '/nfs_scratch/zmao/samples_new/tauESOn/%s/' %scaleOption
+
+if 'tau' not in scaleOption:
+    preFixTauESOffVV = '/nfs_scratch/zmao/samples_new/tauESOff/%s/' %scaleOption
+else:
+    preFixTauESOffVV = '/nfs_scratch/zmao/samples_new/tauESOff/normal/'
+preFixTauESOff = '/nfs_scratch/zmao/samples_new/tauESOff/%s/' %scaleOption
 
 
 iso = 1.0
@@ -38,6 +48,8 @@ bTag = 'M'
 tail = '_withDYEmbed'
 Relax = 'one1To4'
 thirdLeptonVeto = True
+usePassJetTrigger = True
+
 massWindow = True
 if massWindow:
     tail += '_massWindow'
@@ -46,30 +58,29 @@ data_bTag = 'L'
 # if bTag == '2M':
 #     data_bTag = '2L'
 
-sampleConfigs =[('signals', '%s/signal.root' %preFixTauESOnTauShift, 'OSTight%s' %bTag, False),
-                ("DY_inclusive","%s/dy.root" %preFixTauESOnTauShift, 'OSTight%s' %bTag, False),
-                ("t#bar{t}","%s/TT.root" %preFixTauESOffTauShift, 'OSTight%s' %bTag, False),
-                ('VV','%s/Electroweak.root' %preFixTauESOff, 'OSTight%s' %data_bTag, True),
-                ("singleT","%s/singleTop.root" %preFixTauESOff, 'OSTight%s' %data_bTag, True),
-                ("ZLL","%s/dy.root" %preFixTauESOnTauShift, 'OSTight%s' %data_bTag, True),
-                ("DY_embed","%s/DY_embed.root" %preFixTauESOnTauShift, 'OSTight%s' %data_bTag, True),
-                ("tt_embed","%s/tt_embed_all.root" %preFixTauESOffTauShift, 'OSTight%s' %data_bTag, True),
-                ('MCOSRelax','%s/Electroweak.root' %preFixTauESOff, 'OSRelax%s' %data_bTag, False),
+sampleConfigs =[('signals', '%s/signal.root' %preFixTauESOn, 'OSTight%s' %bTag, False),
+                ("DY_inclusive","%s/dy.root" %preFixTauESOn, 'OSTight%s' %bTag, False),
+                ("t#bar{t}","%s/TT.root" %preFixTauESOff, 'OSTight%s' %bTag, False),
+                ("WJets","%s/WJets.root" %preFixTauESOff, 'OSTight%s' %bTag, False),
+                ('VV','%s/Electroweak.root' %preFixTauESOffVV, 'OSTight%s' %data_bTag, True),
+                ("singleT","%s/singleTop.root" %preFixTauESOffVV, 'OSTight%s' %data_bTag, True),
+                ("ZLL","%s/dy.root" %preFixTauESOn, 'OSTight%s' %data_bTag, True),
+                ("DY_embed","%s/DY_embed.root" %preFixTauESOnDYEmbed, 'OSTight%s' %data_bTag, True),
+                ("tt_embed","%s/tt_embed_all.root" %preFixTauESOff, 'OSTight%s' %data_bTag, True),
+                ('MCOSRelax','%s/Electroweak_withSingleTop.root' %preFixTauESOffVV, 'OSRelax%s' %data_bTag, False),
                 ("MCOSRelax","%s/dy.root" %preFixTauESOn, 'OSRelax%s' %data_bTag, False),
                 ("MCOSRelax","%s/TT.root" %preFixTauESOff, 'OSRelax%s' %data_bTag, False),
                 ('dataOSRelax','%s/data.root' %preFixData, 'OSRelax%s' %data_bTag, False),
                 ('dataOSTight','%s/data.root' %preFixData, 'OSTight%s' %bTag, False)]
 
 if bTagShift != '':
-    if scaleOption != 'normal':
-        print "ERROR!!!!!!!!!!!!!
-    else:
-        scaleOption = bTagShift
+    oFileName = 'combined%s_iso%.1f_%s_%s_%s_%s.root' %(postFix, iso, Relax, pairOption, bTagShift, tail)
+else:
+    oFileName = 'combined%s_iso%.1f_%s_%s_%s_%s.root' %(postFix, iso, Relax, pairOption, scaleOption, tail)
 
-oFileName = 'combined%s_iso%.1f_%s_%s_%s_%s.root' %(postFix, iso, Relax, pairOption, scaleOption, tail)
 trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 
-sampleConfigsTools =[('VV', '%s/Electroweak_withSingleTop.root' %preFixTauESOff),
+sampleConfigsTools =[('VV', '%s/Electroweak_withSingleTop.root' %preFixTauESOffVV),
                      ('DYJetsToLL', '%s/dy.root' %preFixTauESOn),
                      ('t#bar{t}','%s/TT.root' %preFixTauESOff),
                      ('data','%s/data.root' %preFixData)]

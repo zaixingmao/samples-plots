@@ -19,7 +19,7 @@ def KSTest(ifile, ofile, name):
     xMax = 1.0
 
     BDT_Sig_Train = r.TH1F('BDT_Sig_Train', 'BDT_Sig_Train', nBins, xMin, xMax)
-    BDT_Sig_Test = r.TH1F('BDT_Sig_Test', 'Overtraining Check (%s)' %name, nBins, xMin, xMax)
+    BDT_Sig_Test = r.TH1F('BDT_Sig_Test', 'Overtraining Check (%s)' %name[:name.find('_')], nBins, xMin, xMax)
     BDT_Bkg_Train = r.TH1F('BDT_Bkg_Train', 'BDT_Bkg_Train', nBins, xMin, xMax)
     BDT_Bkg_Test = r.TH1F('BDT_Bkg_Test', 'BDT_Bkg_Test', nBins, xMin, xMax)
 
@@ -76,12 +76,12 @@ def KSTest(ifile, ofile, name):
     legendHistos1 = []
     legendHistos1.append((BDT_Bkg_Test, 'bkg test'))
     legendHistos1.append((BDT_Bkg_Train, 'bkg train'))
-    legendHistos1.append((BDT_Bkg_Train, 'KS: %0.3f' %bkgKS))
+#     legendHistos1.append((BDT_Bkg_Train, 'KS: %0.3f' %bkgKS))
 
     legendHistos2 = []
     legendHistos2.append((BDT_Sig_Test, 'sig test'))
     legendHistos2.append((BDT_Sig_Train, 'sig train'))
-    legendHistos2.append((BDT_Sig_Train, 'KS: %0.3f' %sigKS))
+#     legendHistos2.append((BDT_Sig_Train, 'KS: %0.3f' %sigKS))
 
 
     l1 = tool.setMyLegend(lPosition=(0.2, 0.67, 0.5, 0.82), lHistList=legendHistos1)
@@ -90,6 +90,8 @@ def KSTest(ifile, ofile, name):
     r.gStyle.SetOptStat(0)
     c = r.TCanvas("c","Test", 800, 600)
     BDT_Sig_Test.Draw()
+    BDT_Sig_Test.GetXaxis().SetTitle("BDT")
+
     BDT_Sig_Test.SetMaximum(0.5)
     BDT_Sig_Train.Draw('sameE1P')
     BDT_Bkg_Test.Draw('same')
@@ -99,11 +101,11 @@ def KSTest(ifile, ofile, name):
 
     c.Print('%s.pdf' %ofile)
 
-# massPoints = ['260','270','280','290','300','310','320','330','340','350']
-massPoints = ['260','300','350']
+massPoints = ['260','270','280','290','300','310','320','330','340','350']
+# massPoints = ['260','300','350']
 
 nTreesList = ['150']
 for nTrees in nTreesList:
     for iMass in massPoints:
-        postFix = '_7_n%s_mJJ_1M' %nTrees
-        KSTest('/scratch/zmao/TMVA/newMethod/TMVA%s%s.root' %(iMass,postFix), '/scratch/zmao/TMVA/pdf/TMVA%s%s' %(iMass,postFix), 'H2hh%s_n%s' %(iMass, nTrees))
+        postFix = '_7_n%s_mJJ' %nTrees
+        KSTest('/nfs_scratch/zmao/TMVA/TMVA%s%s.root' %(iMass,postFix), '/nfs_scratch/zmao/TMVA/pdf/TMVA%s%s' %(iMass,postFix), 'H2hh%s_n%s' %(iMass, nTrees))

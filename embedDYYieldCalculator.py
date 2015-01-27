@@ -58,7 +58,7 @@ def getRightBTagCatName(bTagSelection):
     return bTagSelection[0:2], bTagSelection[2:4]
 
 
-def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOption = 'pt'):
+def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOption = 'pt', nBtag = ''):
 
     yieldForMediumCat = {}
     eventCounterForMediumCat = {}
@@ -85,14 +85,14 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
         counter = 0
         counter_0 = 0
         isEmbed = False
-        isData == False
+        isData = False
         if 'emb' in name:
             isEmbed = True
         if name == 'DY_embed':
             isData = True
 
         for i in range(0, total):
-            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
+            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name, iPrevious=i)
             #Fill Histograms
             iTree.GetEntry(i)
 
@@ -110,7 +110,7 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
                                                                                       relaxedRegionOption = makeWholeSample_cfg.Relax,
                                                                                       isEmbed = isEmbed,
                                                                                       usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
-                                                                                      nBtag = makeWholeSample_cfg.bTagShift)
+                                                                                      nBtag = nBtag)
             if signSelection == None or isoSelection == None:
                 continue
             looseTag, mediumTag = getRightBTagCatName(bTagSelection)
@@ -184,7 +184,7 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
 
     return scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor
 
-def l2MYieldCalculator(sample, massWindow, pairOption = 'pt'):
+def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = ''):
 
     yieldForMediumCat = {}
     yieldForLooseCat = {}
@@ -199,7 +199,7 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt'):
     total = iTree.GetEntries()
 
     for i in range(0, total):
-        tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %sample)
+        tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %sample, iPrevious=i)
         iTree.GetEntry(i)
             
         #get the right pair of taus based on isoMin or ptMax
@@ -217,7 +217,7 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt'):
                                                                                   relaxedRegionOption = makeWholeSample_cfg.Relax,
                                                                                   isEmbed = False,
                                                                                   usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
-                                                                                  nBtag = makeWholeSample_cfg.bTagShift)
+                                                                                  nBtag = nBtag)
 
         if signSelection == None or isoSelection == None:
             continue
@@ -245,14 +245,28 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt'):
 
     return yieldForMediumCat['1M'], yieldForMediumCat['2M']
 
-# l2MYieldCalculator('/nfs_scratch/zmao/samples/BDT_1.0/Electroweak_withSingleTop_OSTightL.root', True, 'iso')
 
-# yieldCalculator(dy_mc = '/nfs_scratch/zmao/samples/tauESOn/normal/dy.root', 
-#                 tt_full_mc = '/nfs_scratch/zmao/samples/tauESOff/normal/tt_all.root', 
-#                 dy_embed = '/nfs_scratch/zmao/samples/tauESOn/normal//DY_embed.root', 
-#                 tt_embed = '/nfs_scratch/zmao/samples/tauESOff/normal/tt_embed_all.root', 
-#                 massWindow = True,
-#                 pairOption = 'pt'
-#                 )
+# shift = 'bSysDown'
+# nBtag = ''
+# if 'bSys' in shift:
+#     shiftLocation = 'bSys'
+#     nBtag = shift
+# elif 'bMis' in shift:
+#     shiftLocation = 'bMis'
+#     nBtag = shift
+# else:
+#     shiftLocation = shift
+# if shift == 'normal' or shift == 'taUp' or shift == 'tauDown':
+#     shiftLocation2 = shift
+# else:
+#     shiftLocation2 = 'normal'
+# 
+# yieldCalculator(dy_mc = '/nfs_scratch/zmao/samples_new/tauESOn/%s/dy.root' %shiftLocation, 
+#                 tt_full_mc = '/nfs_scratch/zmao/samples_new/tauESOff/%s/tt_all.root' %shiftLocation, 
+#                 dy_embed = '/nfs_scratch/zmao/samples_new/tauESOn/%s/DY_embed.root' %shiftLocation2, 
+#                 tt_embed = '/nfs_scratch/zmao/samples_new/tauESOff/%s/tt_embed_all.root' %shiftLocation, 
+#                 massWindow = False,
+#                 pairOption = 'pt',
+#                 nBtag = nBtag)
 
 

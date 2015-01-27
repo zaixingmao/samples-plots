@@ -163,6 +163,10 @@ def run():
     PUWeight = array('f', [0.])
     iso1 = array('f', [0.])
     iso2 = array('f', [0.])
+    pt1 = array('f', [0.])
+    pt2 = array('f', [0.])
+    CSVJ1Pt = array('f', [0.])
+    CSVJ2Pt = array('f', [0.])
     CSVJ2 = array('f', [0.])
     NBTags = array('i', [0])
     triggerEff = array('f', [0.])
@@ -200,6 +204,11 @@ def run():
     oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
     oTree.Branch("iso1", iso1, "iso1/F")
     oTree.Branch("iso2", iso2, "iso2/F")
+    oTree.Branch("pt1", pt1, "pt1/F")
+    oTree.Branch("pt2", pt2, "pt2/F")
+    oTree.Branch("CSVJ1Pt", CSVJ1Pt, "CSVJ1Pt/F")
+    oTree.Branch("CSVJ2Pt", CSVJ2Pt, "CSVJ2Pt/F")
+
     oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
     oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
 
@@ -221,7 +230,7 @@ def run():
 
         total = iTree.GetEntries()
         isData = False
-        if 'data' in name:
+        if ('data' in name) or ('DY_embed' in name):
             isData = True
         if 'emb' in name:
             isEmbed = True
@@ -247,7 +256,7 @@ def run():
             cat = '2M'
 
         for i in range(0, total):
-            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name)
+            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %name, iPrevious=i)
             #Fill Histograms
             iTree.GetEntry(i)
 
@@ -307,6 +316,11 @@ def run():
             CSVJ2[0] = iTree.CSVJ2
             NBTags[0] = int(iTree.NBTags)
             triggerEff[0] = iTree.triggerEff
+            pt1[0] = iTree.pt1.at(rightPair)
+            pt2[0] = iTree.pt2.at(rightPair)
+            CSVJ1Pt[0] = iTree.CSVJ1Pt
+            CSVJ2Pt[0] = iTree.CSVJ2Pt
+
             if '_semi' not in iTree.sampleName:
                 tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_')]
             else:
@@ -398,12 +412,12 @@ def run():
                                           pairOption = makeWholeSample_cfg.pairOption,
                                           massWindow = makeWholeSample_cfg.massWindow,
                                           usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
-                                          nBtag = makeWholeSample_cfg.bTagShift)
+                                          nBtag = '')
 
-    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '/nfs_scratch/zmao/samples/tauESOn/%s/dy.root' %makeWholeSample_cfg.scaleOption, 
-                                                                            tt_full_mc = '/nfs_scratch/zmao/samples/tauESOff/%s/tt_all.root' %makeWholeSample_cfg.scaleOption,
-                                                                            dy_embed = '/nfs_scratch/zmao/samples/tauESOn/%s/DY_embed.root' %makeWholeSample_cfg.scaleOption, 
-                                                                            tt_embed = '/nfs_scratch/zmao/samples/tauESOff/%s/tt_embed_all.root' %makeWholeSample_cfg.scaleOption, 
+    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '%s/dy.root' %makeWholeSample_cfg.preFixTauESOn, 
+                                                                            tt_full_mc = '%s/tt_all.root' %makeWholeSample_cfg.preFixTauESOff,
+                                                                            dy_embed = '%s/DY_embed.root' %makeWholeSample_cfg.preFixTauESOnDYEmbed, 
+                                                                            tt_embed = '%s/tt_embed_all.root' %makeWholeSample_cfg.preFixTauESOff, 
                                                                             massWindow = makeWholeSample_cfg.massWindow,
                                                                             pairOption = makeWholeSample_cfg.pairOption)
 
@@ -431,8 +445,8 @@ def run():
 
     #save histograms
     L_to_T_1M.Fill(0.5, weights[0])
-    L_to_T_SF_1M.Fill(0.5, weights[2])
     L_to_T_2M.Fill(0.5, weights[1])
+    L_to_T_SF_1M.Fill(0.5, weights[2])
     L_to_T_SF_2M.Fill(0.5, weights[3])
     L_to_T_SF_0M.Fill(0.5, weights[4])
 

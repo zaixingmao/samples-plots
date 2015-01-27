@@ -77,12 +77,16 @@ def genHiggsMatchGenTaus(tree):
 
     return higgs, dr
 
-def printProcessStatus(iCurrent, total, processName = 'Foo process'):
+def printProcessStatus(iCurrent, total, processName = 'Foo process', iPrevious = None):
     iCurrent+=0.
     total+=0.
     AddedPercent = iCurrent/total
-    sys.stdout.write("\r%s completed: %0.f" %(processName, round(AddedPercent,2)*100) + "%")
-    sys.stdout.flush()
+    AddedPercent_Pre = -1
+    if iPrevious != None:
+        AddedPercent_Pre = round((iPrevious+0.0)/total,2)
+    if AddedPercent_Pre < round(AddedPercent,2):
+        sys.stdout.write("\r%s completed: %0.f" %(processName, round(AddedPercent,2)*100) + "%")
+        sys.stdout.flush()
 
 def findFilesInDir(dirName):
     for iFile in os.listdir(dirName):

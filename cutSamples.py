@@ -283,7 +283,7 @@ def loop_one_sample(iSample, iLocation, iXS):
         if options.addFiles == 'True':
             oTree.Fill()
             counter += 1
-            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
+            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample), iEntry-1)
             continue
 #         if not (iChain.HLT_Any > 0):
 #             continue

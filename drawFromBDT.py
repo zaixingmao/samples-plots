@@ -15,12 +15,13 @@ from cfg import draw_BDT as draw_cfg
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
-defaultOrder = ['DY_Embed','DY_MC','DY+ttLep', 'VV', 'QCD', 't#bar{t}', 't#bar{t}-ttLep', 'signal', 'Electroweak', 'singleT']
+defaultOrder = ['DY_Embed','ZLL','DY_MC','DY+ttLep', 'VV', 'QCD', 't#bar{t}', 't#bar{t}-ttLep', 'signal', 'Electroweak', 'singleT']
 
 defaultColor = {'VV': r.TColor.GetColor(222, 90,106),
                 'singleT': r.TColor.GetColor(222, 90,106),
                 'Electroweak': r.TColor.GetColor(222, 90,106),
                 'DY_Embed': r.TColor.GetColor(248,206,104),
+                'ZLL': r.TColor.GetColor(100,182,232),
                 'DY_MC': r.TColor.GetColor(248,206,104),
                 'DY+ttLep': r.TColor.GetColor(248,206,104),
                 't#bar{t}': r.TColor.GetColor(155,152,204),
@@ -32,6 +33,15 @@ sampleNameList['Electroweak'] = []
 sampleNameList['tt'] = []
 tt_semi_InitEvents = 12011428.
 
+def getNames(key):
+    dictionary = {'DY_Embed': 'Z#rightarrow#tau#tau',
+                  'ZLL': 'Z#rightarrowll',
+                  }
+    if key in dictionary.keys():
+        return dictionary[key]
+    else:
+        return key
+
 def getBinWdith(var, bins):
     for i in range(len(bins)):
         if bins[i] > var:
@@ -40,19 +50,32 @@ def getBinWdith(var, bins):
     return 1
 def varFromName(tree, varName):
     varsDict = {'svMass': tree.svMass,
+#                 'pt1': tree.pt1,
+#                 'pt2': tree.pt2,
+
+#                 'CSVJ1Pt': tree.CSVJ1Pt,
+                'mJJ': tree.mJJ,
+                'fMassKinFit': tree.fMassKinFit,
+#                 'chi2KinFit2': tree.chi2KinFit2,
+#                 'met': tree.met,
+#                 'dRTauTau': tree.dRTauTau,
+#                 'dRJJ': tree.dRJJ,
+
                 'BDT': tree.BDT,
                 }
     return varsDict[varName]
 
 def varFromName1(tree, varName):
     varsDict = {'svMass': tree.svMass1,
-                'BDT': tree.BDT,
+#                 'BDT': tree.BDT,
                 }
     return varsDict[varName]
 
 def findBKGCategory(sampleName, mass):
     if 'DY_emb' in sampleName:
         return 'DY_embed'
+    if 'ZLL' in sampleName:
+        return 'ZLL'
     if 'dataOSRelax' in sampleName:
         return 'QCD'
     elif 'tt_emb' in sampleName:
@@ -62,7 +85,7 @@ def findBKGCategory(sampleName, mass):
             sampleNameList['tt'].append(sampleName)
         return 't#bar{t}'
     elif 'H2hh' in sampleName:
-        if mass == '' and sampleName != 'H2hh300':
+        if mass == '' and sampleName != 'H2hh270':
             return None
         else:
             return 'signal'
@@ -179,7 +202,11 @@ def setLegend(position, histDict, observed, bins, signalName, drawWhichDY = 'DY_
     nbins = len(bins)
     for ikey in keyList:
         if ikey == 'signal':
-            histList.append((histDict[ikey], '%s (%.2f)' %(signalName, histDict[ikey].Integral(0, nbins+1))))
+            if draw_cfg.addIntegrals:
+                histList.append((histDict[ikey], '%s (%.2f)' %(signalName, histDict[ikey].Integral(0, nbins+1))))
+            else:
+                histList.append((histDict[ikey], '%s' %signalName))
+
         else:
             if (ikey == 'Electroweak' or ikey == 'singleT'):
                 continue
@@ -191,7 +218,10 @@ def setLegend(position, histDict, observed, bins, signalName, drawWhichDY = 'DY_
             else:
                 if ikey == 't#bar{t}-ttLep':
                     continue
-            histList.append((histDict[ikey], '%s (%.2f)' %(ikey, histDict[ikey].Integral(0, nbins+1))))
+            if draw_cfg.addIntegrals:
+                histList.append((histDict[ikey], '%s (%.2f)' %(getNames(ikey), histDict[ikey].Integral(0, nbins+1))))
+            else:
+                histList.append((histDict[ikey], '%s' %getNames(ikey)))
 
     return tool.setMyLegend(position, histList)
 
@@ -200,8 +230,26 @@ def dontUnblind(tree, varName):
     if 'svMass' in varName:
         if 90 < tree.svMass < 150:
             return True
+    elif 'mJJ' in varName:
+        if 70 < tree.mJJ < 150:
+            return True
+    elif 'fMassKinFit' in varName:
+        if tree.fMassKinFit < 400:
+            return True
     elif 'BDT' in varName:
         if tree.BDT > 0:
+            return True
+    elif 'chi2KinFit2' in varName:
+        if tree.chi2KinFit2 <= 30:
+            return True
+    elif 'met' in varName:
+        if tree.met <= 40:
+            return True
+    elif 'dRJJ' in varName:
+        if 2 < tree.dRJJ < 3.5:
+            return True
+    elif 'dRTauTau' in varName:
+        if 2 < tree.dRTauTau < 3.5:
             return True
     return False
 
@@ -230,16 +278,21 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
         if massWindowCut and (not passCutWindow(predictTree)):
             continue
         sampleCat = findBKGCategory(predictTree.sampleName, mass)
+        fillValue = varFromName(predictTree, varName)
+        #hack
+        if fillValue >= bins1[len(bins1)-1]:
+            fillValue = (bins1[len(bins1)-1] + bins1[len(bins1)-2])/2
+
         if sampleCat == 'Observed':
             if dontUnblind(predictTree, varName):
                 continue
-            if predictTree.NBTags == 1:
-                observed1M.Fill(varFromName(predictTree, varName))
-                observed1M_plot.Fill(varFromName(predictTree, varName))
+            if predictTree.Category == '1M':
+                observed1M.Fill(fillValue)
+                observed1M_plot.Fill(fillValue)
 
-            elif predictTree.NBTags > 1:
-                observed2M.Fill(varFromName(predictTree, varName))
-                observed2M_plot.Fill(varFromName(predictTree, varName))
+            elif predictTree.Category == '2M':
+                observed2M.Fill(fillValue)
+                observed2M_plot.Fill(fillValue)
             continue
 
         if sampleCat == None:
@@ -261,27 +314,27 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
             weight1 = (xs/predictTree.initEvents)*predictTree.triggerEff*predictTree.PUWeight*Lumi
             weight2 = weight1
         if predictTree.Category == '1M':
-            histDict1M[sampleCat].Fill(varFromName(predictTree, varName), weight1)
-            histDict1M_plot[sampleCat].Fill(varFromName(predictTree, varName), weight1)
+            histDict1M[sampleCat].Fill(fillValue, weight1)
+            histDict1M_plot[sampleCat].Fill(fillValue, weight1)
             if (sampleCat == 't#bar{t}') and (predictTree.sampleName != 'tt'):
-                histDict1M['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight1)
-                histDict1M_plot['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight1)
+                histDict1M['t#bar{t}-ttLep'].Fill(fillValue, weight1)
+                histDict1M_plot['t#bar{t}-ttLep'].Fill(fillValue, weight1)
         elif predictTree.Category == '2M':
-            histDict2M[sampleCat].Fill(varFromName(predictTree, varName), weight2)
-            histDict2M_plot[sampleCat].Fill(varFromName(predictTree, varName), weight2)
+            histDict2M[sampleCat].Fill(fillValue, weight2)
+            histDict2M_plot[sampleCat].Fill(fillValue, weight2)
             if (sampleCat == 't#bar{t}') and (predictTree.sampleName != 'tt'):
-                histDict2M['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight2)
-                histDict2M_plot['t#bar{t}-ttLep'].Fill(varFromName(predictTree, varName), weight2)
+                histDict2M['t#bar{t}-ttLep'].Fill(fillValue, weight2)
+                histDict2M_plot['t#bar{t}-ttLep'].Fill(fillValue, weight2)
         if draw_cfg.method == 'method1' and sampleCat == 'DY_embed':
             if predictTree.NBTags > 1:
-                histDict2M['DY+ttLep'].Fill(varFromName(predictTree, varName), weight2/0.9)
-                histDict2M_plot['DY+ttLep'].Fill(varFromName(predictTree, varName), weight2/0.9)
+                histDict2M['DY+ttLep'].Fill(fillValue, weight2/0.9)
+                histDict2M_plot['DY+ttLep'].Fill(fillValue, weight2/0.9)
             if predictTree.NBTags == 1:
-                histDict1M['DY+ttLep'].Fill(varFromName(predictTree, varName), weight1/0.9)
-                histDict1M_plot['DY+ttLep'].Fill(varFromName(predictTree, varName), weight1/0.9)
+                histDict1M['DY+ttLep'].Fill(fillValue, weight1/0.9)
+                histDict1M_plot['DY+ttLep'].Fill(fillValue, weight1/0.9)
 
     #Set DY + tt_lep    
-    if draw_cfg.method != 'method1':
+    if draw_cfg.method != 'method1' and 'method' in draw_cfg.method:
         dyWithTT1M_scale = predictFile.Get('DYwithTTScale_1M')
         dyWithTT2M_scale = predictFile.Get('DYwithTTScale_2M')
         dyWithTT1M = dyWithTT1M_scale.GetBinContent(1)
@@ -342,6 +395,19 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     histDict1M_plot['VV'].Add(histDict1M_plot['Electroweak'], histDict1M_plot['singleT'])
     histDict2M_plot['VV'].Add(histDict2M_plot['Electroweak'], histDict2M_plot['singleT'])
 
+    #Set ZLL
+#     ZLLWeightHist1M = predictFile.Get('ZLL_1M')
+#     ZLLWeightHist2M = predictFile.Get('ZLL_2M')
+#     ZLLScale1M = ZLLWeightHist1M.GetBinContent(1)
+#     ZLLScale2M = ZLLWeightHist2M.GetBinContent(1)
+#     tmpIntegral = histDict1M_plot['ZLL'].Integral(0, len(bins1))
+#     histDict1M_plot['ZLL'].Scale(ZLLScale1M/tmpIntegral)
+#     histDict1M['ZLL'].Scale(ZLLScale1M/tmpIntegral)
+#     tmpIntegral = histDict2M_plot['ZLL'].Integral(0, len(bins2))
+#     histDict2M_plot['ZLL'].Scale(ZLLScale2M/tmpIntegral)
+#     histDict2M['ZLL'].Scale(ZLLScale2M/tmpIntegral)
+
+
     print histDict1M['QCD'].Integral(0, len(bins1))
     print ''
     print SF_1M, SF_2M
@@ -370,13 +436,15 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     bkgStack2M = buildStackFromDict(histDict2M_plot, '2M', unit, option, drawWhichDY)
     
     print ''
+    position = (0.6, 0.9 - 0.06*6, 0.87, 0.9)
 
-    position = (0.47, 0.9 - 0.06*6, 0.87, 0.9)
+    if draw_cfg.addIntegrals:
+        position = (0.47, 0.9 - 0.06*6, 0.87, 0.9)
 
     legend1M = setLegend(position, histDict1M, observed1M, bins1, signalName, drawWhichDY)
     legend2M = setLegend(position, histDict2M, observed2M, bins2, signalName, drawWhichDY)
 
-    psfile = '%s_%s_%s_%s_%s.pdf' %(varName, mass, iso, drawWhichDY, draw_cfg.method)
+    psfile = '%s_%s_%s_%s.pdf' %(varName, mass, drawWhichDY, draw_cfg.method)
     c = r.TCanvas("c","Test", 600, 800)
 
     p1 = r.TPad("p1","p1",0.,1,1.,0.4)
@@ -430,10 +498,12 @@ def draw(varName, bins1, bins2, unit, yMax1, yMax2, option, iso, predictLocation
     print "Plot saved at %s" %(psfile)
     c.Close()
     print sampleNameList
-varsDict = draw_cfg.varsRange
 
-scaleWeight_1M = 1.0
-scaleWeight_2M = 1.0
+    print 'data in 1M %i' %observed1M.Integral(0, len(bins1))
+    print 'data in 2M %i' %observed2M.Integral(0, len(bins2))
+
+
+varsDict = draw_cfg.varsRange
 
 # masses = [str(int(x)) for x in range(260, 360, 10)]
 

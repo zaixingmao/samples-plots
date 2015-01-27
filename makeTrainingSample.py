@@ -63,6 +63,8 @@ def passCut(iTree, bTagSelection, bRegion, isData, isEmbed):
     if 'L' in bRegion:
         if '0L' not in bTagSelection:
             return True
+    if bRegion == 'none':
+            return True
     return False
 
 
@@ -79,6 +81,7 @@ options = opts()
 iFile = options.inputFile
 ifile = r.TFile(iFile)
 iTree = ifile.Get("eventTree")
+print options.bRegion
 oString = options.signSelect + options.isoSelect + options.bRegion
 oFile = r.TFile("%s_%s.root" %(options.outputFile, oString),"recreate")
 oTree = iTree.CloneTree(0)
@@ -110,7 +113,9 @@ if int(options.useLooseForShape) != 0:
         if 'emb' in iTree.sampleName:
             isEmbed = True
         signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, 'pt', isData, options.relaxRegion)
-        if options.isoSelect != isoSelection or options.signSelect != signSelection:
+        if options.isoSelect != isoSelection and options.isoSelect != 'none':
+            continue
+        if options.signSelect != signSelection and options.signSelect != 'none':
             continue
         if passCut(iTree, bTagSelection, 'L', isData, isEmbed):
             if '1L' in bTagSelection:
@@ -134,7 +139,9 @@ for i in range(total):
     if 'emb' in iTree.sampleName:
         isEmbed = True
     signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, 'pt', isData, options.relaxRegion)
-    if options.isoSelect != isoSelection or options.signSelect != signSelection:
+    if options.isoSelect != isoSelection and options.isoSelect != 'none':
+        continue
+    if options.signSelect != signSelection and options.signSelect != 'none':
         continue
     if passCut(iTree, bTagSelection, options.bRegion, isData, isEmbed):
         floatVarsDict['category2'][0] = findBCategory(iTree.CSVJ1, iTree.CSVJ2)
