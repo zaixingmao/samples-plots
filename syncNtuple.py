@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+import ROOT as r
+import tool
 from array import array
 from operator import itemgetter
 import math
 import optparse
 import trigger
-
+import makeWholeTools2
 varList = [('run', 'RUN', 'I'),
            ('lumi', 'LUMI', 'I'),
            ('evt', 'EVENT', 'I'),
@@ -82,21 +84,105 @@ def findBestPair(iTree):
                 bestPair = iPair
     return bestPair
 
-def makeSyncNtuples(iLocation, cut, treepath):
+def passTrigger(tree):
+    passTrigger = False
+#     if tree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired > 0:
+#         passTrigger = True
+#     if tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired > 0:
+#         passTrigger = True
+    if tree.HLT_Any > 0:
+        passTrigger = True
+#     if passTrigger == False:
+#         print tree.HLT_DoubleMediumIsoPFTau25_Trk5_eta2p1_Jet30_fired
+#         print tree.HLT_DoubleMediumIsoPFTau30_Trk5_eta2p1_Jet30_fired
+#         print tree.HLT_DoubleMediumIsoPFTau30_Trk1_eta2p1_Jet30_fired
+#         print tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired
+#         print tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired
 
-    iTree = r.TChain(treepath)
-    print iLocation
-    nEntries = tool.addFiles(ch=iTree, dirName=iLocation, knownEventNumber=0, maxFileNumber=-1, printTotalEvents = True)
+    return passTrigger
+
+def passIsoCut(iso1, iso2):
+    if iso1 > 1.0 or iso2 > 1.0:
+        return 0
+    return 1
+
+def passCut(iTree, track, iBestPair):
+    if iTree.nElectrons > 0 or iTree.nMuons > 0:
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at 3rdLeptVeto: nEle %i nMu %i" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.nElectrons, iTree.nMuons)
+        return 0
+    if iTree.pt1.at(iBestPair)<45 or iTree.pt2.at(iBestPair)<45:
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at tauPt: pt1 %.2f pt2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.pt1.at(iBestPair), iTree.pt2.at(iBestPair))
+        return 0
+    if not passTrigger(iTree):
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at triggerPath" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+        return 0
+
+    if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at SS" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+        return 0
+
+    if not passIsoCut(iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair)):
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at iso: iso1 %.2f iso2 %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair))
+        return 0
+
+    if iTree.CSVJ1 < 0:
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at 2jets" %(iTree.EVENT, iTree.RUN, iTree.LUMI)
+        return 0
+
+    if iTree.svMass.at(iBestPair) < 90 or iTree.svMass.at(iBestPair) > 150 :
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at svMass: %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.svMass.at(iBestPair))
+        return 0
+
+    if iTree.mJJ < 70 or iTree.mJJ > 150 :
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at mJJ: %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.mJJ)
+        return 0
+
+    if iTree.fMassKinFit < 10 :
+        if track:
+            print "Event: %i Run: %i Lumi: %i     failed at fMassKinFit: %.2f" %(iTree.EVENT, iTree.RUN, iTree.LUMI, iTree.fMassKinFit)
+        return 0
+    return 1
+
+def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
+
+    if '.root' in iLocation:
+        iFile = r.TFile(iLocation)
+        iTree = iFile.Get(treepath)
+        nEntries = iTree.GetEntries()
+        oFileName = iLocation[iLocation.rfind("/")+1:iLocation.rfind(".root")]
+        oFileName += '_sync'
+        oFileName += '%s_%s' %(cut, cutBTag)
+        if usePassJetTrigger:
+            oFileName += '_jetCut'
+    else:
+        iTree = r.TChain(treepath)
+        nEntries = tool.addFiles(ch=iTree, dirName=iLocation, knownEventNumber=0, maxFileNumber=-1, printTotalEvents = True)
+        oFileName = iLocation[iLocation.rfind("/")+1:iLocation.find("-SUB-TT")]
+
     iTree.SetBranchStatus("*",1)
+    print iLocation
 
-    oFileName = iLocation[iLocation.rfind("/")+1:iLocation.find("-SUB-TT")]
 
-    oFile = r.TFile("%s.root" %oFileName,"recreate")
+    oFile = r.TFile("/nfs_scratch/zmao/samples/sync/%s.root" %oFileName,"recreate")
     oTree = r.TTree('TauCheck', 'TauCheck')
 
     run  = array('i', [0])
     lumi = array('i', [0])
-    evt = array('i', [0])
+    evt = array('I', [0])
     nTauPairs  = array('i', [0])
 
     npv = array('i', [0])
@@ -202,7 +288,7 @@ def makeSyncNtuples(iLocation, cut, treepath):
 
     oTree.Branch("run", run, "run/I")
     oTree.Branch("lumi", lumi, "lumi/I")
-    oTree.Branch("evt", evt, "evt/I")
+    oTree.Branch("evt", evt, "evt/i")
     oTree.Branch("nTauPairs", nTauPairs, "nTauPairs/I")
 
     oTree.Branch("npv", npv, "npv/I")
@@ -311,51 +397,141 @@ def makeSyncNtuples(iLocation, cut, treepath):
 
     iBestPair = 0
 
-    for iEntry in range(nEntries):
-        iTree.GetEntry(iEntry)
-        iBestPair = findBestPair(iTree)
-        if iTree.nElectrons > 0 or iTree.nMuons > 0:
-            continue
-        if iTree.pt1.at(iBestPair)<45 or iTree.pt2.at(iBestPair)<45:
-            continue
-#         if iTree.J1Pt < 30 or abs(iTree.J1Eta) > 4.7:
-#             continue
-        if iTree.iso1.at(iBestPair)>1 or iTree.iso2.at(iBestPair)>1:
-            continue
-        if not (iTree.HLT_Any > 0):
-            continue
-#         if iTree.eleTauPt1.size()>0:
-#             print 'eTauPairFound'
-#             continue
-#         if iTree.muTauPt1.size()>0:
-#             print 'muTauPairFound'
-#             continue
-#         if iTree.charge1.at(iBestPair) == iTree.charge2.at(iBestPair):
-#             continue
 
-        trigweight_1[0] = trigger.correction_leg1(iTree, iBestPair)
-        trigweight_2[0] = trigger.correction_leg2(iTree, iBestPair)
+    eventMask = [(194151, 365,  349335148),
+(194897, 60,  108968509),
+(195540, 242,  330355779),
+(195774, 167,  313155930),
+(196218, 602,  873479041),
+(198372, 99,  70852927),
+(198487, 912,  1001745316),
+(198941, 186,  214469104),
+(198955, 1537,  1513778727),
+(199435, 1396,  1459617602),
+(199608, 2133,  2018864579),
+(199751, 119,  44726153),
+(199804, 368,  427755387),
+(199804, 594,  683424157),
+(199812, 436,  520345518),
+(199875, 106,  101837725),
+(199967, 86,  63021254),
+(199967, 129,  130023275),
+(200091, 316,  383858323),
+(200229, 236,  259139891),
+(200473, 676,  732123594),
+(200991, 580,  734298336),
+(201168, 648,  703448949),
+(201174, 428,  277084870),
+(201278, 578,  780099013),
+(201278, 1736,  1891196520),
+(201613, 81,  139060604),
+(201613, 451,  670507871),
+(201624, 216,  293021679),
+(201669, 77,  139262841),
+(201678, 76,  68881519),
+(201678, 111,  99728107),
+(201679, 102,  86731515),
+(201705, 111,  105406435),
+(201707, 766,  927674406),
+(201802, 235,  308762569),
+(202016, 82,  94189905),
+(202178, 138,  134685443),
+(202237, 305,  476140228),
+(202299, 505,  700039165),
+(202305, 140,  131540972),
+(202328, 452,  670695461),
+(202504, 492,  656225868),
+(202973, 498,  501843502),
+(203834, 18,  13883648),
+(204114, 184,  202790028),
+(204553, 99,  86020028),
+(204563, 523,  712514275),
+(204564, 1099,  1135087262),
+(204577, 1208,  1348064195),
+(205158, 494,  684253208),
+(205238, 40,  43256781),
+(205344, 341,  385682370),
+(205515, 109,  97053827),
+(205526, 194,  178721945),
+(205617, 165,  175483611),
+(205694, 604,  591676916),
+(205833, 89,  67729917),
+(206088, 230,  314486221),
+(206102, 207,  285425714),
+(206207, 342,  511866527),
+(206210, 305,  281280297),
+(206210, 431,  385883083),
+(206389, 241,  317955787),
+(206401, 173,  232342170),
+(206401, 387,  596081779),
+(206446, 556,  798412205),
+(206466, 317,  551862988),
+(206594, 223,  319715951),
+(206598, 461,  379286485),
+(206745, 357,  389682970),
+(206745, 434,  478670049),
+(206866, 186,  194887530),
+(206906, 76,  93622383),
+(206940, 399,  509948850),
+(207214, 332,  531426238),
+(207217, 12,  11509910),
+(207231, 662,  970247235),
+(207269, 224,  289041330),
+(207372, 426,  603356940),
+(207454, 629,  926784153),
+(207487, 183,  294836080),
+(207515, 278,  427363837),
+(207905, 213,  286127146),
+(207905, 764,  1048252272),
+(207920, 158,  203416421),
+(207920, 172,  229795850),
+(207920, 699,  1001056535),
+(208307, 657,  887757961),
+(208341, 412,  466131146),
+(208427, 350,  554044639),
+(208686, 400,  618537965),
+                ]
+
+    
+    for iEntry in range(nEntries):
+        track = False
+        iTree.GetEntry(iEntry)
+        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' % (oFileName))
+        iBestPair = 0#findBestPair(iTree)
+
+        if (iTree.RUN,iTree.LUMI, iTree.EVENT,) in eventMask:
+            print ''
+            print 'Event: %i Lumi: %i run: %i' %(iTree.EVENT, iTree.LUMI, iTree.RUN)
+            print 'pt1: %.2f pt2: %.2f CSVJ1: %.2f CSVJ2: %.2f J1Pt: %.2f J1Eta: %.2f J2Pt: %.2f J2Eta: %.2f' %(iTree.pt1.at(iBestPair), iTree.pt2.at(iBestPair), iTree.CSVJ1, iTree.CSVJ2, iTree.J1Pt, iTree.J1Eta, iTree.J2Pt, iTree.J2Eta)
+            print 'iso1: %.2f iso2: %.2f charge: %.2f' %(iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair), iTree.charge1.at(iBestPair) + iTree.charge2.at(iBestPair))
+            print 'svMass: %.2f mJJ: %.2f' %(iTree.svMass.at(iBestPair), iTree.mJJ)
+
+            print 'tauTrigg1: %i' %iTree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired
+            print 'tauTrigg2: %i' %iTree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired
+            track = True
+        if not makeWholeTools2.passCut(iTree, 'pt'):
+            continue
+
+        signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(tree = iTree,
+                                                                                  iso = 1.0, 
+                                                                                  option = 'pt', 
+                                                                                  isData = True,
+                                                                                  relaxedRegionOption = 'one1To4',
+                                                                                  isEmbed = False, usePassJetTrigger = usePassJetTrigger)
+        if signSelection == None  or isoSelection == None or bTagSelection == None:
+            continue
+        tmpSelect = signSelection+isoSelection
+        if tmpSelect != cut:
+            continue
+        if not (cutBTag in bTagSelection):
+            continue 
+
+        trigweight_1[0] = iTree.triggerEff1
+        trigweight_2[0] = iTree.triggerEff2
+
         effweight[0] = trigweight_1[0] * trigweight_2[0]
         nTauPairs[0] = len(iTree.pt1)
-
-        jetsList = [(iTree.J1CSVbtag, iTree.J1Pt, iTree.J1Eta, iTree.J1Phi, iTree.J1Mass),
-                    (iTree.J2CSVbtag, iTree.J2Pt, iTree.J2Eta, iTree.J2Phi, iTree.J2Mass),
-                    (iTree.J3CSVbtag, iTree.J3Pt, iTree.J3Eta, iTree.J3Phi, iTree.J3Mass),
-                    (iTree.J4CSVbtag, iTree.J4Pt, iTree.J4Eta, iTree.J4Phi, iTree.J4Mass)]
-        jetsList = sorted(jetsList, key=itemgetter(0), reverse=True)
-
-        tau1.SetCoordinates(iTree.pt1.at(iBestPair), iTree.eta1.at(iBestPair), iTree.phi1.at(iBestPair), iTree.m1.at(iBestPair))
-        tau2.SetCoordinates(iTree.pt2.at(iBestPair), iTree.eta2.at(iBestPair), iTree.phi2.at(iBestPair), iTree.m2.at(iBestPair))
-
-        b1.SetCoordinates(jetsList[0][1], jetsList[0][2], jetsList[0][3], jetsList[0][4])
-        b2.SetCoordinates(jetsList[1][1], jetsList[1][2], jetsList[1][3], jetsList[1][4])
-        if cut:
-            if jetsList[0][1] < 20 or abs(jetsList[0][2]) > 2.4:
-                continue
-            if jetsList[0][0] < 0.679 or jetsList[1][0] < 0.244:
-                continue
-
-
+    
         run[0] = iTree.RUN
         evt[0] = iTree.EVENT
         npv[0] = iTree.vertices
@@ -412,24 +588,20 @@ def makeSyncNtuples(iLocation, cut, treepath):
         pzetavis[0] = iTree.pZV
         pzetamiss[0] = iTree.pZetaMiss
 
-        pt_tt[0] = iTree.fullPt
+#         pt_tt[0] = iTree.fullPt
 
         njets[0] = int(iTree.njets)
         njetspt20[0] = int(iTree.njetspt20)
         nbtag[0] = int(iTree.NBTags)
 
-        bcsv_1[0] = jetsList[0][0]
-        bpt_1[0] = jetsList[0][1]
-        beta_1[0] = jetsList[0][2]
-        bphi_1[0] = jetsList[0][3]
-        bcsv_2[0] = jetsList[1][0]
-        bpt_2[0] = jetsList[1][1]
-        beta_2[0] = jetsList[1][2]
-        bphi_2[0] = jetsList[1][3]
-        bcsv_3[0] = jetsList[2][0]
-        bpt_3[0] = jetsList[2][1]
-        beta_3[0] = jetsList[2][2]
-        bphi_3[0] = jetsList[2][3]
+        bcsv_1[0] = iTree.CSVJ1
+        bpt_1[0] = iTree.CSVJ1Pt
+        beta_1[0] = iTree.CSVJ1Eta
+        bphi_1[0] = iTree.CSVJ1Phi
+        bcsv_2[0] = iTree.CSVJ2
+        bpt_2[0] = iTree.CSVJ2Pt
+        beta_2[0] = iTree.CSVJ2Eta
+        bphi_2[0] = iTree.CSVJ2Phi
 
         jpt_1[0] = iTree.J1Pt
         jeta_1[0] = iTree.J1Eta
@@ -450,9 +622,11 @@ def makeSyncNtuples(iLocation, cut, treepath):
         jpass_2[0] = bool(iTree.jpass_2)
 
         m_bb[0] = iTree.mJJ
-        m_ttbb[0] = iTree.HMass
+#         m_ttbb[0] = iTree.HMass
 
         oTree.Fill()
+        if track:
+            print 'saved'
         counter += 1
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file ')
     
@@ -463,27 +637,45 @@ def makeSyncNtuples(iLocation, cut, treepath):
     oFile.Close()
     print 'Saved file: %s.root' %oFileName
 
-def opts():
-    parser = optparse.OptionParser("Usage: %prog /path/to/ntuples/ [options]")
-    parser.add_option("--cut", dest="cut", default=False, action="store_true", help="apply cuts")
-    defTree = "ttTreeBeforeChargeCut/eventTree"
-    parser.add_option("--treepath", dest="treepath", default=defTree, help="TDirectory/name of TTree (default is %s)" % defTree)
-    options, args = parser.parse_args()
+# def opts():
+#     parser = optparse.OptionParser("Usage: %prog /path/to/ntuples/ [options]")
+#     parser.add_option("--cut", dest="cut", default=False, action="store_true", help="apply cuts")
+#     defTree = "ttTreeBeforeChargeCut/eventTree"
+#     parser.add_option("--treepath", dest="treepath", default=defTree, help="TDirectory/name of TTree (default is %s)" % defTree)
+#     options, args = parser.parse_args()
+# 
+#     if len(args) != 1:
+#         parser.print_help()
+#         exit()
+#     return args[0], options
+# location, options = opts()
 
-    if len(args) != 1:
-        parser.print_help()
-        exit()
-    return args[0], options
-
-location, options = opts()
-
-import ROOT as r
-import tool
 
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_NoType1-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_syncNew-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newCalibMet-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newMET-SUB-TT')
 # makeSyncNtuples('/hdfs/store/user/zmao/H2hh300_newPhilHMetCalib-SUB-TT', True, "TauCheck/eventTree")
+# makeSyncNtuples('/hdfs/store/user/zmao/nt_H2hh300_up-SUB-TT', False, "ttTreeBeforeChargeCut/eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/embedSync/DY_embed_v9.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/tt_embed_v11_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/DY_embed_v12.root', False, "eventTree")
 
-makeSyncNtuples(location, options.cut, options.treepath)
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/tt_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/fromLogin05/looseCSV2/dataA_doublemu_emb_v12_tauShift_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/samples/data_embed/DY_embed.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/samples/tauESOff/normal/tt_embed_all.root', False, "eventTree")
+usePassJetTrigger = True
+# makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'OSRelax','1M', "eventTree", usePassJetTrigger)
+# makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'OSRelax','2M', "eventTree", usePassJetTrigger)
+makeSyncNtuples('/nfs_scratch/zmao/samples/data_new/data.root', 'SSRelax','1L', "eventTree", usePassJetTrigger)
+# makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'SSRelax','2L', "eventTree", usePassJetTrigger)
+# makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'SSTight','1L', "eventTree", usePassJetTrigger)
+# makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'SSTight','2L', "eventTree", usePassJetTrigger)
+# makeSyncNtuples('/nfs_scratch/zmao/samples/tauESOff/normal/tthad_all.root', False, "eventTree")
+# makeSyncNtuples('/nfs_scratch/zmao/samples/tauESOff/normal/tt_all.root', False, "eventTree")
+
+# makeSyncNtuples('/hdfs/store/user/zmao/nt_tauP_D_v7-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
+# makeSyncNtuples('/hdfs/store/user/elaird/nt_tauP_C_v3-SUB-TT-data', False, "ttTreeBeforeChargeCut/eventTree")
+
+# makeSyncNtuples(location, options.cut, options.treepath)

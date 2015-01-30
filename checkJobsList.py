@@ -4,7 +4,7 @@
 import checkJobs
 import os
 
-postFix = 'shift'
+postFix = 'rightJetMVA' #'tauESOn_tauShift'
 
 locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_H2hh270_%s-SUB-TT' %postFix,
@@ -21,6 +21,7 @@ locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/H2hh1000_rad_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_ttfull_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_ttsemi_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_tthad_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/v4/DY4JetsToLL_M-50_TuneZ2Star_8TeV-madgraph'
 #                 '/nfs_scratch/zmao/nt_zz_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_w1_%s-SUB-TT' %postFix,
@@ -31,9 +32,14 @@ locationList = [# '/nfs_scratch/zmao/nt_H2hh260_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy1_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy2_%s-SUB-TT' %postFix,
 #                 '/nfs_scratch/zmao/nt_dy3_%s-SUB-TT' %postFix,
-                '/nfs_scratch/zmao/nt_dy4_%s-SUB-TT' %postFix,
+#                 '/nfs_scratch/zmao/nt_dy4_%s-SUB-TT' %postFix,
 
-#                 '/nfs_scratch/zmao/nt_tau_A_%s-SUB-TT-data' %postFix,
+#                 '/nfs_scratch/zmao/nt_doublemu_emb_A_%s-SUB-TT-data' %postFix,
+#                 '/nfs_scratch/zmao/nt_doublemu_emb_B_%s-SUB-TT-data' %postFix,
+#                 '/nfs_scratch/zmao/nt_doublemu_emb_C_%s-SUB-TT-data' %postFix,
+#                 '/nfs_scratch/zmao/nt_doublemu_emb_D_%s-SUB-TT-data' %postFix,
+#                 '/nfs_scratch/zmao/nt_tauP_D_rightJetMVA2-SUB-TT-data'
+                '/nfs_scratch/zmao/nt_tauP_D_triggerFix-SUB-TT-data'
 #                 '/nfs_scratch/zmao/nt_tauP_B_%s-SUB-TT-data' %postFix,
 #                 '/nfs_scratch/zmao/nt_tauP_C_%s-SUB-TT-data' %postFix,
 #                 '/nfs_scratch/zmao/nt_tauP_D_%s-SUB-TT-data' %postFix,
@@ -46,4 +52,5 @@ for iLocation in locationList:
     checkJobs.checkJobs(opt)
     print '************************************************************************************'
     print ''
+
 

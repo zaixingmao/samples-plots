@@ -13,6 +13,31 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
 lumi = 19.7
 
+def passJetTrigger(tree):
+    etas = []
+    jetPtThreshold = 50.0
+    if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired or tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired:
+        return 1
+    else:
+        if tree.J1Pt < jetPtThreshold:
+            return 0
+        etas.append((abs(tree.J1Eta)))
+        if tree.J2Pt > jetPtThreshold:
+            etas.append((abs(tree.J2Eta)))
+        if tree.J3Pt > jetPtThreshold:
+            etas.append((abs(tree.J3Eta)))
+        if tree.J4Pt > jetPtThreshold:
+            etas.append((abs(tree.J4Eta)))
+        if tree.J5Pt > jetPtThreshold:
+            etas.append((abs(tree.J5Eta)))
+        if tree.J6Pt > jetPtThreshold:
+            etas.append((abs(tree.J6Eta)))
+        etas.sort()
+        if etas[0] < 3.0:
+            return 1
+        else:
+            return 0
+
 def calcSysUnc(sf, num, denom, delta_num = 0, delta_denom = 0):
     if delta_num == 0:
         delta_num = math.sqrt(num)
@@ -40,6 +65,12 @@ def addYieldInRegion(dict, name):
     ignoreKeys = ['0L1M', '0L2M', '1L2M']
     ignoreKeys = []
     for ikey in dict.keys():
+        if name == "*":
+            out += dict[ikey]
+            continue
+        if (name == "1M2M") and ('0M' not in ikey):
+            out += dict[ikey]
+            continue
         if ikey in ignoreKeys:
             continue
         if name in ikey:
@@ -52,24 +83,38 @@ def findSignSelection(charge1, charge2):
     else:
         return 'OS'
 
-def findIsoSelection(iso1, iso2, iso = 1.0):
+def findIsoSelection(iso1, iso2, iso = 1.0, relaxedRegionOption = 'one'):
     isoTight = iso
     isoCut = 1.0
     isoMax = 4.0
 
+    if '1To10' in relaxedRegionOption:
+        isoMax = 10.0
+    if '3To10' in relaxedRegionOption:
+        isoMax = 10.0
+        isoCut = 3.0
+    if '1.5To10' in relaxedRegionOption:
+        isoMax = 10.0
+        isoCut = 1.5
     isoSelection = None
     if (iso1 > isoMax) or (iso2 > isoMax):
         return None
-    elif (iso1 < isoTight) and (iso2 < isoTight):
+    if (iso1 < isoTight) and (iso2 < isoTight):
         return 'Tight'
-    elif (iso1 > isoCut) and (iso2 > isoCut):
-        return 'Relax'
+    if 'both' in relaxedRegionOption:
+        if (iso1 > isoCut) and (iso2 > isoCut):
+            return 'Relax'
     else:
-        return None
+        if ((iso1 > isoCut) and (iso2 < isoTight)) or ((iso2 > isoCut) and (iso1 < isoTight)):
+            return 'Relax'
+
+    return None
 
 def findBTagSelection(CSVJ1, CSVJ2, NBTags):
     CSVL = 0.244
     bTagSelection = None
+    if CSVJ1 < 0:
+        return bTagSelection      
     if CSVJ1 < CSVL:
         bTagSelection = '0L'
     elif (CSVJ1 > CSVL) and (CSVJ2 < CSVL):
@@ -79,7 +124,6 @@ def findBTagSelection(CSVJ1, CSVJ2, NBTags):
 
     if bTagSelection == None:
         return bTagSelection
-
     if NBTags < 1:
         bTagSelection += '0M'
     if NBTags == 1:
@@ -88,31 +132,46 @@ def findBTagSelection(CSVJ1, CSVJ2, NBTags):
         bTagSelection += '2M'
     return bTagSelection
 
-def findCategory(tree, iso):
-    global pair_0_counter
-    global pairNot_0_counter
-
-    if findRightPair(tree, 'iso') == 0:
-        pair_0_counter += 1
-    else:
-        pairNot_0_counter += 1
-    rightPair = findRightPair(tree, '')
-    if tree.pt1.at(rightPair) < 45 or tree.pt2.at(rightPair) < 45:
+def findCategory(tree, iso, option, isData, relaxedRegionOption, isEmbed = False, usePassJetTrigger = False, nBtag=''):
+    rightPair = findRightPair(tree, option)
+    if tree.pt1.at(rightPair) < 45 or tree.pt2.at(rightPair) < 45 or tree.HLT_Any == 0:
         return None, None, None
+    if abs(tree.eta1.at(rightPair)) > 2.1 or abs(tree.eta2.at(rightPair)) > 2.1:
+        return None, None, None
+    if (not isEmbed) and usePassJetTrigger:
+        if (not passJetTrigger(tree)):
+            return None, None, None
 
     #sign selection
     signSelection = findSignSelection(tree.charge1.at(rightPair), tree.charge2.at(rightPair))
 
     #iso selections
-    isoSelection = findIsoSelection(tree.iso1.at(rightPair), tree.iso2.at(rightPair), iso)
+    isoSelection = findIsoSelection(tree.iso1.at(rightPair), tree.iso2.at(rightPair), iso, relaxedRegionOption)
     
     #b-tag selections
-    bTagSelection = findBTagSelection(tree.CSVJ1, tree.CSVJ2, tree.NBTags)
+    nBTags = tree.NBTags
+    if isData or nBtag == '':
+        nBTags = tree.NBTags
+    elif nBtag == 'bSysUp':
+        nBTags = tree.NBTagsSysUp
+    elif nBtag == 'bSysDown':
+        nBTags = tree.NBTagsSysDown
+    elif nBtag == 'bMisUp':
+        nBTags = tree.NBTagsMisUp
+    elif nBtag == 'bMisDown':
+        nBTags = tree.NBTagsMisDown
+    bTagSelection = findBTagSelection(tree.CSVJ1, tree.CSVJ2, nBTags)
 
     return signSelection, isoSelection, bTagSelection
-        
+#         
+def passCut(tree, option):
+    rightPair = findRightPair(tree, option)
+    if (90.0 < tree.svMass.at(rightPair) < 150.0) and (70.0 < tree.mJJ < 150.0) and (tree.fMassKinFit > 10):
+        return True
+    else:
+        return False
 
-def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegionOption = 'relaxed', verbose = False, isoTight = 1.0):
+def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1to3', verbose = False, isoTight = 1.0, pairOption = 'pt', massWindow = False, usePassJetTrigger = False, nBtag = ''):
     files = []
     trees = []
     yields = {'MC': {},
@@ -134,7 +193,7 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
 
     for fileName, location, in fileList:
 
-        files.append(r.TFile(location0+location))
+        files.append(r.TFile(location))
         trees.append(files[len(files)-1].Get("eventTree"))
         total = trees[len(trees)-1].GetEntries()
         if 'data' in fileName:
@@ -144,14 +203,17 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
         if 'H2hh' in fileName:
             continue
         for i in range(total):
-            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %fileName)
+            tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %fileName, iPrevious = i)
             trees[len(trees)-1].GetEntry(i)
             if not isData:
                 puWeight = trees[len(trees)-1].PUWeight
             else:
                 puWeight = 1.0
+            if massWindow:
+                if not passCut(trees[len(trees)-1], pairOption):
+                    continue
             if trees[len(trees)-1].nElectrons == 0 and trees[len(trees)-1].nMuons == 0:
-                signSelection, isoSelection, bTagSelection = findCategory(trees[len(trees)-1], isoTight)
+                signSelection, isoSelection, bTagSelection = findCategory(trees[len(trees)-1], isoTight, pairOption, isData, relaxedRegionOption, False, usePassJetTrigger, nBtag)
                 if (signSelection == None) or (isoSelection == None) or (bTagSelection == None):
                     continue
                 if isData:
@@ -206,36 +268,57 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
           'loose2medium': {},
           'data2QCD': {},
           'weight': {},
+          'SS2OS': {}
          }
     SF_unc = {'relax2tight': {},
               'loose2medium': {},
               'data2QCD': {},
               'weight': {},
+              'SS2OS': {}
              }
 
+    if addYieldInRegion(yields['QCD']['SS']['Relax'], "*") != 0:
+        SF['SS2OS']['*'] = addYieldInRegion(yields['QCD']['OS']['Relax'], '*')/addYieldInRegion(yields['QCD']['SS']['Relax'], '*')
+    else:
+        SF['SS2OS']['*'] = 0
+    if addYieldInRegion(yields['QCD']['SS']['Relax'], "1M2M") != 0:
+        SF['SS2OS']['1M2M'] = addYieldInRegion(yields['QCD']['OS']['Relax'], '1M2M')/addYieldInRegion(yields['QCD']['SS']['Relax'], '1M2M')
+    else:
+        SF['SS2OS']['1M2M'] = 0
     for region in ['0', '1', '2']:
         #calculate scale factors
         if addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'L') != 0:
             SF['relax2tight'][region] = addYieldInRegion(yields['QCD']['SS']['Tight'], region + 'L')/addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'L')
         else:
             SF['relax2tight'][region] = 0
-        if addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'L') != 0:
-            SF['loose2medium'][region] = addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M')/addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'L')
+        if addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'L') != 0:
+            SF['loose2medium'][region] = addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'M')/addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'L')
         else:
             SF['loose2medium'][region] = 0
         if addYieldInRegion(yields['Data']['OS']['Relax'], region + 'M') != 0:
             SF['data2QCD'][region] = addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'L')/addYieldInRegion(yields['Data']['OS']['Relax'], region + 'L')
         else:
             SF['data2QCD'][region] = 0
-        SF['weight'][region] = SF['relax2tight'][region]*SF['loose2medium'][region]*SF['data2QCD'][region]
-        
+        if region != '0':
+            SF['weight'][region] = SF['relax2tight'][region]*SF['loose2medium'][region]*SF['data2QCD'][region]
+        else:
+            if addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M') != 0:
+                SF['relax2tight'][region] = addYieldInRegion(yields['QCD']['SS']['Tight'], region + 'M')/addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M')
+            else:
+                SF['relax2tight'][region] = 0
+            SF['weight'][region] = SF['relax2tight'][region]*SF['data2QCD'][region]
+        if addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M') != 0:
+            SF['SS2OS'][region] = addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'M')/addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M')
+        else:
+            SF['SS2OS'][region] = 0
+
         #calculate uncertainties factors
         SF_unc['relax2tight'][region] = calcSysUnc(sf = SF['relax2tight'][region], 
                                                    num = addYieldInRegion(yields['QCD']['SS']['Tight'], region + 'L'), 
                                                    denom = addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'L'))
         SF_unc['loose2medium'][region] = calcSysUnc(sf = SF['loose2medium'][region], 
-                                                    num = addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'M'), 
-                                                    denom = addYieldInRegion(yields['QCD']['SS']['Relax'], region + 'L'))
+                                                    num = addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'M'), 
+                                                    denom = addYieldInRegion(yields['QCD']['OS']['Relax'], region + 'L'))
         SF_unc['data2QCD'][region] = calcSysUnc(sf = 1.0 - SF['data2QCD'][region], 
                                                 num = addYieldInRegion(yields['MC']['OS']['Relax'], region + 'L'), 
                                                 denom = addYieldInRegion(yields['Data']['OS']['Relax'], region + 'L'))
@@ -249,7 +332,15 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
                                               denom = SF['data2QCD'][region],
                                               delta_num = unc_weight1,
                                               delta_denom = SF_unc['data2QCD'][region])
-                                
+        SF_unc['SS2OS'][region] = calcSysUnc(sf = SF['SS2OS'][region], 
+                                             num = addYieldInRegion(yields['QCD']['OS']['Relax'], region), 
+                                             denom = addYieldInRegion(yields['QCD']['SS']['Relax'], region))
+    SF_unc['SS2OS']['*'] = calcSysUnc(sf = SF['SS2OS']['*'], 
+                                      num = addYieldInRegion(yields['QCD']['OS']['Relax'], '*'), 
+                                      denom = addYieldInRegion(yields['QCD']['SS']['Relax'], '*'))
+    SF_unc['SS2OS']['1M2M'] = calcSysUnc(sf = SF['SS2OS']['1M2M'], 
+                                      num = addYieldInRegion(yields['QCD']['OS']['Relax'], '1M2M'), 
+                                      denom = addYieldInRegion(yields['QCD']['SS']['Relax'], '1M2M'))
 
     if verbose:
         for region in ['1M', '2M', '1L', '2L']:
@@ -288,16 +379,21 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
         print 'MC in 1M: %.2f' %(addYieldInRegion(yields['MC']['OS']['Tight'], '1M'))
         print 'MC in 2M: %.2f' %(addYieldInRegion(yields['MC']['OS']['Tight'], '2M'))
 
+        print 'OS/SS all:       %.3f +/- %.3f' %(SF['SS2OS']['*'], SF_unc['SS2OS']['*'])
+        print 'OS/SS (0M):       %.3f +/- %.3f' %(SF['SS2OS']['0'], SF_unc['SS2OS']['0'])
+        print 'OS/SS (1M+2M):   %.3f +/- %.3f' %(SF['SS2OS']['1M2M'], SF_unc['SS2OS']['1M2M'])
+        print 'OS/SS 1M:        %.3f +/- %.3f' %(SF['SS2OS']['1'], SF_unc['SS2OS']['1'])
+        print 'OS/SS 2M:        %.3f +/- %.3f' %(SF['SS2OS']['2'], SF_unc['SS2OS']['2'])
+
     output = []
     output.append(SF['weight']['1']) 
     output.append(SF['weight']['2'])
     output.append(SF['relax2tight']['1']*SF['loose2medium']['1']) 
     output.append(SF['relax2tight']['2']*SF['loose2medium']['2']) 
-
+    output.append(SF['relax2tight']['0']) 
     return output
 
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, 'Tight', makeWholeSample_cfg.Relax, True, 1.0, 'pt', False, usePassJetTrigger = True, nBtag = '')
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
-calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','relaxed', True)
-print pair_0_counter
-print pairNot_0_counter
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','both3To10', True, 1.0, 'pt', True)

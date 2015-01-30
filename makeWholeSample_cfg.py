@@ -3,98 +3,87 @@
 #Sample should be in directory preFix0/TRAINEDMASSPOINT
 #with name ClassApp_both_TMVARegApp_*
 #example, for sample trained with H260:
-#sample: /scratch/zmao/relaxed_regression4/260/ClassApp_both_TMVARegApp_H2hh260_all.root
+#sample: /scratch/zmao/Relax_regression4/260/ClassApp_both_TMVARegApp_H2hh260_all.root
 
 
-#preFix0 = '/scratch/zmao/relaxed_regression4/'
+#preFix0 = '/scratch/zmao/Relax_regression4/'
 # preFix0 = '/scratch/zmao/v4/'
-preFixTools = '/nfs_scratch/zmao/fromLogin05/forPlots/'
-
+preFixTools = '/nfs_scratch/zmao/fromLogin05/looseCSV2/'
 # preFix0 = '/scratch/zmao/BDTStudy/7_noDPhiMetJ2_mJJ/'
-scaleOption = ''
-# scaleOption = 'tauUp'
+scaleOption = 'normal'
+scaleOption = 'tauDown'
 # scaleOption = 'tauDown'
-# scaleOption = 'jetUp'
-# scaleOption = 'jetDown'
+scaleOption = 'jetUp'
+scaleOption = 'jetDown'
+bTagShift = '' # bMisDown,sysUp, sysDown, misUp, misDown 
 
-preFix0 = '/nfs_scratch/zmao/fromLogin05/forPlots/%s/' %scaleOption
+preFixTauESOff = '/nfs_scratch/zmao/samples_new/tauESOff/normal/'
+preFixTauESOn = '/nfs_scratch/zmao/samples_new/tauESOn/normal/'
+preFixData = '/nfs_scratch/zmao/samples_new/data/'
+
+if bTagShift != '':
+    if 'Sys' in bTagShift:
+        scaleOption = 'bSys'
+    else:
+        scaleOption = 'bMis'
+        
+if scaleOption == 'normal' or 'tau' in scaleOption:
+    preFixTauESOnDYEmbed = '/nfs_scratch/zmao/samples_new/tauESOn/%s/' %scaleOption
+else:
+    preFixTauESOnDYEmbed = '/nfs_scratch/zmao/samples_new/tauESOn/normal/'
+preFixTauESOn = '/nfs_scratch/zmao/samples_new/tauESOn/%s/' %scaleOption
+
+if 'tau' not in scaleOption:
+    preFixTauESOffVV = '/nfs_scratch/zmao/samples_new/tauESOff/%s/' %scaleOption
+else:
+    preFixTauESOffVV = '/nfs_scratch/zmao/samples_new/tauESOff/normal/'
+preFixTauESOff = '/nfs_scratch/zmao/samples_new/tauESOff/%s/' %scaleOption
 
 
 iso = 1.0
+pairOption = 'pt'
+checkSpeed = False
 postFix = ''
-bTag = '1M'
-relaxed = 'INFN_relaxed'
+bTag = 'M'
+tail = '_withDYEmbed'
+Relax = 'one1To4'
 thirdLeptonVeto = True
+usePassJetTrigger = True
 
-scaleFactors = {'bTag': 0.051,
-                '2M': 0.058,
-                '1M1NonM': 0.0523,
-                '1M': 0.0523}  
+massWindow = True
+if massWindow:
+    tail += '_massWindow'
 
-if thirdLeptonVeto:
-    scaleFactors = {'bTag': 0.051,
-                    '2M': 0.0507,
-                    '1M1NonM': 0.0498,
-                    '1M': 0.0499}
+data_bTag = 'L'
+# if bTag == '2M':
+#     data_bTag = '2L'
 
-WScale = 1.193
+sampleConfigs =[('signals', '%s/signal.root' %preFixTauESOn, 'OSTight%s' %bTag, False),
+                ("DY_inclusive","%s/dy.root" %preFixTauESOn, 'OSTight%s' %bTag, False),
+                ("t#bar{t}","%s/TT.root" %preFixTauESOff, 'OSTight%s' %bTag, False),
+                ("WJets","%s/WJets.root" %preFixTauESOff, 'OSTight%s' %bTag, False),
+                ('VV','%s/Electroweak.root' %preFixTauESOffVV, 'OSTight%s' %data_bTag, True),
+                ("singleT","%s/singleTop.root" %preFixTauESOffVV, 'OSTight%s' %data_bTag, True),
+                ("ZLL","%s/dy.root" %preFixTauESOn, 'OSTight%s' %data_bTag, True),
+                ("DY_embed","%s/DY_embed.root" %preFixTauESOnDYEmbed, 'OSTight%s' %data_bTag, True),
+                ("tt_embed","%s/tt_embed_all.root" %preFixTauESOff, 'OSTight%s' %data_bTag, True),
+                ('MCOSRelax','%s/Electroweak_withSingleTop.root' %preFixTauESOffVV, 'OSRelax%s' %data_bTag, False),
+                ("MCOSRelax","%s/dy.root" %preFixTauESOn, 'OSRelax%s' %data_bTag, False),
+                ("MCOSRelax","%s/TT.root" %preFixTauESOff, 'OSRelax%s' %data_bTag, False),
+                ('dataOSRelax','%s/data.root' %preFixData, 'OSRelax%s' %data_bTag, False),
+                ('dataOSTight','%s/data.root' %preFixData, 'OSTight%s' %bTag, False)]
 
-# sampleConfigs =[('H2hh260', 'H2hh260%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-# 
-#                 ('H2hh270', 'H2hh270%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-#                 ('H2hh280', 'H2hh280%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-#                 ('H2hh290', 'H2hh290%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-# 
-#                 ("H2hh300", "H2hh300%s_all.root" %postFix, 'OStight%s' %bTag, 15.9),
-# 
-#                 ('H2hh310', 'H2hh310%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-#                 ('H2hh320', 'H2hh320%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-#                 ('H2hh330', 'H2hh330%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-#                 ('H2hh340', 'H2hh340%s_all.root' %postFix, 'OStight%s' %bTag, 14.76),
-# 
-#                 ('H2hh350', 'H2hh350%s_all.root' %postFix, 'OStight%s' %bTag, 8.57),
-# 
-# #                 ('H2hh500', 'H2hh500_all.root', 'OStight%s' %bTag, 8.57),
-# #                 ('H2hh700', 'H2hh700_all.root', 'OStight%s' %bTag, 8.57),
-# #                 ('H2hh1000', 'H2hh1000_all.root', 'OStight%s' %bTag, 8.57),
-# 
-#                 ('ZZ','ZZ_all.root', 'OStight%s' %bTag, 2500),
-#                 ("tt_full","tt%s_all.root" %postFix, 'OStight%s' %bTag, 26197.5),
-#                 ("tt_semi","tt_semi%s_all.root" %postFix, 'OStight%s' %bTag, 109281),
-#                 ('WZJetsTo2L2Q', 'WZJetsTo2L2Q_all.root', 'OStight%s' %bTag, 2207),
-#                 ("DYJetsToLL","DYJetsToLL%s_all.root" %postFix, 'OStight%s' %bTag, 3504000),
-# #                 ("DY1JetsToLL","DY1JetsToLL_all.root", 'OStight%s' %bTag, 561000),
-# #                 ('DY2JetsToLL','DY2JetsToLL_all.root', 'OStight%s' %bTag, 181000),
-# #                 ('DY3JetsToLL','DY3JetsToLL_all.root', 'OStight%s' %bTag, 51100),
-#                 ('W1JetsToLNu','W1JetsToLNu_all.root', 'OStight%s' %bTag, 5400000*WScale),
-#                 ('W2JetsToLNu','W2JetsToLNu_all.root', 'OStight%s' %bTag, 1750000*WScale),
-#                 ('W3JetsToLNu','W3JetsToLNu_all.root', 'OStight%s' %bTag, 519000*WScale),
-#                 ('dataOSRelax','dataTotal_all.root', 'OSrelaxed%s' %bTag, scaleFactors[bTag])]
-data_bTag = '1L'
-if bTag == '2M':
-    data_bTag = '2L'
+if bTagShift != '':
+    oFileName = 'combined%s_iso%.1f_%s_%s_%s_%s.root' %(postFix, iso, Relax, pairOption, bTagShift, tail)
+else:
+    oFileName = 'combined%s_iso%.1f_%s_%s_%s_%s.root' %(postFix, iso, Relax, pairOption, scaleOption, tail)
 
-sampleConfigs =[('signals', 'signal.root', 'OStight%s' %bTag),
-                ('Electroweak','Electroweak_new.root', 'OStight%s' %bTag),
-                ("DYJetsToLL","DYJetsToLL_all.root", 'OStight%s' %bTag),
-                ("t#bar{t}","tt_new.root", 'OStight%s' %bTag),
-
-                ('MCOSRelax','Electroweak_new.root', 'OSrelaxed%s' %data_bTag),
-                ("MCOSRelax","DYJetsToLL_all.root", 'OSrelaxed%s' %data_bTag),
-                ("MCOSRelax","tt_new.root", 'OSrelaxed%s' %data_bTag),
-                ('data','dataTotal_all.root', 'OSrelaxed%s' %data_bTag)]
-
-oFileName = 'combined%s_%s_iso%.1f_%s_%s_newMethod_withMCOSRelax.root' %(postFix, bTag, iso, relaxed, scaleOption)
 trainedMassPoints = [260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
 
-sampleConfigsTools =[('Electroweak', 'Electroweak_new.root'),
-                     ('DYJetsToLL', 'DYJetsToLL_all.root'),
-                     ('t#bar{t}','tt_new.root'),
-                     ('data','dataTotal_all.root')]
+sampleConfigsTools =[('VV', '%s/Electroweak_withSingleTop.root' %preFixTauESOffVV),
+                     ('DYJetsToLL', '%s/dy.root' %preFixTauESOn),
+                     ('t#bar{t}','%s/TT.root' %preFixTauESOff),
+                     ('data','%s/data.root' %preFixData)]
 
-# sampleConfigsTools =[('Electroweak', 'Electroweak.root'),
-#                      ('DYJetsToLL', 'DYJetsToLL_all.root'),
-#                      ('t#bar{t}','tt_withHad.root'),
-#                      ('data','dataTotal_all.root')]
 
 

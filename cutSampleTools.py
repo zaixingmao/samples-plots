@@ -31,19 +31,139 @@ def setupLumiReWeight():
 def getPUWeight(npu = 0):
     return reWeight.weight(npu)
 
+def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
+    tmpGen = lvClass()
+    tmpParticle = lvClass()
+    dR = 999999.0
+    tmpParticle.SetCoordinates(pt, eta, phi, 0)
+    if genPt < genPtThreshold:
+        return dR
+    tmpGen.SetCoordinates(genPt, genEta, genPhi, 0)
+    dR = r.Math.VectorUtil.DeltaR(tmpParticle, tmpGen)
+    return dR
+
+def findMinDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
+    minDR = 99999.9
+    for iGen in range(len(genPt)):
+        tmpDR = findDR(genPt.at(iGen), genEta.at(iGen), genPhi.at(iGen), pt, eta, phi, genPtThreshold)
+        if tmpDR < minDR:
+            minDR = tmpDR
+    return minDR
+
+def findBestPair(iChain):
+    iPair = 0
+    minIso = 9999.
+    for i in range(len(iChain.iso1)):
+        if iChain.iso1.at(i) + iChain.iso2.at(i) < minIso:
+            minIso = iChain.iso1.at(i) + iChain.iso2.at(i)
+            iPair = i
+    return iPair
+
+def dR_genLept(genElePt, genEleEta, genElePhi, genMuPt, genMuEta, genMuPhi, pt, eta, phi):
+    dR_ele = findMinDR(genPt = genElePt,
+                       genEta = genEleEta,
+                       genPhi = genElePhi,
+                       pt = pt,
+                       eta = eta,
+                       phi = phi,
+                       genPtThreshold = 8.0)
+    dR_mu = findMinDR(genPt = genMuPt,
+                      genEta = genMuEta,
+                      genPhi = genMuPhi,
+                      pt = pt,
+                      eta = eta,
+                      phi = phi,
+                      genPtThreshold = 8.0)
+    return dR_ele, dR_mu
+
+def getDRs(iChain):
+    bestPair = findBestPair(iChain)
+    dR_tau_leg1 = findDR(genPt = iChain.genVisPt1.at(bestPair),
+                         genEta = iChain.genVisEta1.at(bestPair),
+                         genPhi = iChain.genVisPhi1.at(bestPair),
+                         pt = iChain.pt1.at(bestPair),
+                         eta = iChain.eta1.at(bestPair),
+                         phi = iChain.phi1.at(bestPair),
+                         genPtThreshold = 18.0)
+
+    dR_ele_leg1, dR_mu_leg1 = dR_genLept(genElePt = iChain.genElePt, 
+                                         genEleEta = iChain.genEleEta,
+                                         genElePhi = iChain.genElePhi, 
+                                         genMuPt = iChain.genMuPt,
+                                         genMuEta = iChain.genMuEta,
+                                         genMuPhi = iChain.genMuPhi,
+                                         pt = iChain.pt1.at(bestPair),
+                                         eta = iChain.eta1.at(bestPair),
+                                         phi = iChain.phi1.at(bestPair))
+
+    dR_tau_leg2 = findDR(genPt = iChain.genVisPt2.at(bestPair),
+                         genEta = iChain.genVisEta2.at(bestPair),
+                         genPhi = iChain.genVisPhi2.at(bestPair),
+                         pt = iChain.pt2.at(bestPair),
+                         eta = iChain.eta2.at(bestPair),
+                         phi = iChain.phi2.at(bestPair),
+                         genPtThreshold = 18.0)
+
+    dR_ele_leg2, dR_mu_leg2 = dR_genLept(genElePt = iChain.genElePt, 
+                                         genEleEta = iChain.genEleEta,
+                                         genElePhi = iChain.genElePhi, 
+                                         genMuPt = iChain.genMuPt,
+                                         genMuEta = iChain.genMuEta,
+                                         genMuPhi = iChain.genMuPhi,
+                                         pt = iChain.pt2.at(bestPair),
+                                         eta = iChain.eta2.at(bestPair),
+                                         phi = iChain.phi2.at(bestPair))
+
+    return dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2
+
+
+
+def passCategory(iChain, separate):
+    if separate == 'all':
+        return True
+    elif separate == 'ZTT' and iChain.genTausFromZ < 2:
+        return False
+    dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2 = getDRs(iChain)
+    case = ''
+    #check if any of the gen particles are within dR < 0.5
+    dRs1 = [dR_tau_leg1, dR_ele_leg1, dR_mu_leg1]
+    dRs2 = [dR_tau_leg2, dR_ele_leg2, dR_mu_leg2]
+    dRs1.sort()
+    dRs2.sort()
+    if separate == 'ZTT':
+        if dRs1[0] < 0.5 and dRs2[0] < 0.5:
+            return True
+        else:
+            return False
+
+    elif separate == 'ZLL':
+        #ZL+ZJ case
+        if iChain.genTausFromZ < 2:
+            return True
+        else:
+            if dRs1[0] > 0.5 or dRs2[0] > 0.5:
+                return True
+            else:
+                return False
+
+    print 'If it got to this point, check separate option: %s' %separate
+
+
 def findFullMass(jetsList = [], sv4Vec = '', ptThreshold = 20):
     newList = []
+    emptyV4 = lvClass()
+    emptyV4.SetCoordinates(0,0,0,0)
     for i in range(len(jetsList)):
         if jetsList[i][1].pt() > ptThreshold and abs(jetsList[i][1].eta()) < 2.4:
             newList.append(jetsList[i])
     newList = sorted(newList, key=itemgetter(0), reverse=True)
     if len(newList) < 2:
-        return -1, -1, -1, -1, -1, -1, -1, -1, -1
-    if newList[1][0] > 0:
-        combinedJJ = newList[0][1]+newList[1][1]
-        return combinedJJ, newList[0][0], newList[1][0], newList[0][1], newList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(newList[0][1], newList[1][1]), newList[0][2], newList[1][2]
-    else:
-        return -1, -1, -1, -1, -1, -1, -1, -1, -1
+        return emptyV4, -1.0, -1.0, emptyV4, emptyV4, 0.0, -1.0, 'J1', 'J1'
+#     if newList[1][0] > 0:
+    combinedJJ = newList[0][1]+newList[1][1]
+    return combinedJJ, newList[0][0], newList[1][0], newList[0][1], newList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(newList[0][1], newList[1][1]), newList[0][2], newList[1][2]
+#     else:
+#         return emptyV4, -1.0, -1.0, emptyV4, emptyV4, 0.0, -1.0, 'J1', 'J1'
 
 
 def findGenJet(j1Name, jet1, j2Name, jet2, tChain):

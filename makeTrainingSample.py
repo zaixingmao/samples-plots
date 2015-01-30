@@ -6,6 +6,8 @@ import math
 import optparse
 import os
 from array import array
+import struct
+import makeWholeTools2
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 j1Reg = lvClass()
@@ -23,54 +25,54 @@ def splitFileNames(inputName):
     fileNames.append(tmpName)
     return fileNames
 
+def setUpFloatVarsDict():
+    varDict = {}
+    names = ['met1', 'iso1_1', 'iso2_1', 'svMass1', 'weight',
+             'weightWithPU','EVENT1','EVENT2','EVENT3', 'EVENT4', 'sampleName2', 'category2']
+    for iName in names:
+        varDict[iName] = array('f', [0.])
+    return varDict
+
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("--i", dest="inputFile", default = '', help="")
     parser.add_option("--o", dest="outputFile", default = 'trainSample', help="")
-    parser.add_option("--xs", dest="xs", default = 1., help="")
+    parser.add_option("--weightOne", dest="weightOne", default = -1., help="")
+    parser.add_option("--weightTwo", dest="weightTwo", default = -1., help="")
     parser.add_option("--c", dest="cut", default = 'none', help="")
+    parser.add_option("--iso", dest="isoSelect", default = 'none', help="")
+    parser.add_option("--sign", dest="signSelect", default = 'none', help="")
+    parser.add_option("--relaxRegion", dest="relaxRegion", default = 'none', help="")
+    parser.add_option("--bRegion", dest="bRegion", default = 'none', help="")
+    parser.add_option("--useLooseForShape", dest="useLooseForShape", default = 0, help="")
+
     options, args = parser.parse_args()
     return options
 
-def passCut(iTree, cut):
-    if 'none' in cut:
-        return True
-    if 'tight' in cut:
-        if iTree.iso1.at(0) > 1.5 or iTree.iso2.at(0) > 1.5:
+def passCut(iTree, bTagSelection, bRegion, isData, isEmbed):
+    if bTagSelection == None:
+        return False
+    if isEmbed:
+        if iTree.HLT_Any == 0:
             return False
-    if ('relaxed' in cut) and ('very' not in cut):
-        if iTree.iso1.at(0) < 3 or iTree.iso2.at(0) < 3:
-            return False
-    if 'very_relaxed' in cut:
-        if iTree.iso1.at(0) < 1.5 or iTree.iso2.at(0) < 1.5:
-            return False
-    if 'same' in cut:
-        if iTree.charge1.at(0) == -iTree.charge2.at(0):
-            return False
-    if 'opposite' in cut:
-        if iTree.charge1.at(0) == iTree.charge2.at(0):
-            return False
-    if 'bTag' in cut:
-        if iTree.CSVJ1 < 0.679 or iTree.CSVJ2 < 0.244:
-            return False
-    if '2M' in cut:
-        if iTree.NBTags > 1:
-            return False
-    if '1M1NonM' in cut:
-        if iTree.NBTags == 1:
-            return False
-    if '1M' in cut:
-        if iTree.NBTags < 1:
-            return False
-    if '3rdLepVeto' in cut:
-        if iTree.nElectrons > 0 or iTree.nMuons > 0:
-            return False
-    return True
+    if iTree.nElectrons > 0 or iTree.nMuons > 0:
+        return False
+    if 'M' in bRegion:
+        if '0M' not in bTagSelection:
+            return True
+    if 'L' in bRegion:
+        if '0L' not in bTagSelection:
+            return True
+    if bRegion == 'none':
+            return True
+    return False
 
-def findCategory(csv1, csv2):
-    if csv1 < 0.679:
+
+def findBCategory(csv1, csv2):
+    CSVL = 0.244
+    if csv1 < CSVL:
         return -1
-    elif csv2 > 0.679:
+    elif csv2 > CSVL:
         return 2
     else:
         return 1 
@@ -79,62 +81,114 @@ options = opts()
 iFile = options.inputFile
 ifile = r.TFile(iFile)
 iTree = ifile.Get("eventTree")
-# cutFlow = ifile.Get("preselection")
-oFile = r.TFile("%s_%s.root" %(options.outputFile, options.cut),"recreate")
+print options.bRegion
+oString = options.signSelect + options.isoSelect + options.bRegion
+oFile = r.TFile("%s_%s.root" %(options.outputFile, oString),"recreate")
 oTree = iTree.CloneTree(0)
 total = iTree.GetEntries()
-category = array('i', [0])
-sampleName2 = array('i', [0])
+
 Lumi = 19.7
-initEvents = array('i', [0])
-xs = array('f', [0.])
-met = array('f', [0.])
-svMass = array('f', [0.])
-iso1 = array('f', [0.])
-iso2 = array('f', [0.])
 
-weight = array('f', [0.])
-PUWeight = array('f', [0.])
-oTree.Branch("sampleName2", sampleName2, "sampleName2/I")
-oTree.Branch("met1", met, "met1/f")
-oTree.Branch("iso1_1", iso1, "iso1_1/f")
-oTree.Branch("iso2_1", iso2, "iso2_1/f")
-oTree.Branch("svMass1", svMass, "svMass1/f")
-oTree.Branch("category2", category, "category2/I")
-oTree.Branch("initEvents", initEvents, "initEvents/I")
-oTree.Branch("xs", xs, "xs/f")
-oTree.Branch("weight", weight, "weight/f")
+floatVarsDict = setUpFloatVarsDict()
 
-oTree.Branch("PUWeight", PUWeight, "PUWeight/f")
+for iVar in floatVarsDict.keys():
+    oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/f" %iVar)
+
+isData = False
+isEmbed = False
+
+#calculate yields
+looseYield_1 = 0.0
+looseYield_2 = 0.0
+mediumYield_1 = 0.0
+mediumYield_2 = 0.0
+
+if int(options.useLooseForShape) != 0:
+    for i in range(total):
+        r.gStyle.SetOptStat(0)
+        tool.printProcessStatus(iCurrent=i, total=total, processName = 'Looping sample %s, calculating yields' %iFile)
+        iTree.GetEntry(i)
+        if 'data' in iTree.sampleName:
+            isData = True
+        if 'emb' in iTree.sampleName:
+            isEmbed = True
+        signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, 'pt', isData, options.relaxRegion)
+        if options.isoSelect != isoSelection and options.isoSelect != 'none':
+            continue
+        if options.signSelect != signSelection and options.signSelect != 'none':
+            continue
+        if passCut(iTree, bTagSelection, 'L', isData, isEmbed):
+            if '1L' in bTagSelection:
+                looseYield_1 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
+            elif '2L' in bTagSelection:
+                looseYield_2 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
+        if passCut(iTree, bTagSelection, 'M', isData, isEmbed):
+            if '1M' in bTagSelection:
+                mediumYield_1 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
+            elif '2M' in bTagSelection:
+                mediumYield_2 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
+    print 'Loose yields: %s (1M)\t  %s (2M)' %(looseYield_1, looseYield_2)
+    print 'Medium yields: %s (1M)\t  %s (2M)' %(mediumYield_1, mediumYield_2)
 
 for i in range(total):
     r.gStyle.SetOptStat(0)
     tool.printProcessStatus(iCurrent=i, total=total, processName = 'Looping sample %s' %iFile)
     iTree.GetEntry(i)
-    if passCut(iTree, options.cut):
+    if 'data' in iTree.sampleName:
+        isData = True
+    if 'emb' in iTree.sampleName:
+        isEmbed = True
+    signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, 'pt', isData, options.relaxRegion)
+    if options.isoSelect != isoSelection and options.isoSelect != 'none':
+        continue
+    if options.signSelect != signSelection and options.signSelect != 'none':
+        continue
+    if passCut(iTree, bTagSelection, options.bRegion, isData, isEmbed):
+        floatVarsDict['category2'][0] = findBCategory(iTree.CSVJ1, iTree.CSVJ2)
+
         if '_semi' in iTree.sampleName:
             sampleName = iTree.sampleName[:iTree.sampleName.find('_semi')+5]
-        elif '_' in iTree.sampleName:
+        elif '_' in iTree.sampleName and 'emb' not in iTree.sampleName:
             sampleName = iTree.sampleName[:iTree.sampleName.find('_')]
         else:
             sampleName = iTree.sampleName
-        if 'wbbj' in sampleName:
-            continue
-        if 'data' in sampleName:
+
+        if isEmbed:
+            if isData:
+                sampleName = 'DY_embed'
+                floatVarsDict['weight'][0] = iTree.triggerEff
+                floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]
+            else:
+                sampleName = 'tt_embed'
+                floatVarsDict['weight'][0] = iTree.xs*0.983*Lumi*iTree.triggerEff/(iTree.initEvents)
+                floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]
+        elif isData:
             sampleName = 'dataOSRelax_all'
-            weight[0] = float(options.xs)*iTree.triggerEff
-            PUWeight[0] = 1.0
+            if floatVarsDict['category2'][0] == 1:
+                floatVarsDict['weight'][0] = float(options.weightOne)
+                floatVarsDict['weightWithPU'][0] = float(options.weightOne)
+            elif floatVarsDict['category2'][0] == 2:
+                floatVarsDict['weight'][0] = float(options.weightTwo)
+                floatVarsDict['weightWithPU'][0] = float(options.weightTwo)            
         else:
-            initEvents[0] = iTree.initEvents
-            xs[0] = iTree.xs
-            PUWeight[0] = iTree.PUWeight
-            weight[0] = iTree.xs*Lumi*iTree.triggerEff/(iTree.initEvents)
-        sampleName2[0] = tool.nameEnDecoder(sampleName, 'encode')
-        category[0] = findCategory(iTree.CSVJ1, iTree.CSVJ2)
-        met[0] = iTree.met.at(0)
-        svMass[0] = iTree.svMass.at(0)
-        iso1[0] = iTree.iso1.at(0)
-        iso2[0] = iTree.iso2.at(0)
+            floatVarsDict['weight'][0] = iTree.xs*Lumi*iTree.triggerEff/(iTree.initEvents)
+            floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]*iTree.PUWeight
+            if int(options.useLooseForShape) != 0:
+                if floatVarsDict['category2'][0] == 1:
+                    floatVarsDict['weightWithPU'][0] = floatVarsDict['weightWithPU'][0]*mediumYield_1/looseYield_1
+                elif floatVarsDict['category2'][0] == 2:
+                    floatVarsDict['weightWithPU'][0] = floatVarsDict['weightWithPU'][0]*mediumYield_2/looseYield_2
+
+        floatVarsDict['sampleName2'][0] = tool.nameEnDecoder(sampleName, 'encode')
+        step = struct.calcsize("i")/4
+        floatVarsDict['EVENT1'][0] = float(int(iTree.EVENT >> 8*(struct.calcsize("i")-step)))
+        floatVarsDict['EVENT2'][0] = float(int((iTree.EVENT<<8*step) >> 8*(struct.calcsize("i")-step)))
+        floatVarsDict['EVENT3'][0] = float(int((iTree.EVENT<<16*step) >> 8*(struct.calcsize("i")-step)))
+        floatVarsDict['EVENT4'][0] = float(int((iTree.EVENT<<24*step) >> 8*(struct.calcsize("i")-step)))
+        floatVarsDict['met1'][0] = iTree.met.at(0)
+        floatVarsDict['svMass1'][0] = iTree.svMass.at(0)
+        floatVarsDict['iso1_1'][0] = iTree.iso1.at(0)
+        floatVarsDict['iso2_1'][0] = iTree.iso2.at(0)
 
         oTree.Fill()
 
@@ -146,4 +200,4 @@ oTree.Write()
 nSaved = oTree.GetEntries()
 oFile.Close()
 
-print 'saved %i events out of %i at: %s_%s.root' %(nSaved,total,options.outputFile, options.cut)
+print 'saved %i events out of %i at: %s_%s.root' %(nSaved,total,options.outputFile, oString)

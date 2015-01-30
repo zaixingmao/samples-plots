@@ -384,6 +384,6 @@ def calculateSF(fileList, location0, out, sigRegionOption = 'tight', relaxedRegi
 
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
-calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'INFN_tight','INFN_relaxed',True, True)
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'INFN_tight','INFN_relaxed',True, True)
 print pair_0_counter
 print pairNot_0_counter

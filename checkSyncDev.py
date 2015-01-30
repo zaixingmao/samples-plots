@@ -27,7 +27,7 @@ def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
     p = "%0.2f"
     dashes = '------'
     title = 'Event: %i Difference: %s' %(varsList1[1], p)
-    title = title % abs(varsList1[3] - varsList2[3])
+    title = title % abs(varsList1[5] - varsList2[5])
     printedEvN.append(varsList1[1])
     nChar = max([len(x) for x in [name1, name2]])
     outline0 = ' ' * (nChar + 2)
@@ -76,8 +76,11 @@ def printSingleInfo(name, varsList):
     outline1 = name
     for i in range(2, len(varsList)/2):
         value = varsList[i*2+1]
-        lineColor = bcolors.FAIL     
-        outline1 += '%s%0.3f\033[0m\t' %(lineColor,value)
+        lineColor = bcolors.FAIL
+        if value == -10000:
+            outline1 += '%snull\033[0m\t' %(lineColor)
+        else:
+            outline1 += '%s%.1f\033[0m\t' %(lineColor,value)
         outline0 += '%s%s\033[0m\t' %(lineColor, varsList[i*2])
         dashes += '--------'
     print title
@@ -92,11 +95,13 @@ def addVars(iTree):
             'mvaMet', iTree.mvamet, 
 #             'mvaMet', iTree.mvamet, 
 #             'mvaPhi', iTree.mvametphi, 
+            'lumi', iTree.lumi, 
+            'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
 #             'iso1', iTree.iso_1, 
 #             'Com1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
-            'tw_1', iTree.trigweight_1, 
+#             'tw_1', iTree.trigweight_1, 
 
 #             'phi1', iTree.phi_1, 
 #             'mass1', iTree1.m_1,
@@ -104,38 +109,38 @@ def addVars(iTree):
             'eta2', iTree.eta_2, 
 #             'iso2', iTree.iso_2, 
 #             'Com2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
-            'tw_2', iTree.trigweight_2, 
+#             'tw_2', iTree.trigweight_2, 
 
 #             'phi2', iTree.phi_2, 
 #             'mass2', iTree1.m_2,
 #             'jptraw1', iTree.jptraw_1,
             'jpt_1', iTree.jpt_1, 
-#             'jeta_1', iTree.jeta_1, 
+            'jeta_1', iTree.jeta_1, 
 #             'jphi_1', iTree.jphi_1, 
 
 #             'jptraw2', iTree.jptraw_2,
             'jpt_2', iTree.jpt_2, 
-#             'jeta_2', iTree.jeta_2, 
+            'jeta_2', iTree.jeta_2, 
 #             'jphi_2', iTree.jphi_2,
 # 
 #             'npv', iTree.npv,
 # 
-#             'bcsv_1', iTree.bcsv_1,
-#             'bpt_1', iTree.bpt_1,
-#             'beta_1', iTree.beta_1,
+            'bcsv_1', iTree.bcsv_1,
+            'bpt_1', iTree.bpt_1,
+            'beta_1', iTree.beta_1,
 #             'bphi_1', iTree.bphi_1,
-#             'bcsv_2', iTree.bcsv_2,
-#             'bpt_2', iTree.bpt_2,
-#             'beta_2', iTree.beta_2,
+            'bcsv_2', iTree.bcsv_2,
+            'bpt_2', iTree.bpt_2,
+            'beta_2', iTree.beta_2,
 #             'bphi_2', iTree.bphi_2,
 #             'bcsv_3', iTree.bcsv_3,
 #             'bpt_3', iTree.bpt_3,
 #             'beta_3', iTree.beta_3,
-#             'bphi_3', iTree.bphi_3,
+            'NBTags', iTree.nbtag,
 #             'cov00', iTree.mvacov00,
 #             'cov01', iTree.mvacov01,
 #             'cov10', iTree.mvacov10,
-#             'cov11', iTree.mvacov11
+            'svMass', iTree.m_sv
             ]
     return a
 
@@ -159,13 +164,15 @@ common events, it prints out the values of several variables.  If
 which the MVAMET agrees.  Likewise for --subset=diff.
 """
     parser = optparse.OptionParser(description=desc)
-    parser.add_option("--f1", dest="location1", default='/scratch/zmao/sync/H2hh300_newPhilHMetCalib.root', help="location of file 1")
-    parser.add_option("--f2", dest="location2", default='/afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root', help="location of file 2")
-    parser.add_option("--n1", dest="name1", default='Brown: ', help="inst name of file 1")
-    parser.add_option("--n2", dest="name2", default='INFN:  ', help="inst name of file 2")
+    parser.add_option("--f2", dest="location2", default='/nfs_scratch/zmao/fromLogin05/dataSync/dataSync_SSRelax_D.root', help="location of file 1")
+#     parser.add_option("--f2", dest="location2", default='/afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root', help="location of file 2")
+    parser.add_option("--f1", dest="location1", default='/nfs_scratch/zmao/fromLogin05/dataSync/Tau_SS_AntiIso_A.root', help="location of file 2")
 
-    parser.add_option("--t1", dest="tree1", default='TauCheck', help="tree name of file 1")
-    parser.add_option("--t2", dest="tree2", default='syncTree', help="tree name of file 2")
+    parser.add_option("--n2", dest="name2", default='Brown: ', help="inst name of file 1")
+    parser.add_option("--n1", dest="name1", default='INFN:  ', help="inst name of file 2")
+
+    parser.add_option("--t2", dest="tree2", default='TauCheck', help="tree name of file 1")
+    parser.add_option("--t1", dest="tree1", default='syncTree', help="tree name of file 2")
     parser.add_option("--evN", dest="eventNumber", default=-1, help="look at specific event")
     parser.add_option("--subset", dest="style", default='diff', help="diff, same or all")
     parser.add_option("--nPair", dest="nTauPairs", default=0, help="Print number of tau pairs")
@@ -217,16 +224,27 @@ def checkSyncDev(options):
     sameEvents = 0
     differentEvents = 0
 
+    runRanges = {'A': (0,193621),
+                'B': (193621,196531),
+                'C': (196531,203742),
+                'D': (203742,208686)}
+
+    runRange = runRanges['A']
+
     for i in range(total1):
+#         if not (runRange[0] < varsList1[i][5] <= runRange[1]):
+#             continue 
         for j in range(total2):
+#             if not (runRange[0] < varsList2[j][5] <= runRange[1]):
+#                 continue 
             if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
-                diff = varsList1[i][3]/varsList2[j][3]
+                diff = varsList1[i][5]/varsList2[j][5]
                 printInfo(options.name1, varsList1[i], options.name2, varsList2[j])
                 return 1
             elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
                 matchedEvents += 1
-                diff = varsList1[i][3]/varsList2[j][3]
+                diff = varsList1[i][5]/varsList2[j][5]
                 mvaMet2.Fill(diff)
                 indexFound2.append(j)
                 if diff != 1 and (options.style == 'diff' or options.style == 'all'):
@@ -247,10 +265,10 @@ def checkSyncDev(options):
         for i_1 in indexNotFound1:
             printSingleInfo(options.name1, varsList1[i_1])
         print ' '
-        print 'Extra events in %s **********' %options.name2
-        for i_2 in range(total2):
-            if i_2 not in indexFound2:
-                printSingleInfo(options.name2, varsList2[i_2])
+#         print 'Extra events in %s **********' %options.name2
+#         for i_2 in range(total2):
+#             if i_2 not in indexFound2:
+#                 printSingleInfo(options.name2, varsList2[i_2])
 
     print '%s %i events' %(options.name1, total1)
     print '%s %i events' %(options.name2, total2)
@@ -263,7 +281,7 @@ def checkSyncDev(options):
     if options.style == 'miss':
         print "%s has an extra of %i events" %(options.name1, len(indexNotFound1))
         print "%s has an extra of %i events" %(options.name2, total2 - len(indexFound2))
-
+    
     if eventNumber == -1:   
         return 1
     else:
