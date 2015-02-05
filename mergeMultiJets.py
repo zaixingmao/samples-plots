@@ -78,4 +78,4 @@ def merge(dir= "", type = "DY"):
     oTree.Write()
     oFile.Close()
 
-merge(dir= "/nfs_scratch/zmao/samples_Iso/tauESOff/", type = "W")
+merge(dir= "/nfs_scratch/zmao/samples_Iso/tauESOn/", type = "DY")
