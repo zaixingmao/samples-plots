@@ -157,7 +157,7 @@ def passCut(iTree, track, iBestPair):
         return 0
     return 1
 
-def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
+def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger, pairOption):
 
     if '.root' in iLocation:
         iFile = r.TFile(iLocation)
@@ -229,6 +229,7 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
     againstMuonTight2_2 = array('f', [0.])
 
     met = array('f', [0.])
+    puweight = array('f', [0.])
     mvamet = array('f', [0.])
     mvametphi = array('f', [0.])
     mvacov00 = array('f', [0.])
@@ -278,6 +279,9 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
     bphi_3 = array('f', [0.])
     bcsv_3 = array('f', [0.])
 
+    decayModeWeight_1 = array('f', [0.])
+    decayModeWeight_2 = array('f', [0.])
+    embeddedWeight = array('f', [0.])
     m_bb = array('f', [0.])
     m_ttbb = array('f', [0.])
     nbtag = array('i', [0])
@@ -285,6 +289,9 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
     trigweight_1 = array('f', [0.])
     trigweight_2 = array('f', [0.])
     effweight = array('f', [0.])
+
+    weight = array('f', [0.])
+
 
     oTree.Branch("run", run, "run/I")
     oTree.Branch("lumi", lumi, "lumi/I")
@@ -367,6 +374,7 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
     oTree.Branch("jmva_2", jmva_2, "jmva_2/F")
     oTree.Branch("jctm_2", jctm_2, "jctm_2/F")
     oTree.Branch("jpass_2", jpass_2, "jpass_2/B")    
+    oTree.Branch("puweight", puweight, "puweight/F")    
 
     oTree.Branch("bpt_1", bpt_1, "bpt_1/F")
     oTree.Branch("beta_1", beta_1, "beta_1/F")
@@ -380,6 +388,9 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
     oTree.Branch("beta_3", beta_3, "beta_3/F")
     oTree.Branch("bphi_3", bphi_3, "bphi_3/F")
     oTree.Branch("bcsv_3", bcsv_3, "bcsv_3/F")
+    oTree.Branch("weight", weight, "weight/F")
+    oTree.Branch("embeddedWeight", embeddedWeight, "embeddedWeight/F")
+
 
     oTree.Branch("m_bb", m_bb, "m_bb/F")    
     oTree.Branch("m_ttbb", m_ttbb, "m_ttbb/F")    
@@ -387,6 +398,8 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
     oTree.Branch("trigweight_1", trigweight_1, "trigweight_1/F")    
     oTree.Branch("trigweight_2", trigweight_2, "trigweight_2/F")    
     oTree.Branch("effweight", effweight, "effweight/F")    
+    oTree.Branch("decayModeWeight_1", decayModeWeight_1, "decayModeWeight_1/F")    
+    oTree.Branch("decayModeWeight_2", decayModeWeight_2, "decayModeWeight_2/F")   
 
     counter = 0
     lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
@@ -395,109 +408,14 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
     tau1 = lvClass()
     tau2 = lvClass()
 
-    iBestPair = 0
-
-
-    eventMask = [(194151, 365,  349335148),
-(194897, 60,  108968509),
-(195540, 242,  330355779),
-(195774, 167,  313155930),
-(196218, 602,  873479041),
-(198372, 99,  70852927),
-(198487, 912,  1001745316),
-(198941, 186,  214469104),
-(198955, 1537,  1513778727),
-(199435, 1396,  1459617602),
-(199608, 2133,  2018864579),
-(199751, 119,  44726153),
-(199804, 368,  427755387),
-(199804, 594,  683424157),
-(199812, 436,  520345518),
-(199875, 106,  101837725),
-(199967, 86,  63021254),
-(199967, 129,  130023275),
-(200091, 316,  383858323),
-(200229, 236,  259139891),
-(200473, 676,  732123594),
-(200991, 580,  734298336),
-(201168, 648,  703448949),
-(201174, 428,  277084870),
-(201278, 578,  780099013),
-(201278, 1736,  1891196520),
-(201613, 81,  139060604),
-(201613, 451,  670507871),
-(201624, 216,  293021679),
-(201669, 77,  139262841),
-(201678, 76,  68881519),
-(201678, 111,  99728107),
-(201679, 102,  86731515),
-(201705, 111,  105406435),
-(201707, 766,  927674406),
-(201802, 235,  308762569),
-(202016, 82,  94189905),
-(202178, 138,  134685443),
-(202237, 305,  476140228),
-(202299, 505,  700039165),
-(202305, 140,  131540972),
-(202328, 452,  670695461),
-(202504, 492,  656225868),
-(202973, 498,  501843502),
-(203834, 18,  13883648),
-(204114, 184,  202790028),
-(204553, 99,  86020028),
-(204563, 523,  712514275),
-(204564, 1099,  1135087262),
-(204577, 1208,  1348064195),
-(205158, 494,  684253208),
-(205238, 40,  43256781),
-(205344, 341,  385682370),
-(205515, 109,  97053827),
-(205526, 194,  178721945),
-(205617, 165,  175483611),
-(205694, 604,  591676916),
-(205833, 89,  67729917),
-(206088, 230,  314486221),
-(206102, 207,  285425714),
-(206207, 342,  511866527),
-(206210, 305,  281280297),
-(206210, 431,  385883083),
-(206389, 241,  317955787),
-(206401, 173,  232342170),
-(206401, 387,  596081779),
-(206446, 556,  798412205),
-(206466, 317,  551862988),
-(206594, 223,  319715951),
-(206598, 461,  379286485),
-(206745, 357,  389682970),
-(206745, 434,  478670049),
-(206866, 186,  194887530),
-(206906, 76,  93622383),
-(206940, 399,  509948850),
-(207214, 332,  531426238),
-(207217, 12,  11509910),
-(207231, 662,  970247235),
-(207269, 224,  289041330),
-(207372, 426,  603356940),
-(207454, 629,  926784153),
-(207487, 183,  294836080),
-(207515, 278,  427363837),
-(207905, 213,  286127146),
-(207905, 764,  1048252272),
-(207920, 158,  203416421),
-(207920, 172,  229795850),
-(207920, 699,  1001056535),
-(208307, 657,  887757961),
-(208341, 412,  466131146),
-(208427, 350,  554044639),
-(208686, 400,  618537965),
-                ]
+    eventMask = [(195390, 111,  90094712),(191226, 161, 179372769)]
 
     
     for iEntry in range(nEntries):
         track = False
         iTree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s.root' % (oFileName))
-        iBestPair = 0#findBestPair(iTree)
+        iBestPair = makeWholeTools2.findRightPair(iTree, pairOption)
 
         if (iTree.RUN,iTree.LUMI, iTree.EVENT,) in eventMask:
             print ''
@@ -505,26 +423,31 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
             print 'pt1: %.2f pt2: %.2f CSVJ1: %.2f CSVJ2: %.2f J1Pt: %.2f J1Eta: %.2f J2Pt: %.2f J2Eta: %.2f' %(iTree.pt1.at(iBestPair), iTree.pt2.at(iBestPair), iTree.CSVJ1, iTree.CSVJ2, iTree.J1Pt, iTree.J1Eta, iTree.J2Pt, iTree.J2Eta)
             print 'iso1: %.2f iso2: %.2f charge: %.2f' %(iTree.iso1.at(iBestPair), iTree.iso2.at(iBestPair), iTree.charge1.at(iBestPair) + iTree.charge2.at(iBestPair))
             print 'svMass: %.2f mJJ: %.2f' %(iTree.svMass.at(iBestPair), iTree.mJJ)
+            print 'fMass: %.2f' %(iTree.fMassKinFit)
 
-            print 'tauTrigg1: %i' %iTree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired
-            print 'tauTrigg2: %i' %iTree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired
             track = True
-        if not makeWholeTools2.passCut(iTree, 'pt'):
+        if iTree.HLT_Any == 0:
             continue
-
+        if not makeWholeTools2.passCut(iTree, pairOption):
+            continue
+        if (iTree.nElectrons > 0 or iTree.nMuons > 0):
+            continue
         signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(tree = iTree,
                                                                                   iso = 1.0, 
-                                                                                  option = 'pt', 
-                                                                                  isData = True,
+                                                                                  option = pairOption, 
+                                                                                  isData = False,
                                                                                   relaxedRegionOption = 'one1To4',
-                                                                                  isEmbed = False, usePassJetTrigger = usePassJetTrigger)
+                                                                                  isEmbed = True, 
+                                                                                  usePassJetTrigger = usePassJetTrigger)
         if signSelection == None  or isoSelection == None or bTagSelection == None:
             continue
         tmpSelect = signSelection+isoSelection
         if tmpSelect != cut:
             continue
-        if not (cutBTag in bTagSelection):
+        if not (cutBTag in bTagSelection) and (cutBTag != 'inclusive'):
             continue 
+        if iTree.ZTT == 0:
+            continue
 
         trigweight_1[0] = iTree.triggerEff1
         trigweight_2[0] = iTree.triggerEff2
@@ -620,9 +543,15 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
         jmva_2[0] = iTree.jmva_2
         jctm_2[0] = iTree.J2Ntot
         jpass_2[0] = bool(iTree.jpass_2)
-
+        embeddedWeight[0] = iTree.embeddedWeight
+        weight[0] = effweight[0]*iTree.decayModeWeight*iTree.embeddedWeight
+#         weight[0] = effweight[0]*iTree.decayModeWeight*iTree.PUWeight
+        puweight[0] = iTree.PUWeight
         m_bb[0] = iTree.mJJ
 #         m_ttbb[0] = iTree.HMass
+
+        decayModeWeight_1[0] = iTree.decayModeWeight1
+        decayModeWeight_2[0] = iTree.decayModeWeight2
 
         oTree.Fill()
         if track:
@@ -666,9 +595,14 @@ def makeSyncNtuples(iLocation, cut, cutBTag, treepath, usePassJetTrigger):
 # makeSyncNtuples('/nfs_scratch/zmao/samples/data_embed/DY_embed.root', False, "eventTree")
 # makeSyncNtuples('/nfs_scratch/zmao/samples/tauESOff/normal/tt_embed_all.root', False, "eventTree")
 usePassJetTrigger = True
+pairOption = 'iso'
 # makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'OSRelax','1M', "eventTree", usePassJetTrigger)
 # makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'OSRelax','2M', "eventTree", usePassJetTrigger)
-makeSyncNtuples('/nfs_scratch/zmao/samples/data_new/data.root', 'SSRelax','1L', "eventTree", usePassJetTrigger)
+# makeSyncNtuples('/nfs_scratch/zmao/samples_new/tauESOn/normal/DY_embed.root', 'OSTight','2M', "eventTree", usePassJetTrigger, pairOption)
+makeSyncNtuples('/nfs_scratch/zmao/samples_Iso/tauESOn/normal/DY_embed_new.root', 'OSTight','1M', "eventTree", usePassJetTrigger, pairOption)
+# makeSyncNtuples('/nfs_scratch/zmao/samples_Iso/tauESOff/normal/tt_embed_all_new.root', 'OSTight','1M', "eventTree", usePassJetTrigger, pairOption)
+
+# makeSyncNtuples('/nfs_scratch/zmao/samples_new/data/data.root', 'OSTight','2M', "eventTree", usePassJetTrigger)
 # makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'SSRelax','2L', "eventTree", usePassJetTrigger)
 # makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'SSTight','1L', "eventTree", usePassJetTrigger)
 # makeSyncNtuples('/nfs_scratch/zmao/samples/data/data.root', 'SSTight','2L', "eventTree", usePassJetTrigger)
