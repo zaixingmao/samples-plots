@@ -97,8 +97,6 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
             iTree.GetEntry(i)
 
             #get the right pair of taus based on isoMin or ptMax
-            rightPair = findRightPair(iTree, pairOption)
-
             if (iTree.nElectrons > 0 or iTree.nMuons > 0):
                 continue
 
@@ -117,43 +115,46 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
 
             if iTree.HLT_Any == 0:
                 continue
+            if iTree.ZTT == 0:
+                continue
+            if 'tt' not in name:
+                tmpEventYield = iTree.triggerEff*iTree.decayModeWeight
+            else:
+                tmpEventYield = iTree.triggerEff
+
             #calculate inclusiveYield
             if (signSelection == "OS") and (isoSelection == "Tight"):
                 if 'data' in iTree.sampleName:
-                    inclusiveYields[name] += iTree.triggerEff
+                    inclusiveYields[name] += tmpEventYield*iTree.embeddedWeight
                 elif isEmbed:
-                    inclusiveYields[name] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+                    inclusiveYields[name] += iTree.triggerEff*iTree.xs*0.983*(lumi/tt_semi_InitEvents)*iTree.embeddedWeight*iTree.PUWeight
                 else:
                     if not makeWholeTools2.passJetTrigger(iTree):
                         continue
-                    inclusiveYields[name] += iTree.triggerEff*iTree.xs*lumi/(iTree.initEvents+0.0)
+                    inclusiveYields[name] += tmpEventYield*iTree.xs*lumi*iTree.PUWeight/(iTree.initEvents+0.0)
             else:
                 continue
-
-            if isEmbed:
-                if iTree.ZTT == 0:
-                    continue
-            if  massWindow and not passMassWindow(iTree.svMass.at(0),iTree.mJJ, iTree.fMassKinFit):
+            if  massWindow and not makeWholeTools2.passCut(iTree, pairOption):
                 continue
                 
             #calculate category yield
             if mediumTag != '0M':
                 if isEmbed:
                     if 'data' in iTree.sampleName:
-                        yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff
+                        yieldForMediumCat["%s_%s" %(name, mediumTag)] += tmpEventYield*iTree.embeddedWeight
                     else:
-                        yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+                        yieldForMediumCat["%s_%s" %(name, mediumTag)] += tmpEventYield*iTree.xs*0.983*(lumi/tt_semi_InitEvents)*iTree.embeddedWeight*iTree.PUWeight
                 else:
-                    yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
+                    yieldForMediumCat["%s_%s" %(name, mediumTag)] += tmpEventYield*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
                 eventCounterForMediumCat["%s_%s" %(name, mediumTag)] += 1
 
 
             #calculate loose cat yield for embed samples
             if isEmbed and (looseTag != '0L'):
                 if 'data' in iTree.sampleName:
-                    yieldForLooseCat["%s_%s" %(name, looseTag)] += iTree.triggerEff
+                    yieldForLooseCat["%s_%s" %(name, looseTag)] += tmpEventYield*iTree.embeddedWeight
                 else:
-                    yieldForLooseCat["%s_%s" %(name, looseTag)] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+                    yieldForLooseCat["%s_%s" %(name, looseTag)] += tmpEventYield*iTree.embeddedWeight*iTree.xs*0.983*lumi/tt_semi_InitEvents
                 eventCounterForLooseCat["%s_%s" %(name, looseTag)] += 1
 
         print ''
@@ -203,8 +204,6 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = ''):
         iTree.GetEntry(i)
             
         #get the right pair of taus based on isoMin or ptMax
-        rightPair = findRightPair(iTree, pairOption)
-
         if (iTree.nElectrons > 0 or iTree.nMuons > 0):
             continue
         if not makeWholeTools2.passJetTrigger(iTree):
@@ -223,7 +222,7 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = ''):
             continue
         looseTag, mediumTag = getRightBTagCatName(bTagSelection)
 
-        if  massWindow and not passMassWindow(iTree.svMass.at(0),iTree.mJJ, iTree.fMassKinFit):
+        if  massWindow and not makeWholeTools2.passCut(iTree, pairOption):
             continue
         #calculate category yield
         if (signSelection == "OS") and (isoSelection == "Tight") and (mediumTag != '0M'):
@@ -246,27 +245,29 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = ''):
     return yieldForMediumCat['1M'], yieldForMediumCat['2M']
 
 
-# shift = 'bSysDown'
-# nBtag = ''
-# if 'bSys' in shift:
-#     shiftLocation = 'bSys'
-#     nBtag = shift
-# elif 'bMis' in shift:
-#     shiftLocation = 'bMis'
-#     nBtag = shift
-# else:
-#     shiftLocation = shift
-# if shift == 'normal' or shift == 'taUp' or shift == 'tauDown':
-#     shiftLocation2 = shift
-# else:
-#     shiftLocation2 = 'normal'
-# 
-# yieldCalculator(dy_mc = '/nfs_scratch/zmao/samples_new/tauESOn/%s/dy.root' %shiftLocation, 
-#                 tt_full_mc = '/nfs_scratch/zmao/samples_new/tauESOff/%s/tt_all.root' %shiftLocation, 
-#                 dy_embed = '/nfs_scratch/zmao/samples_new/tauESOn/%s/DY_embed.root' %shiftLocation2, 
-#                 tt_embed = '/nfs_scratch/zmao/samples_new/tauESOff/%s/tt_embed_all.root' %shiftLocation, 
-#                 massWindow = False,
-#                 pairOption = 'pt',
-#                 nBtag = nBtag)
+shift = 'normal'
+nBtag = ''
+if 'bSys' in shift:
+    shiftLocation = 'bSys'
+    nBtag = shift
+elif 'bMis' in shift:
+    shiftLocation = 'bMis'
+    nBtag = shift
+else:
+    shiftLocation = shift
+if shift == 'normal' or shift == 'taUp' or shift == 'tauDown':
+    shiftLocation2 = shift
+else:
+    shiftLocation2 = 'normal'
+
+location = "samples_Iso"
+
+yieldCalculator(dy_mc = '/nfs_scratch/zmao/%s/tauESOn/%s/dy_new.root' %(location, shiftLocation),
+                tt_full_mc = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_all.root' %(location, shiftLocation),
+                dy_embed = '/nfs_scratch/zmao/%s/tauESOn/%s/DY_embed_new.root' %(location, shiftLocation2), 
+                tt_embed = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_embed_all_new.root' %(location, shiftLocation), 
+                massWindow = True,
+                pairOption = 'iso',
+                nBtag = nBtag)
 
 
