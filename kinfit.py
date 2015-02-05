@@ -20,7 +20,7 @@ def setup(path="HHKinFit", lib="libHHKinFit.so"):
     r.gROOT.LoadMacro("%s/include/HHKinFitMaster.h+" % path)
 
 
-def fit(tree, j1, j2):
+def fit(tree, j1, j2, pair = 0):
     # NOTE! j1 and j2 are expected to be r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
     b1 = r.TLorentzVector()
@@ -31,8 +31,8 @@ def fit(tree, j1, j2):
     b1.SetPtEtaPhiM(j1.pt(), j1.eta(), j1.phi(), j1.mass())
     b2.SetPtEtaPhiM(j2.pt(), j2.eta(), j2.phi(), j2.mass())
 
-    tauvis1.SetPtEtaPhiM(tree.pt1.at(0), tree.eta1.at(0), tree.phi1.at(0), tree.m1.at(0))
-    tauvis2.SetPtEtaPhiM(tree.pt2.at(0), tree.eta2.at(0), tree.phi2.at(0), tree.m2.at(0))
+    tauvis1.SetPtEtaPhiM(tree.pt1.at(pair), tree.eta1.at(pair), tree.phi1.at(pair), tree.m1.at(pair))
+    tauvis2.SetPtEtaPhiM(tree.pt2.at(pair), tree.eta2.at(pair), tree.phi2.at(pair), tree.m2.at(pair))
 
     kinFits = r.HHKinFitMaster(b1, b2, tauvis1, tauvis2)
 

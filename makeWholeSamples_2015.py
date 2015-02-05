@@ -31,18 +31,6 @@ def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
             dR = tmpDR
     return dR
 
-def findRightPair(tree, option):
-    if option == 'iso':
-        isoMin = 999.9
-        bestPair = 0
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) + tree.iso2.at(iPair)) < isoMin:
-                isoMin = tree.iso1.at(iPair) + tree.iso2.at(iPair)
-                bestPair = iPair
-        return iPair
-    else:
-        return 0
-
 def findGenMatch(dR1_tau, dR2_tau, dR1_ele, dR2_ele, dR1_mu, dR2_mu, option = ''):
     #for leg1
     leg1 = sorted([('t',dR1_tau), ('e',dR1_ele), ('m',dR1_mu)], key=itemgetter(1))    
@@ -91,13 +79,6 @@ def findGenMatch(dR1_tau, dR2_tau, dR1_ele, dR2_ele, dR1_mu, dR2_mu, option = ''
     stringList = [leg1Match, leg2Match]
     stringList.sort()
     return '%s%s' %(stringList[0], stringList[1])
-
-def passMassWindow(svMass, mJJ, fMassKinFit):
-    if 90.0 < svMass < 150.0:
-        if 70.0 < mJJ < 150.0:
-            if fMassKinFit > 10.0:
-                return 1
-    return 0
 
 def passCut(option, signSelection, isoSelection, looseTag, mediumTag):
     if 'L' in option and looseTag != '0L':
@@ -173,6 +154,9 @@ def run():
     sampleName = bytearray(20)
     genMatchName = bytearray(3)
     xs = array('f', [0.])
+    embeddedWeight = array('f', [0.])
+    decayModeWeight = array('f', [0.])
+
     initEvents = array('f', [0.])
     Category = bytearray(5)
 
@@ -211,6 +195,8 @@ def run():
 
     oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
     oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
+    oTree.Branch("embeddedWeight", embeddedWeight, "embeddedWeight/F")
+    oTree.Branch("decayModeWeight", decayModeWeight, "decayModeWeight/F")
 
     oTree.Branch("sampleName", sampleName, "sampleName[21]/C")
     oTree.Branch("genMatchName", genMatchName, "genMatchName[21]/C")
@@ -261,7 +247,7 @@ def run():
             iTree.GetEntry(i)
 
             #get the right pair of taus based on isoMin or ptMax
-            rightPair = findRightPair(iTree, makeWholeSample_cfg.pairOption)
+            rightPair = makeWholeTools2.findRightPair(iTree, makeWholeSample_cfg.pairOption)
 
             if makeWholeSample_cfg.thirdLeptonVeto and (iTree.nElectrons > 0 or iTree.nMuons > 0):
                 continue
@@ -290,7 +276,7 @@ def run():
                 continue
             #calculate category yield
             if useMediumCat4Yield:
-                if (not makeWholeSample_cfg.massWindow) or (makeWholeSample_cfg.massWindow and passMassWindow(iTree.svMass.at(rightPair),iTree.mJJ, iTree.fMassKinFit)):
+                if (not makeWholeSample_cfg.massWindow) or (makeWholeSample_cfg.massWindow and makeWholeTools2.passCut(iTree, makeWholeSample_cfg.pairOption)):
                     if (signSelection == "OS") and (isoSelection == "Tight") and (mediumTag != '0M'):
                         if isEmbed:
                             if 'data' in iTree.sampleName:
@@ -320,6 +306,8 @@ def run():
             pt2[0] = iTree.pt2.at(rightPair)
             CSVJ1Pt[0] = iTree.CSVJ1Pt
             CSVJ2Pt[0] = iTree.CSVJ2Pt
+            decayModeWeight[0] = 1.0
+            embeddedWeight[0] = 1.0
 
             if '_semi' not in iTree.sampleName:
                 tmpSampleName = iTree.sampleName[0:iTree.sampleName.find('_')]
@@ -331,14 +319,20 @@ def run():
                 xs[0] = 1.0           
             elif ('data' in tmpSampleName) and isEmbed:
                 sampleName[:21] = 'DY_embed'
-                initEvents[0] = 19.7
-                xs[0] = 1.0            
+                initEvents[0] = 1.0
+                xs[0] = 1.0
+                embeddedWeight[0] = iTree.embeddedWeight
+                decayModeWeight[0] = iTree.decayModeWeight    
             elif not isEmbed:
+                if name == 'signals':
+                    decayModeWeight[0] = iTree.decayModeWeight
                 initEvents[0] = iTree.initEvents
                 xs[0] = iTree.xs
                 sampleName[:21] = tmpSampleName
                 if name == 'MCOSRelax':
                     sampleName[:21] = 'MCOSRelax'
+                if 'HToTauTau' in name:
+                    sampleName[:21] = name
                 elif name == 'ZLL':
                     sampleName[:21] = 'ZLL'
                 elif name == 'ZTT':
@@ -347,7 +341,9 @@ def run():
                 initEvents[0] = tt_semi_InitEvents
                 xs[0] = iTree.xs*0.983
                 sampleName[:21] = 'tt_embed'
-            
+                embeddedWeight[0] = iTree.embeddedWeight       
+                decayModeWeight[0] = iTree.decayModeWeight    
+
             if str(sampleName) not in initEventsValues.keys():
                 if 'data' not in str(sampleName):
                     initEventsValues[str(sampleName)] = iTree.initEvents
@@ -368,7 +364,7 @@ def run():
             else:
                 continue
 
-            if makeWholeSample_cfg.massWindow and (not passMassWindow(iTree.svMass.at(rightPair), iTree.mJJ, iTree.fMassKinFit)):
+            if makeWholeSample_cfg.massWindow and (not makeWholeTools2.passCut(iTree, makeWholeSample_cfg.pairOption)):
                 continue
             if isData:
                 eventsSaved[str(sampleName)] += 1
@@ -414,10 +410,10 @@ def run():
                                           usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
                                           nBtag = '')
 
-    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '%s/dy.root' %makeWholeSample_cfg.preFixTauESOn, 
+    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '%s/dy_new.root' %makeWholeSample_cfg.preFixTauESOn, 
                                                                             tt_full_mc = '%s/tt_all.root' %makeWholeSample_cfg.preFixTauESOff,
-                                                                            dy_embed = '%s/DY_embed.root' %makeWholeSample_cfg.preFixTauESOnDYEmbed, 
-                                                                            tt_embed = '%s/tt_embed_all.root' %makeWholeSample_cfg.preFixTauESOff, 
+                                                                            dy_embed = '%s/DY_embed_new.root' %makeWholeSample_cfg.preFixTauESOnDYEmbed, 
+                                                                            tt_embed = '%s/tt_embed_all_new.root' %makeWholeSample_cfg.preFixTauESOff, 
                                                                             massWindow = makeWholeSample_cfg.massWindow,
                                                                             pairOption = makeWholeSample_cfg.pairOption)
 

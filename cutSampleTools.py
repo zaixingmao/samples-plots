@@ -13,6 +13,37 @@ r.AutoLibraryLoader.enable()
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 combinedJJ = lvClass()
 reWeight = 1.0
+def findRightPair(tree, choice = 'pt'):
+    if choice == 'pt':
+        return 0
+    elif choice == 'iso':
+        isoMin = 100.0
+        for iPair in range(len(tree.pt1)):
+            if (tree.iso1.at(iPair) + tree.iso2.at(iPair)) < isoMin:
+                isoMin = tree.iso1.at(iPair) + tree.iso2.at(iPair)
+                bestPair = iPair
+        return bestPair
+    elif choice == 'region':
+        #Prioritize in OSTight
+        for iPair in range(len(tree.pt1)):
+            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
+                return iPair
+        #Prioritize in SSTight
+        for iPair in range(len(tree.pt1)):
+            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
+                return iPair
+        #Prioritize in OSRelax
+        for iPair in range(len(tree.pt1)):
+            if (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
+                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
+                    return iPair
+        #Prioritize in SSTight
+        for iPair in range(len(tree.pt1)):
+            if (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
+                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
+                    return iPair
+        #if not in any category, return the pt leading pair
+        return 0
 
 def findCategory(csv1, csv2):
     if csv1 < 0.679:
@@ -30,6 +61,10 @@ def setupLumiReWeight():
     
 def getPUWeight(npu = 0):
     return reWeight.weight(npu)
+
+def freeLumiReWeight():
+    global reWeight
+    del reWeight
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen = lvClass()
@@ -50,15 +85,6 @@ def findMinDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
             minDR = tmpDR
     return minDR
 
-def findBestPair(iChain):
-    iPair = 0
-    minIso = 9999.
-    for i in range(len(iChain.iso1)):
-        if iChain.iso1.at(i) + iChain.iso2.at(i) < minIso:
-            minIso = iChain.iso1.at(i) + iChain.iso2.at(i)
-            iPair = i
-    return iPair
-
 def dR_genLept(genElePt, genEleEta, genElePhi, genMuPt, genMuEta, genMuPhi, pt, eta, phi):
     dR_ele = findMinDR(genPt = genElePt,
                        genEta = genEleEta,
@@ -76,25 +102,14 @@ def dR_genLept(genElePt, genEleEta, genElePhi, genMuPt, genMuEta, genMuPhi, pt, 
                       genPtThreshold = 8.0)
     return dR_ele, dR_mu
 
-def getDRs(iChain):
-    bestPair = findBestPair(iChain)
+def getDRs(iChain, bestPair, option = 'all', tauPtThreshold = 18.0):
     dR_tau_leg1 = findDR(genPt = iChain.genVisPt1.at(bestPair),
                          genEta = iChain.genVisEta1.at(bestPair),
                          genPhi = iChain.genVisPhi1.at(bestPair),
                          pt = iChain.pt1.at(bestPair),
                          eta = iChain.eta1.at(bestPair),
                          phi = iChain.phi1.at(bestPair),
-                         genPtThreshold = 18.0)
-
-    dR_ele_leg1, dR_mu_leg1 = dR_genLept(genElePt = iChain.genElePt, 
-                                         genEleEta = iChain.genEleEta,
-                                         genElePhi = iChain.genElePhi, 
-                                         genMuPt = iChain.genMuPt,
-                                         genMuEta = iChain.genMuEta,
-                                         genMuPhi = iChain.genMuPhi,
-                                         pt = iChain.pt1.at(bestPair),
-                                         eta = iChain.eta1.at(bestPair),
-                                         phi = iChain.phi1.at(bestPair))
+                         genPtThreshold = tauPtThreshold)
 
     dR_tau_leg2 = findDR(genPt = iChain.genVisPt2.at(bestPair),
                          genEta = iChain.genVisEta2.at(bestPair),
@@ -102,28 +117,47 @@ def getDRs(iChain):
                          pt = iChain.pt2.at(bestPair),
                          eta = iChain.eta2.at(bestPair),
                          phi = iChain.phi2.at(bestPair),
-                         genPtThreshold = 18.0)
+                         genPtThreshold = tauPtThreshold)
+    if option == 'all':
+        dR_ele_leg2, dR_mu_leg2 = dR_genLept(genElePt = iChain.genElePt, 
+                                             genEleEta = iChain.genEleEta,
+                                             genElePhi = iChain.genElePhi, 
+                                             genMuPt = iChain.genMuPt,
+                                             genMuEta = iChain.genMuEta,
+                                             genMuPhi = iChain.genMuPhi,
+                                             pt = iChain.pt2.at(bestPair),
+                                             eta = iChain.eta2.at(bestPair),
+                                             phi = iChain.phi2.at(bestPair))
+        dR_ele_leg1, dR_mu_leg1 = dR_genLept(genElePt = iChain.genElePt, 
+                                             genEleEta = iChain.genEleEta,
+                                             genElePhi = iChain.genElePhi, 
+                                             genMuPt = iChain.genMuPt,
+                                             genMuEta = iChain.genMuEta,
+                                             genMuPhi = iChain.genMuPhi,
+                                             pt = iChain.pt1.at(bestPair),
+                                             eta = iChain.eta1.at(bestPair),
+                                             phi = iChain.phi1.at(bestPair))
+        return dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2
+    else:
+        return dR_tau_leg1, dR_tau_leg2
 
-    dR_ele_leg2, dR_mu_leg2 = dR_genLept(genElePt = iChain.genElePt, 
-                                         genEleEta = iChain.genEleEta,
-                                         genElePhi = iChain.genElePhi, 
-                                         genMuPt = iChain.genMuPt,
-                                         genMuEta = iChain.genMuEta,
-                                         genMuPhi = iChain.genMuPhi,
-                                         pt = iChain.pt2.at(bestPair),
-                                         eta = iChain.eta2.at(bestPair),
-                                         phi = iChain.phi2.at(bestPair))
+def getDecayModeWeight(iChain, bestPair):
+    weight1 = 1.0
+    weight2 = 1.0
+    dR_tau_leg1, dR_tau_leg2 = getDRs(iChain, bestPair, 'tau', 0.0)
+    if iChain.tauDecayMode1.at(bestPair) == 0 and dR_tau_leg1 < 0.5:
+        weight1 = 0.88
+    if iChain.tauDecayMode2.at(bestPair) == 0 and dR_tau_leg1 < 0.5:
+        weight2 = 0.88
+    return weight1, weight2
 
-    return dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2
-
-
-
-def passCategory(iChain, separate):
+def passCategory(iChain, separate, pairOption):
     if separate == 'all':
         return True
     elif separate == 'ZTT' and iChain.genTausFromZ < 2:
         return False
-    dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2 = getDRs(iChain)
+    bestPair = findRightPair(iChain, pairOption)
+    dR_tau_leg1, dR_ele_leg1, dR_mu_leg1, dR_tau_leg2, dR_ele_leg2, dR_mu_leg2 = getDRs(iChain, bestPair)
     case = ''
     #check if any of the gen particles are within dR < 0.5
     dRs1 = [dR_tau_leg1, dR_ele_leg1, dR_mu_leg1]
@@ -245,6 +279,9 @@ def getRegVars(j1Name, j2Name, tChain):
         SoftLepPt2 = 0
 
     return PtUncorr1, Et1, Mt1, ptLeadTrk1, Vtx3dL1,Vtx3deL1, vtxMass1, VtxPt1, JECUnc1, float(Ntot1), SoftLepPtRel1, SoftLepPt1, SoftLepdR1, PtUncorr2, Et2, Mt2, ptLeadTrk2, Vtx3dL2,Vtx3deL2, vtxMass2, VtxPt2, JECUnc2, float(Ntot2), SoftLepPtRel2, SoftLepPt2, SoftLepdR2
+
+
+
 
 
 def setDPhiInRange(dPhi):

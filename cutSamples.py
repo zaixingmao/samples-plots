@@ -41,6 +41,36 @@ sv4Vec = lvClass()
 kinfit.setup()
 
 
+def setUpFloatVarsDict():
+    varDict = {}
+    names = ['fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 'CSVJ1','CSVJ1Pt','CSVJ1Eta','CSVJ1Phi', 'CSVJ1Mass',
+             'CSVJ2', 'CSVJ2Pt', 'CSVJ2Eta', 'CSVJ2Phi', 'CSVJ2Mass', 'dRTauTau', 'dRJJ', 'dRhh', 'mTop1', 'mTop2',
+             'pZ_new', 'pZV_new', 'pZ_new2', 'pZV_new2', 'triggerEff', 'triggerEff1', 'triggerEff2', 'metTau1DPhi', 'metTau2DPhi',
+             'metJ1DPhi', 'metJ2DPhi', 'metTauPairDPhi', 'metJetPairDPhi', 'metSvTauPairDPhi', 'dRGenJet1Match', 'dRGenJet2Match',
+             'matchGenJet1Pt', 'matchGenJet1Eta', 'matchGenJet1Phi', 'matchGenJet1Mass', 'matchGenJet2Pt', 'matchGenJet2Eta', 'matchGenJet2Phi', 'matchGenJet2Mass', 
+             'matchGenMJJ', 'matchGenPtJJ', 'matchGendRJJ', 'CSVJ1PtUncorr', 'CSVJ1Et', 'CSVJ1Mt', 'CSVJ1ptLeadTrk', 'CSVJ1Vtx3dL', 
+             'CSVJ1Vtx3deL', 'CSVJ1VtxPt', 'CSVJ1vtxMass', 'CSVJ1JECUnc', 'CSVJ1Ntot', 'CSVJ1SoftLeptPtRel', 'CSVJ1SoftLeptPt', 'CSVJ1SoftLeptdR', 
+             'CSVJ2PtUncorr', 'CSVJ2Et', 'CSVJ2Mt', 'CSVJ2ptLeadTrk', 'CSVJ2Vtx3dL', 'CSVJ2Vtx3deL', 'CSVJ2VtxPt', 'CSVJ2JECUnc', 
+             'CSVJ2Ntot', 'CSVJ2SoftLeptPtRel', 'CSVJ2SoftLeptPt', 'CSVJ2SoftLeptdR', 'chi2KinFit', 'chi2KinFit2', 'fMassKinFit', 'PUWeight', 
+             'xs', 'decayModeWeight1', 'decayModeWeight2', 'decayModeWeight',
+            ]
+    for iName in names:
+        varDict[iName] = array('f', [0.])
+    return varDict
+
+def setUpIntVarsDict():
+    varDict = {}
+    names = ['nElectrons', 'nMuons', 'initEvents', 'ZTT', 'ZLL']
+    for iName in names:
+        varDict[iName] = array('i', [0])
+    return varDict
+
+def setUpCharVarsDict():
+    varDict = {}
+    names = ['sampleName', 'category']
+    for iName in names:
+        varDict[iName] = bytearray(30)
+    return varDict
 
 def opts():
     parser = optparse.OptionParser()
@@ -50,6 +80,7 @@ def opts():
     parser.add_option("-a", dest="addFiles", default="False", help="")
     parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
     parser.add_option("-c", dest="cutLHEProduct", default=False, action="store_true", help="cut to 0 jet")
+    parser.add_option("--pair", dest="pairChoice", default="pt", help="which pair")
 
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     options, args = parser.parse_args()
@@ -71,6 +102,10 @@ def loop_one_sample(iSample, iLocation, iXS):
         isEmbedded = True
     else:
         isEmbedded = False
+    if 'H2hh' in iSample:
+        isSignal = True
+    else:
+        isSignal = False
         
     cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
     if options.addFiles == 'True':
@@ -87,194 +122,29 @@ def loop_one_sample(iSample, iLocation, iXS):
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=enVars.corruptedROOTfiles)
     iChain.SetBranchStatus("*",1)
 #     iChain.SetBranchStatus("mJJ",0)
-    fullMass = array('f', [0.])
-    mJJ = array('f', [0.])
-    ptJJ = array('f', [0.])
-    etaJJ = array('f', [0.])
-    phiJJ = array('f', [0.])
-    CSVJ1 = array('f', [0.])
-    CSVJ1Pt = array('f', [0.])
-    CSVJ1Eta = array('f', [0.])
-    CSVJ1Phi = array('f', [0.])
-    CSVJ1Mass = array('f', [0.])
-    CSVJ2 = array('f', [0.])
-    CSVJ2Pt = array('f', [0.])
-    CSVJ2Eta = array('f', [0.])
-    CSVJ2Phi = array('f', [0.])
-    CSVJ2Mass = array('f', [0.])
-    dRTauTau = array('f', [0.])
-    dRJJ = array('f', [0.])
-    dRhh = array('f', [0.])
-    mTop1 = array('f', [0.])
-    mTop2 = array('f', [0.])
-    pZ_new = array('f', [0.])
-    pZV_new = array('f', [0.])
-    pZ_new2 = array('f', [0.])
-    pZV_new2 = array('f', [0.])
-    triggerEff = array('f', [0.])
-    triggerEff1 = array('f', [0.])
-    triggerEff2 = array('f', [0.])
-    metTau1DPhi = array('f', [0.])
-    metTau2DPhi = array('f', [0.])
-    metJ1DPhi = array('f', [0.])
-    metJ2DPhi = array('f', [0.])
-    metTauPairDPhi = array('f', [0.])
-    metJetPairDPhi = array('f', [0.])
-    metSvTauPairDPhi = array('f', [0.])
-    dRGenJet1Match = array('f', [0.])
-    dRGenJet2Match = array('f', [0.])
-    matchGenJet1Pt = array('f', [0.])
-    matchGenJet1Eta = array('f', [0.])
-    matchGenJet1Phi = array('f', [0.])
-    matchGenJet1Mass = array('f', [0.])
-    matchGenJet2Pt = array('f', [0.])
-    matchGenJet2Eta = array('f', [0.])
-    matchGenJet2Phi = array('f', [0.])
-    matchGenJet2Mass = array('f', [0.])
-    matchGenMJJ = array('f', [0.])
-    matchGenPtJJ = array('f', [0.])
-    matchGendRJJ = array('f', [0.])
 
-    CSVJ1PtUncorr = array('f', [0.])
-    CSVJ1Et = array('f', [0.])
-    CSVJ1Mt = array('f', [0.])
-    CSVJ1ptLeadTrk = array('f', [0.])
-    CSVJ1Vtx3dL  = array('f', [0.])
-    CSVJ1Vtx3deL  = array('f', [0.])
-    CSVJ1vtxMass  = array('f', [0.])
-    CSVJ1VtxPt = array('f', [0.])
-    CSVJ1JECUnc = array('f', [0.])
-    CSVJ1Ntot = array('f', [0.])
-    CSVJ1SoftLeptPtRel = array('f', [0.])
-    CSVJ1SoftLeptPt = array('f', [0.])
-    CSVJ1SoftLeptdR = array('f', [0.])
+    #set up vars dict
+    charVarsDict = setUpCharVarsDict()
+    floatVarsDict = setUpFloatVarsDict()
+    intVarsDict = setUpIntVarsDict()
 
-    CSVJ2PtUncorr = array('f', [0.])
-    CSVJ2Et = array('f', [0.])
-    CSVJ2Mt = array('f', [0.])
-    CSVJ2ptLeadTrk = array('f', [0.])
-    CSVJ2Vtx3dL  = array('f', [0.])
-    CSVJ2Vtx3deL  = array('f', [0.])
-    CSVJ2vtxMass  = array('f', [0.])
-    CSVJ2VtxPt = array('f', [0.])
-    CSVJ2JECUnc = array('f', [0.])
-    CSVJ2Ntot = array('f', [0.])
-    CSVJ2SoftLeptPtRel = array('f', [0.])
-    CSVJ2SoftLeptPt = array('f', [0.])
-    CSVJ2SoftLeptdR = array('f', [0.])
-
-    chi2KinFit = array('f', [0.])
-    chi2KinFit2 = array('f', [0.])
-    fMassKinFit = array('f', [0.])
-    nElectrons = array('i', [0])
-    nMuons = array('i', [0])
-    sampleName = bytearray(30)
-    category = bytearray(30)
-    PUWeight = array('f', [0.])
-    initEvents = array('i', [0])
-    ZTT = array('i', [0])
-    ZLL = array('i', [0])
-    xs = array('f', [0.])
 
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
     iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
     iFile = r.TFile("%s/%s.root" %(options.location,iSample),"recreate")
-    oTree.Branch("fMass", fullMass, "fMass/F")
-    oTree.Branch("mJJ", mJJ, "mJJ/F")
-    oTree.Branch("etaJJ", etaJJ, "etaJJ/F")
-    oTree.Branch("phiJJ", phiJJ, "phiJJ/F")
-    oTree.Branch("ptJJ", ptJJ, "ptJJ/F")
-    oTree.Branch("CSVJ1", CSVJ1, "CSVJ1/F")
-    oTree.Branch("CSVJ1Pt", CSVJ1Pt, "CSVJ1Pt/F")
-    oTree.Branch("CSVJ1Eta", CSVJ1Eta, "CSVJ1Eta/F")
-    oTree.Branch("CSVJ1Phi", CSVJ1Phi, "CSVJ1Phi/F")
-    oTree.Branch("CSVJ1Mass", CSVJ1Mass, "CSVJ1Mass/F")
-    oTree.Branch("CSVJ2", CSVJ2, "CSVJ2/F")
-    oTree.Branch("CSVJ2Pt", CSVJ2Pt, "CSVJ2Pt/F")
-    oTree.Branch("CSVJ2Eta", CSVJ2Eta, "CSVJ2Eta/F")
-    oTree.Branch("CSVJ2Phi", CSVJ2Phi, "CSVJ2Phi/F")
-    oTree.Branch("CSVJ2Mass", CSVJ2Mass, "CSVJ2Mass/F")
-    oTree.Branch("dRTauTau", dRTauTau, "dRTauTau/F")
-    oTree.Branch("dRJJ", dRJJ, "dRJJ/F")
-    oTree.Branch("dRhh", dRhh, "dRhh/F")
-    oTree.Branch("mTop1", mTop1, "mTop1/F")
-    oTree.Branch("mTop2", mTop2, "mTop2/F")
-    oTree.Branch("pZ_new", pZ_new, "pZ_new/F")
-    oTree.Branch("pZV_new", pZV_new, "pZV_new/F")
-    oTree.Branch("pZ_new2", pZ_new2, "pZ_new2/F")
-    oTree.Branch("pZV_new2", pZV_new2, "pZV_new2/F")
-    oTree.Branch("triggerEff", triggerEff, "triggerEff/F")
-    oTree.Branch("triggerEff1", triggerEff1, "triggerEff1/F")
-    oTree.Branch("triggerEff2", triggerEff2, "triggerEff2/F")
-    oTree.Branch("metTau1DPhi", metTau1DPhi, "metTau1DPhi/F")
-    oTree.Branch("metTau2DPhi", metTau2DPhi, "metTau2DPhi/F")
-    oTree.Branch("metJ1DPhi", metJ1DPhi, "metJ1DPhi/F")
-    oTree.Branch("metJ2DPhi", metJ2DPhi, "metJ2DPhi/F")
-    oTree.Branch("metTauPairDPhi", metTauPairDPhi, "metTauPairDPhi/F")
-    oTree.Branch("metJetPairDPhi", metJetPairDPhi, "metJetPairDPhi/F")
-    oTree.Branch("metSvTauPairDPhi", metSvTauPairDPhi, "metSvTauPairDPhi/F")
-    oTree.Branch("chi2KinFit", chi2KinFit, "chi2KinFit/F")
-    oTree.Branch("chi2KinFit2", chi2KinFit2, "chi2KinFit2/F")
 
-    oTree.Branch("fMassKinFit", fMassKinFit, "fMassKinFit/F")
-    oTree.Branch("nElectrons", nElectrons, "nElectrons/I")
-    oTree.Branch("nMuons", nMuons, "nMuons/I")
-    oTree.Branch("ZTT", ZTT, "ZTT/I")
-    oTree.Branch("ZLL", ZLL, "ZLL/I")
-    oTree.Branch("sampleName", sampleName, "sampleName[31]/C")
-    oTree.Branch("category", category, "category[31]/C")
-    oTree.Branch("PUWeight", PUWeight, "PUWeight/F")
+    #setup branches
+    for iVar in charVarsDict.keys():
+        oTree.Branch("%s" %iVar, charVarsDict[iVar], "%s[31]/C" %iVar)
+    for iVar in floatVarsDict.keys():
+        oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/F" %iVar)
+    for iVar in intVarsDict.keys():
+        oTree.Branch("%s" %iVar, intVarsDict[iVar], "%s/I" %iVar)
 
-    if not isData:
-        oTree.Branch("dRGenJet1Match", dRGenJet1Match, "dRGenJet1Match/F")
-        oTree.Branch("dRGenJet2Match", dRGenJet2Match, "dRGenJet2Match/F")
-        oTree.Branch("matchGenJet1Pt", matchGenJet1Pt, "matchGenJet1Pt/F")
-        oTree.Branch("matchGenJet1Eta", matchGenJet1Eta, "matchGenJet1Eta/F")
-        oTree.Branch("matchGenJet1Phi", matchGenJet1Phi, "matchGenJet1Phi/F")
-        oTree.Branch("matchGenJet1Mass", matchGenJet1Mass, "matchGenJet1Mass/F")
-        oTree.Branch("matchGenJet2Pt", matchGenJet2Pt, "matchGenJet2Pt/F")
-        oTree.Branch("matchGenJet2Eta", matchGenJet2Eta, "matchGenJet2Eta/F")
-        oTree.Branch("matchGenJet2Phi", matchGenJet2Phi, "matchGenJet2Phi/F")
-        oTree.Branch("matchGenJet2Mass", matchGenJet2Mass, "matchGenJet2Mass/F")
-        oTree.Branch("matchGenMJJ", matchGenMJJ, "matchGenMJJ/F")
-        oTree.Branch("matchGenPtJJ", matchGenPtJJ, "matchGenPtJJ/F")
-        oTree.Branch("matchGendRJJ", matchGendRJJ, "matchGendRJJ/F")
-
-
-    oTree.Branch("CSVJ1PtUncorr",CSVJ1PtUncorr,"CSVJ1PtUncorr/F")
-    oTree.Branch("CSVJ1Et",CSVJ1Et,"CSVJ1Et/F")
-    oTree.Branch("CSVJ1Mt",CSVJ1Mt,"CSVJ1Mt/F")
-    oTree.Branch("CSVJ1ptLeadTrk",CSVJ1ptLeadTrk,"CSVJ1ptLeadTrk/F")
-    oTree.Branch("CSVJ1Vtx3dL",CSVJ1Vtx3dL,"CSVJ1Vtx3dL/F")
-    oTree.Branch("CSVJ1Vtx3deL",CSVJ1Vtx3deL,"CSVJ1Vtx3deL/F")
-    oTree.Branch("CSVJ1vtxMass",CSVJ1vtxMass,"CSVJ1vtxMass/F")
-    oTree.Branch("CSVJ1VtxPt",CSVJ1VtxPt,"CSVJ1VtxPt/F")
-    oTree.Branch("CSVJ1JECUnc",CSVJ1JECUnc,"CSVJ1JECUnc/F")
-    oTree.Branch("CSVJ1Ntot",CSVJ1Ntot,"CSVJ1Ntot/F")
-    oTree.Branch("CSVJ1SoftLeptPtRel",CSVJ1SoftLeptPtRel,"CSVJ1SoftLeptPtRel/F")
-    oTree.Branch("CSVJ1SoftLeptPt",CSVJ1SoftLeptPt,"CSVJ1SoftLeptPt/F")
-    oTree.Branch("CSVJ1SoftLeptdR",CSVJ1SoftLeptdR,"CSVJ1SoftLeptdR/F")
-
-    oTree.Branch("CSVJ2PtUncorr",CSVJ2PtUncorr,"CSVJ2PtUncorr/F")
-    oTree.Branch("CSVJ2Et",CSVJ2Et,"CSVJ2Et/F")
-    oTree.Branch("CSVJ2Mt",CSVJ2Mt,"CSVJ2Mt/F")
-    oTree.Branch("CSVJ2ptLeadTrk",CSVJ2ptLeadTrk,"CSVJ2ptLeadTrk/F")
-    oTree.Branch("CSVJ2Vtx3dL",CSVJ2Vtx3dL,"CSVJ2Vtx3dL/F")
-    oTree.Branch("CSVJ2Vtx3deL",CSVJ2Vtx3deL,"CSVJ2Vtx3deL/F")
-    oTree.Branch("CSVJ2vtxMass",CSVJ2vtxMass,"CSVJ2vtxMass/F")
-    oTree.Branch("CSVJ2VtxPt",CSVJ2VtxPt,"CSVJ2VtxPt/F")
-    oTree.Branch("CSVJ2JECUnc",CSVJ2JECUnc,"CSVJ2JECUnc/F")
-    oTree.Branch("CSVJ2Ntot",CSVJ2Ntot,"CSVJ2Ntot/F")
-    oTree.Branch("CSVJ2SoftLeptPtRel",CSVJ2SoftLeptPtRel,"CSVJ2SoftLeptPtRel/F")
-    oTree.Branch("CSVJ2SoftLeptPt",CSVJ2SoftLeptPt,"CSVJ2SoftLeptPt/F")
-    oTree.Branch("CSVJ2SoftLeptdR",CSVJ2SoftLeptdR,"CSVJ2SoftLeptdR/F")
-
-    oTree.Branch("initEvents",initEvents,"initEvents/I")
-    oTree.Branch("xs",xs,"xs/F")
-    sampleName[:31] = iSample
-    initEvents[0] = int(cutFlow.GetBinContent(1))
-    xs[0] = iXS
+    charVarsDict['sampleName'][:31] = iSample
+    intVarsDict['initEvents'][0] = int(cutFlow.GetBinContent(1))
+    floatVarsDict['xs'][0] = iXS
     counter = 0
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
@@ -297,25 +167,6 @@ def loop_one_sample(iSample, iLocation, iXS):
         if iChain.svMass.size() == 0:
             continue
 
-        #separate sample into ZLL and ZTT category:
-        ZTT[0] = 0
-        ZLL[0] = 0
-        if isEmbedded or ('DY' in iSample) or ('dy' in iSample):
-            if passCategory(iChain, 'ZTT'):
-                ZTT[0] = 1
-            if passCategory(iChain, 'ZLL'):
-                ZLL[0] = 1
-#         if not tool.calc(iChain):
-#             continue
-#         if iChain.charge1.at(0) - iChain.charge2.at(0) == 0: #sign requirement
-#             continue
-#         if iChain.pt1.at(0)<45 or iChain.pt2.at(0)<45: #pt cut
-#             continue        
-#         if abs(iChain.eta1.at(0))>2.1 or abs(iChain.eta2.at(0))>2.1: #pt cut
-#             continue
-#         if iChain.iso1.at(0)<1.5 or iChain.iso2.at(0)<1.5: #iso cut
-#             continue 
-
         jetsList = [(iChain.J1CSVbtag, J1.SetCoordinates(iChain.J1Pt, iChain.J1Eta, iChain.J1Phi, iChain.J1Mass), 'J1'),
                     (iChain.J2CSVbtag, J2.SetCoordinates(iChain.J2Pt, iChain.J2Eta, iChain.J2Phi, iChain.J2Mass), 'J2'),
                     (iChain.J3CSVbtag, J3.SetCoordinates(iChain.J3Pt, iChain.J3Eta, iChain.J3Phi, iChain.J3Mass), 'J3'),
@@ -324,18 +175,15 @@ def loop_one_sample(iSample, iLocation, iXS):
                     (iChain.J6CSVbtag, J6.SetCoordinates(iChain.J6Pt, iChain.J6Eta, iChain.J6Phi, iChain.J6Mass), 'J6')]
         sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
         bb = lvClass()
-        bb, CSVJ1[0], CSVJ2[0], CSVJet1, CSVJet2, fullMass[0], dRJJ[0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
-#         if bb == -1:
-#             continue
+        bb, floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2, floatVarsDict['fullMass'][0], floatVarsDict['dRJJ'][0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
 
-        category[:31] = findCategory(CSVJ1[0], CSVJ2[0])
-#         if iChain.LHEProduct != 5:
-#             continue
+        charVarsDict['category'][:31] = findCategory(floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0])
+
         #Gen Matching
-        matchGenJet1Pt[0] = 0
-        matchGenJet2Pt[0] = 0
-        if (not isData) or (not isEmbedded):
-            PUWeight[0] = getPUWeight(iChain.puTruth)
+        floatVarsDict['matchGenJet1Pt'][0] = 0
+        floatVarsDict['matchGenJet2Pt'][0] = 0
+        if (not isData):
+            floatVarsDict['PUWeight'][0] = getPUWeight(iChain.puTruth)
 #             if options.genMatch == 'jet':
 #                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenJet(j1Name, CSVJet1, j2Name, CSVJet2, iChain)
 #             else:
@@ -360,59 +208,71 @@ def loop_one_sample(iSample, iLocation, iXS):
 #                 matchGenMJJ[0] = 0
 #                 matchGenPtJJ[0] = 0
         else:
-            PUWeight[0] = 1.0
+            floatVarsDict['PUWeight'][0] = 1.0
         #Store values
-        CSVJ1Pt[0] = CSVJet1.pt()
-        CSVJ1Eta[0] = CSVJet1.eta()
-        CSVJ1Phi[0] = CSVJet1.phi()
-        CSVJ1Mass[0] = CSVJet1.mass()
-        CSVJ2Pt[0] = CSVJet2.pt()
-        CSVJ2Eta[0] = CSVJet2.eta()
-        CSVJ2Phi[0] = CSVJet2.phi()
-        CSVJ2Mass[0] = CSVJet2.mass()
+        floatVarsDict['CSVJ1Pt'][0] = CSVJet1.pt()
+        floatVarsDict['CSVJ1Eta'][0] = CSVJet1.eta()
+        floatVarsDict['CSVJ1Phi'][0] = CSVJet1.phi()
+        floatVarsDict['CSVJ1Mass'][0] = CSVJet1.mass()
+        floatVarsDict['CSVJ2Pt'][0] = CSVJet2.pt()
+        floatVarsDict['CSVJ2Eta'][0] = CSVJet2.eta()
+        floatVarsDict['CSVJ2Phi'][0] = CSVJet2.phi()
+        floatVarsDict['CSVJ2Mass'][0] = CSVJet2.mass()
 
 #         CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0], CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j1Name, j2Name, iChain)
 
-        if CSVJ1Vtx3dL[0] == -10:
-            CSVJ1Vtx3dL[0] = 0
-            CSVJ1Vtx3deL[0] = 0
-            CSVJ1vtxMass[0] = 0
-            CSVJ1VtxPt[0] = 0
-        if CSVJ1ptLeadTrk[0] < 0:
-            CSVJ1ptLeadTrk[0] = 0
+        if floatVarsDict['CSVJ1Vtx3dL'][0] == -10:
+            floatVarsDict['CSVJ1Vtx3dL'][0] = 0
+            floatVarsDict['CSVJ1Vtx3deL'][0] = 0
+            floatVarsDict['CSVJ1vtxMass'][0] = 0
+            floatVarsDict['CSVJ1VtxPt'][0] = 0
+        if floatVarsDict['CSVJ1ptLeadTrk'][0] < 0:
+            floatVarsDict['CSVJ1ptLeadTrk'][0] = 0
 
-        if CSVJ2Vtx3dL[0] == -10:
-            CSVJ2Vtx3dL[0] = 0
-            CSVJ2Vtx3deL[0] = 0
-            CSVJ2vtxMass[0] = 0
-            CSVJ2VtxPt[0] = 0
-        if CSVJ2ptLeadTrk[0] < 0:
-            CSVJ2ptLeadTrk[0] = 0
+        if floatVarsDict['CSVJ2Vtx3dL'][0] == -10:
+            floatVarsDict['CSVJ2Vtx3dL'][0] = 0
+            floatVarsDict['CSVJ2Vtx3deL'][0] = 0
+            floatVarsDict['CSVJ2vtxMass'][0] = 0
+            floatVarsDict['CSVJ2VtxPt'][0] = 0
+        if floatVarsDict['CSVJ2ptLeadTrk'][0] < 0:
+            floatVarsDict['CSVJ2ptLeadTrk'][0] = 0
 
-        if CSVJ1SoftLeptPtRel[0] == -10:
-            CSVJ1SoftLeptPtRel[0] == 0
-            CSVJ1SoftLeptPt[0] == 0
-        if CSVJ2SoftLeptPtRel[0] == -10:
-            CSVJ2SoftLeptPtRel[0] == 0
-            CSVJ2SoftLeptPt[0] == 0
+        if floatVarsDict['CSVJ1SoftLeptPtRel'][0] == -10:
+            floatVarsDict['CSVJ1SoftLeptPtRel'][0] == 0
+            floatVarsDict['CSVJ1SoftLeptPt'][0] == 0
+        if floatVarsDict['CSVJ2SoftLeptPtRel'][0] == -10:
+            floatVarsDict['CSVJ2SoftLeptPtRel'][0] == 0
+            floatVarsDict['CSVJ2SoftLeptPt'][0] == 0
 
-        ptJJ[0] = bb.pt()
-        etaJJ[0] = bb.eta()
-        phiJJ[0] = bb.phi()
-        mJJ[0] = bb.mass()
-        tau1.SetCoordinates(iChain.pt1.at(0), iChain.eta1.at(0), iChain.phi1.at(0), iChain.m1.at(0))
-        tau2.SetCoordinates(iChain.pt2.at(0), iChain.eta2.at(0), iChain.phi2.at(0), iChain.m2.at(0))
+        floatVarsDict['ptJJ'][0] = bb.pt()
+        floatVarsDict['etaJJ'][0] = bb.eta()
+        floatVarsDict['phiJJ'][0] = bb.phi()
+        floatVarsDict['mJJ'][0] = bb.mass()
+
+        rightPair = findRightPair(iChain, options.pairChoice)
+
+        #separate sample into ZLL and ZTT category:
+        intVarsDict['ZTT'][0] = 0
+        intVarsDict['ZLL'][0] = 0
+        if isEmbedded or ('DY' in iSample) or ('dy' in iSample):
+            if passCategory(iChain, 'ZTT', options.pairChoice):
+                intVarsDict['ZTT'][0] = 1
+            if passCategory(iChain, 'ZLL', options.pairChoice):
+                intVarsDict['ZLL'][0] = 1
+
+        tau1.SetCoordinates(iChain.pt1.at(rightPair), iChain.eta1.at(rightPair), iChain.phi1.at(rightPair), iChain.m1.at(rightPair))
+        tau2.SetCoordinates(iChain.pt2.at(rightPair), iChain.eta2.at(rightPair), iChain.phi2.at(rightPair), iChain.m2.at(rightPair))
 #         mTop1[0] = (CSVJet1 + tau1).mass()
 #         mTop2[0] = (CSVJet2 + tau2).mass()
 
-        nElectrons[0] = iChain.nElectrons
-        nMuons[0] = iChain.nMuons
+        intVarsDict['nElectrons'][0] = iChain.nElectrons
+        intVarsDict['nMuons'][0] = iChain.nMuons
 #         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
 #         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
 #         pZ_new2[0] = iChain.pZ/fullMass[0]
 #         pZV_new2[0] = iChain.pZV/fullMass[0]
 
-        dRTauTau[0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
+        floatVarsDict['dRTauTau'][0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
 #         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
 
         #Trigger Calc MetDPhiValues
@@ -420,26 +280,34 @@ def loop_one_sample(iSample, iLocation, iXS):
 
         #Trigger Eff
         if isEmbedded:
-            eff1 = trigger.dataEff_leg1(iChain, 0)
-            eff2 = trigger.dataEff_leg2(iChain, 0)
+            eff1 = trigger.dataEff_leg1(iChain, rightPair)
+            eff2 = trigger.dataEff_leg2(iChain, rightPair)
         else:
-            eff1 = trigger.correction_leg1(iChain, 0)
-            eff2 = trigger.correction_leg2(iChain, 0)
+            eff1 = trigger.correction_leg1(iChain, rightPair)
+            eff2 = trigger.correction_leg2(iChain, rightPair)
 
-        triggerEff1[0] = eff1
-        triggerEff2[0] = eff2        
-        triggerEff[0] = eff1*eff2
+        floatVarsDict['triggerEff1'][0] = eff1
+        floatVarsDict['triggerEff2'][0] = eff2        
+        floatVarsDict['triggerEff'][0] = eff1*eff2
         if isData and not isEmbedded:
-            triggerEff[0] = 1
-            triggerEff1[0] = 1
-            triggerEff2[0] = 1
+            floatVarsDict['triggerEff'][0] = 1
+            floatVarsDict['triggerEff1'][0] = 1
+            floatVarsDict['triggerEff2'][0] = 1
 
         #Kinematic Fit
-        if not CSVJ1[0] == -1.0:
-            chi2KinFit[0], fMassKinFit[0], status = kinfit.fit(iChain, CSVJet1, CSVJet2)
-            chi2KinFit2[0] = chi2KinFit[0]
-            if chi2KinFit2[0] > 200:
-                chi2KinFit2[0] = 200
+        if not floatVarsDict['CSVJ1'][0] == -1.0:
+            floatVarsDict['chi2KinFit'][0], floatVarsDict['fMassKinFit'][0], status = kinfit.fit(iChain, CSVJet1, CSVJet2, rightPair)
+            floatVarsDict['chi2KinFit2'][0] = floatVarsDict['chi2KinFit'][0]
+            if floatVarsDict['chi2KinFit2'][0] > 200:
+                floatVarsDict['chi2KinFit2'][0] = 200
+
+        #decayModeWeight
+        if (isData and isEmbedded) or (isSignal):
+            floatVarsDict['decayModeWeight1'][0], floatVarsDict['decayModeWeight2'][0] = getDecayModeWeight(iChain, rightPair)
+        else:
+            floatVarsDict['decayModeWeight1'][0] = 1.0
+            floatVarsDict['decayModeWeight2'][0] = 1.0
+        floatVarsDict['decayModeWeight'][0] = floatVarsDict['decayModeWeight1'][0]*floatVarsDict['decayModeWeight2'][0]
 
         oTree.Fill()
         counter += 1
@@ -456,6 +324,7 @@ def go():
     setupLumiReWeight()
     for iSample, iLocation, xs in enVars.sampleLocations:
         loop_one_sample(iSample, iLocation, float(xs))
+    freeLumiReWeight()
 
 
 if __name__ == "__main__":

@@ -16,6 +16,8 @@ lumi = 19.7
 def passJetTrigger(tree):
     etas = []
     jetPtThreshold = 50.0
+    if tree.HLT_Any == 0:
+        return 0
     if tree.HLT_DoubleMediumIsoPFTau35_Trk5_eta2p1_fired or tree.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_fired:
         return 1
     else:
@@ -48,16 +50,36 @@ def calcSysUnc(sf, num, denom, delta_num = 0, delta_denom = 0):
 pair_0_counter = 0
 pairNot_0_counter = 0
 
-def findRightPair(tree, option):
-    if option == 'iso':
-        isoMin = 999.9
-        bestPair = 0
+def findRightPair(tree, choice = 'pt'):
+    if choice == 'pt':
+        return 0
+    elif choice == 'iso':
+        isoMin = 100.0
         for iPair in range(len(tree.pt1)):
             if (tree.iso1.at(iPair) + tree.iso2.at(iPair)) < isoMin:
                 isoMin = tree.iso1.at(iPair) + tree.iso2.at(iPair)
                 bestPair = iPair
-        return iPair
-    else:
+        return bestPair
+    elif choice == 'region':
+        #Prioritize in OSTight
+        for iPair in range(len(tree.pt1)):
+            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
+                return iPair
+        #Prioritize in SSTight
+        for iPair in range(len(tree.pt1)):
+            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
+                return iPair
+        #Prioritize in OSRelax
+        for iPair in range(len(tree.pt1)):
+            if (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
+                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
+                    return iPair
+        #Prioritize in SSTight
+        for iPair in range(len(tree.pt1)):
+            if (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
+                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
+                    return iPair
+        #if not in any category, return the pt leading pair
         return 0
 
 def addYieldInRegion(dict, name):
