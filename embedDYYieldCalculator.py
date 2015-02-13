@@ -9,24 +9,20 @@ from array import array
 import makeWholeSample_cfg
 import makeWholeTools2
 import cutSampleTools 
+r.gStyle.SetOptStat(0)
+r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
 dR_tauEleMu_max = 0.5
 dR_b_max = 0.5
 lumi = 19.7
 tt_semi_InitEvents = 12011428.
 
+def calcSysUncSingle(sampleYield, sampleCount):
+    delta = math.sqrt(sampleCount+0.0)
+    return sampleYield*delta/(sampleCount+0.0)
 
-def findRightPair(tree, option):
-    if option == 'iso':
-        isoMin = 999.9
-        bestPair = 0
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) + tree.iso2.at(iPair)) < isoMin:
-                isoMin = tree.iso1.at(iPair) + tree.iso2.at(iPair)
-                bestPair = iPair
-        return iPair
-    else:
-        return 0
+def calcSysUnc(sf, numA, numB, denomA, denomB, delta_numA, delta_numB, delta_denomA, delta_denomB):
+    return sf*math.sqrt(((delta_numA)**2 + (delta_numB)**2)/((numA-numB)**2) + ((delta_denomA)**2 + (delta_denomB)**2)/((denomA-denomB)**2))
 
 
 def passMassWindow(svMass, mJJ, fMassKinFit):
@@ -58,13 +54,20 @@ def getRightBTagCatName(bTagSelection):
     return bTagSelection[0:2], bTagSelection[2:4]
 
 
-def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOption = 'pt', nBtag = ''):
+def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOption = 'pt', nBtag = '', doDraw = False):
 
     yieldForMediumCat = {}
     eventCounterForMediumCat = {}
     yieldForLooseCat = {}
     eventCounterForLooseCat = {}
     inclusiveYields = {}
+    eventCounterForInclusive = {}
+
+    bins = [19, 225, 700]
+    dy_embed_1M = r.TH1F('dy_embed_1M', '', bins[0], bins[1], bins[2])
+    dy_embed_2M = r.TH1F('dy_embed_2M', '', bins[0], bins[1], bins[2])
+    tt_embed_1M = r.TH1F('tt_embed_1M', '', bins[0], bins[1], bins[2])
+    tt_embed_2M = r.TH1F('tt_embed_2M', '', bins[0], bins[1], bins[2])
 
     fileList = [('DY_inclusive', dy_mc), ('tt_inclusive', tt_full_mc), ('DY_embed', dy_embed), ('tt_embed', tt_embed)]
 
@@ -76,6 +79,7 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
         yieldForMediumCat[name+'_2M'] = 0.0
         yieldForLooseCat[name+'_1L'] = 0.0
         yieldForLooseCat[name+'_2L'] = 0.0
+        eventCounterForInclusive[name] = 0
         eventCounterForMediumCat[name+'_1M'] = 0
         eventCounterForMediumCat[name+'_2M'] = 0
         eventCounterForLooseCat[name+'_1L'] = 0
@@ -124,6 +128,7 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
 
             #calculate inclusiveYield
             if (signSelection == "OS") and (isoSelection == "Tight"):
+                eventCounterForInclusive[name] += 1
                 if 'data' in iTree.sampleName:
                     inclusiveYields[name] += tmpEventYield*iTree.embeddedWeight
                 elif isEmbed:
@@ -137,13 +142,24 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
             if  massWindow and not makeWholeTools2.passCut(iTree, pairOption):
                 continue
                 
+            fillValue = iTree.fMassKinFit
+
             #calculate category yield
             if mediumTag != '0M':
                 if isEmbed:
                     if 'data' in iTree.sampleName:
                         yieldForMediumCat["%s_%s" %(name, mediumTag)] += tmpEventYield*iTree.embeddedWeight
+                        if mediumTag == '1M':
+                            dy_embed_1M.Fill(fillValue, tmpEventYield*iTree.embeddedWeight)
+                        else:
+                            dy_embed_2M.Fill(fillValue, tmpEventYield*iTree.embeddedWeight)
                     else:
                         yieldForMediumCat["%s_%s" %(name, mediumTag)] += tmpEventYield*iTree.xs*0.983*(lumi/tt_semi_InitEvents)*iTree.embeddedWeight*iTree.PUWeight
+                        if mediumTag == '1M':
+                            tt_embed_1M.Fill(fillValue, tmpEventYield*iTree.xs*0.983*(lumi/tt_semi_InitEvents)*iTree.embeddedWeight*iTree.PUWeight)
+                        else:
+                            tt_embed_2M.Fill(fillValue, tmpEventYield*iTree.xs*0.983*(lumi/tt_semi_InitEvents)*iTree.embeddedWeight*iTree.PUWeight)
+
                 else:
                     yieldForMediumCat["%s_%s" %(name, mediumTag)] += tmpEventYield*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
                 eventCounterForMediumCat["%s_%s" %(name, mediumTag)] += 1
@@ -158,17 +174,44 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
                 eventCounterForLooseCat["%s_%s" %(name, looseTag)] += 1
 
         print ''
+
         if isEmbed:
             print name
-            print 'inclusive yield for %s: %.2f' %(name, inclusiveYields[name])
-            print '1-Medium %s yield: %.2f \t events: %i' %(name, yieldForMediumCat[name+'_1M'], eventCounterForMediumCat[name+'_1M'])
-            print '1-Loose %s yield: %.2f \t events: %i' %(name, yieldForLooseCat[name+'_1L'], eventCounterForLooseCat[name+'_1L'])
-            print '2-Medium %s yield: %.2f \t events: %i' %(name, yieldForMediumCat[name+'_2M'], eventCounterForMediumCat[name+'_2M'])
-            print '2-Loose %s yield: %.2f \t events: %i' %(name, yieldForLooseCat[name+'_2L'], eventCounterForLooseCat[name+'_2L'])
+            print 'inclusive yield for %s: %.2f +/- %.2f' %(name, inclusiveYields[name], calcSysUncSingle(inclusiveYields[name], eventCounterForInclusive[name]))
+            print '1-Medium %s yield: %.2f +/- %.2f \t events: %i' %(name, yieldForMediumCat[name+'_1M'], calcSysUncSingle(yieldForMediumCat[name+'_1M'], eventCounterForMediumCat[name+'_1M']), eventCounterForMediumCat[name+'_1M'])
+            print '1-Loose %s yield: %.2f  +/- %.2f \t events: %i' %(name, yieldForLooseCat[name+'_1L'], calcSysUncSingle(yieldForLooseCat[name+'_1L'], eventCounterForLooseCat[name+'_1L']), eventCounterForLooseCat[name+'_1L'])
+            print '2-Medium %s yield: %.2f +/- %.2f \t events: %i' %(name, yieldForMediumCat[name+'_2M'], calcSysUncSingle(yieldForMediumCat[name+'_2M'], eventCounterForMediumCat[name+'_2M']), eventCounterForMediumCat[name+'_2M'])
+            print '2-Loose %s yield: %.2f +/- %.2f \t events: %i' %(name, yieldForLooseCat[name+'_2L'], calcSysUncSingle(yieldForLooseCat[name+'_2L'], eventCounterForLooseCat[name+'_2L']), eventCounterForLooseCat[name+'_2L'])
 
         else:
             print 'inclusive yield for %s: %.2f' %(name, inclusiveYields[name])
 
+    delta_dy_inclusive = calcSysUncSingle(inclusiveYields['DY_embed'], eventCounterForInclusive['DY_embed'])
+    delta_tt_inclusive = calcSysUncSingle(inclusiveYields['tt_embed'], eventCounterForInclusive['tt_embed'])
+    delta_dy_1M = calcSysUncSingle(yieldForMediumCat['DY_embed_1M'], eventCounterForMediumCat['DY_embed_1M'])
+    delta_tt_1M = calcSysUncSingle(yieldForMediumCat['tt_embed_1M'], eventCounterForMediumCat['tt_embed_1M'])
+    delta_dy_2M = calcSysUncSingle(yieldForMediumCat['DY_embed_2M'], eventCounterForMediumCat['DY_embed_2M'])
+    delta_tt_2M = calcSysUncSingle(yieldForMediumCat['tt_embed_2M'], eventCounterForMediumCat['tt_embed_2M'])
+
+    sysUnc_1M = calcSysUnc(sf = (yieldForMediumCat['DY_embed_1M']-yieldForMediumCat['tt_embed_1M'])/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed']), 
+                        numA = yieldForMediumCat['DY_embed_1M'], 
+                        numB = yieldForMediumCat['tt_embed_1M'],
+                        denomA = inclusiveYields['DY_embed'],
+                        denomB = inclusiveYields['tt_embed'],
+                        delta_numA = delta_dy_1M,
+                        delta_numB = delta_tt_1M,
+                        delta_denomA = delta_dy_inclusive,
+                        delta_denomB = delta_tt_inclusive)
+
+    sysUnc_2M = calcSysUnc(sf = (yieldForMediumCat['DY_embed_2M']-yieldForMediumCat['tt_embed_2M'])/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed']), 
+                        numA = yieldForMediumCat['DY_embed_2M'], 
+                        numB = yieldForMediumCat['tt_embed_2M'],
+                        denomA = inclusiveYields['DY_embed'],
+                        denomB = inclusiveYields['tt_embed'],
+                        delta_numA = delta_dy_2M,
+                        delta_numB = delta_tt_2M,
+                        delta_denomA = delta_dy_inclusive,
+                        delta_denomB = delta_tt_inclusive)
 
     preScaleFactor = inclusiveYields['DY_inclusive']/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed'])
     scaleFactor_1M = preScaleFactor*(yieldForMediumCat['DY_embed_1M']-yieldForMediumCat['tt_embed_1M'])
@@ -178,14 +221,41 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
     scaleFactor_1M2 = preScaleFactor2*(yieldForMediumCat['DY_embed_1M'])
     scaleFactor_2M2 = preScaleFactor2*(yieldForMediumCat['DY_embed_2M'])
 
-    print 'predicted DY in 1M: %.2f' %scaleFactor_1M
-    print 'predicted DY in 2M: %.2f' %scaleFactor_2M
+    print 'predicted DY in 1M: %.2f +/- %.2f%%' %(scaleFactor_1M, sysUnc_1M*inclusiveYields['DY_inclusive']/scaleFactor_1M*100)
+    print 'predicted DY in 2M: %.2f +/- %.2f%%' %(scaleFactor_2M, sysUnc_2M*inclusiveYields['DY_inclusive']/scaleFactor_2M*100)
     print 'predicted DY+tt in 1M: %.2f' %scaleFactor_1M2
     print 'predicted DY+tt in 2M: %.2f' %scaleFactor_2M2
 
+
+    if doDraw:
+        position = (0.6, 0.9 - 0.06*2, 0.87, 0.9)
+        l1 = tool.setMyLegend(position, [(dy_embed_1M, 'dy_embed_1M'), (tt_embed_1M, 'tt_embed_1M')])
+        l2 = tool.setMyLegend(position, [(dy_embed_2M, 'dy_embed_2M'), (tt_embed_2M, 'tt_embed_2M')])
+
+        psfile = 'DY_embed_tauUp.pdf'
+        c = r.TCanvas("c","Test", 800, 600)
+        dy_embed_1M.Draw()
+        dy_embed_1M.SetTitle(';fMassKinFit;')
+        tt_embed_1M.SetLineStyle(2)
+        tt_embed_1M.SetLineColor(r.kRed)
+        tt_embed_1M.Draw('same')
+        l1.Draw('same')
+
+        c.Print('%s(' %psfile)
+        dy_embed_2M.Draw()
+        dy_embed_2M.SetTitle(';fMassKinFit;')
+
+        tt_embed_2M.SetLineStyle(2)
+        tt_embed_2M.SetLineColor(r.kRed)
+        tt_embed_2M.Draw('same')
+        l2.Draw('same')
+
+        c.Print('%s)' %psfile)
+
+
     return scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor
 
-def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = ''):
+def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = '', ZLL = False):
 
     yieldForMediumCat = {}
     yieldForLooseCat = {}
@@ -207,6 +277,9 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = ''):
         if (iTree.nElectrons > 0 or iTree.nMuons > 0):
             continue
         if not makeWholeTools2.passJetTrigger(iTree):
+            continue
+
+        if ZLL and iTree.ZLL == 0:
             continue
         #get event category
         signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(tree = iTree, 
@@ -255,19 +328,21 @@ elif 'bMis' in shift:
     nBtag = shift
 else:
     shiftLocation = shift
-if shift == 'normal' or shift == 'taUp' or shift == 'tauDown':
+if shift == 'normal' or 'tau' in shift:
     shiftLocation2 = shift
 else:
     shiftLocation2 = 'normal'
 
 location = "samples_Iso"
 
-yieldCalculator(dy_mc = '/nfs_scratch/zmao/%s/tauESOn/%s/dy_new.root' %(location, shiftLocation),
+yieldCalculator(dy_mc = '/nfs_scratch/zmao/%s/tauESOn/%s/dy.root' %(location, shiftLocation),
                 tt_full_mc = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_all.root' %(location, shiftLocation),
-                dy_embed = '/nfs_scratch/zmao/%s/tauESOn/%s/DY_embed_new.root' %(location, shiftLocation2), 
-                tt_embed = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_embed_all_new.root' %(location, shiftLocation), 
+                dy_embed = '/nfs_scratch/zmao/%s/tauESOn/%s/DY_embed.root' %(location, shiftLocation2), 
+                tt_embed = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_embed_all.root' %(location, shiftLocation), 
                 massWindow = True,
                 pairOption = 'iso',
-                nBtag = nBtag)
+                nBtag = nBtag,
+                doDraw = False,
+)
 
 
