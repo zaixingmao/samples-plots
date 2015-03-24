@@ -4,6 +4,7 @@ import ROOT as r
 from operator import itemgetter
 import optparse
 
+lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
 printedEvN = []
 
@@ -91,16 +92,22 @@ def printSingleInfo(name, varsList):
 
 
 def addVars(iTree):
+
+    tau2 = lvClass()
+    jet2 = lvClass()
+    tau2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
+    jet2.SetCoordinates(iTree.bpt_2, iTree.beta_2, iTree.bphi_2, 0)
+
     a = ['evtNumber', iTree.evt, 
             'mvaMet', iTree.mvamet, 
 #             'mvaMet', iTree.mvamet, 
 #             'mvaPhi', iTree.mvametphi, 
-            'lumi', iTree.lumi, 
-            'run', iTree.run, 
+#             'lumi', iTree.lumi, 
+#             'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
 #             'iso1', iTree.iso_1, 
-            'Com1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
+#             'Com1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
 
 #             'phi1', iTree.phi_1, 
@@ -108,31 +115,32 @@ def addVars(iTree):
             'pt2', iTree.pt_2, 
             'eta2', iTree.eta_2, 
 #             'iso2', iTree.iso_2, 
-            'Com2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
+#             'Com2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
 #             'tw_2', iTree.trigweight_2, 
 
 #             'phi2', iTree.phi_2, 
 #             'mass2', iTree1.m_2,
 #             'jptraw1', iTree.jptraw_1,
-            'jpt_1', iTree.jpt_1, 
-            'jeta_1', iTree.jeta_1, 
+#             'jpt_1', iTree.jpt_1, 
+#             'jeta_1', iTree.jeta_1, 
 #             'jphi_1', iTree.jphi_1, 
 
 #             'jptraw2', iTree.jptraw_2,
-            'jpt_2', iTree.jpt_2, 
-            'jeta_2', iTree.jeta_2, 
+#             'jpt_2', iTree.jpt_2, 
+#             'jeta_2', iTree.jeta_2, 
 #             'jphi_2', iTree.jphi_2,
 # 
 #             'npv', iTree.npv,
 # 
-#             'bcsv_1', iTree.bcsv_1,
-#             'bpt_1', iTree.bpt_1,
-#             'beta_1', iTree.beta_1,
-#             'bphi_1', iTree.bphi_1,
-#             'bcsv_2', iTree.bcsv_2,
-#             'bpt_2', iTree.bpt_2,
-#             'beta_2', iTree.beta_2,
-#             'bphi_2', iTree.bphi_2,
+            'bcsv_1', iTree.bcsv_1,
+            'bpt_1', iTree.bpt_1,
+            'beta_1', iTree.beta_1,
+            'bphi_1', iTree.bphi_1,
+            'bcsv_2', iTree.bcsv_2,
+            'bpt_2', iTree.bpt_2,
+            'beta_2', iTree.beta_2,
+            'bphi_2', iTree.bphi_2,
+            'dr2', r.Math.VectorUtil.DeltaR(tau2, jet2),
 #             'bcsv_3', iTree.bcsv_3,
 #             'bpt_3', iTree.bpt_3,
 #             'beta_3', iTree.beta_3,

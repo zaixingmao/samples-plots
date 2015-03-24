@@ -152,9 +152,11 @@ def findBTagSelection(CSVJ1, CSVJ2, NBTags):
         bTagSelection += '1M'
     if NBTags > 1:
         bTagSelection += '2M'
+    if NBTags > 1 and CSVJ2 < 0:
+        return None
     return bTagSelection
 
-def findCategory(tree, iso, option, isData, relaxedRegionOption, isEmbed = False, usePassJetTrigger = False, nBtag=''):
+def findCategory(tree, iso, option, isData, relaxedRegionOption, isEmbed = False, usePassJetTrigger = True, nBtag=''):
     rightPair = findRightPair(tree, option)
     if tree.pt1.at(rightPair) < 45 or tree.pt2.at(rightPair) < 45 or tree.HLT_Any == 0:
         return None, None, None
@@ -186,12 +188,19 @@ def findCategory(tree, iso, option, isData, relaxedRegionOption, isEmbed = False
 
     return signSelection, isoSelection, bTagSelection
 #         
-def passCut(tree, option):
-    rightPair = findRightPair(tree, option)
-    if (90.0 < tree.svMass.at(rightPair) < 150.0) and (70.0 < tree.mJJ < 150.0) and (tree.fMassKinFit > 10):
-        return True
+def passCut(tree, option = ''):
+    if option == '':
+        if (90.0 < tree.svMass < 150.0) and (70.0 < tree.mJJ < 150.0) and (tree.fMassKinFit > 10):
+            return True
+        else:
+            return False
+
     else:
-        return False
+        rightPair = findRightPair(tree, option)
+        if (90.0 < tree.svMass.at(rightPair) < 150.0) and (70.0 < tree.mJJ < 150.0) and (tree.fMassKinFit > 10):
+            return True
+        else:
+            return False
 
 def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1to3', verbose = False, isoTight = 1.0, pairOption = 'pt', massWindow = False, usePassJetTrigger = False, nBtag = ''):
     files = []
@@ -365,7 +374,7 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
                                       denom = addYieldInRegion(yields['QCD']['SS']['Relax'], '1M2M'))
 
     if verbose:
-        for region in ['1M', '2M', '1L', '2L']:
+        for region in ['0M', '1M', '2M', '1L', '2L']:
             print '%s_________________________' %region
             print '%.2f\t\t%.2f/%.0f' %(addYieldInRegion(yields['MC']['OS']['Tight'], region), 
                                         addYieldInRegion(yields['MC']['SS']['Tight'], region), 
@@ -415,7 +424,7 @@ def calculateSF(fileList, sigRegionOption = 'Tight', relaxedRegionOption = 'one1
     output.append(SF['relax2tight']['0']) 
     return output
 
-# calculateSF(makeWholeSample_cfg.sampleConfigsTools, 'Tight', makeWholeSample_cfg.Relax, True, 1.0, 'pt', False, usePassJetTrigger = True, nBtag = '')
+# calculateSF(makeWholeSample_cfg.sampleConfigsTools, 'Tight', makeWholeSample_cfg.Relax, True, 1.0, 'iso', False, usePassJetTrigger = True, nBtag = '')
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'very_semiTight','very_relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, 'veto012None', 'semiTight','relaxed',False, True)
 # calculateSF(makeWholeSample_cfg.sampleConfigsTools, makeWholeSample_cfg.preFixTools, '012None', 'tight','both3To10', True, 1.0, 'pt', True)

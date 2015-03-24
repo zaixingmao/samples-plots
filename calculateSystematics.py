@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import ROOT as r
 import tool
+import makeWholeTools2
 
 lumi = 19.7
 tt = ['tt', 'tt_semi', 'tthad']
@@ -69,6 +70,8 @@ def getYieldsFromFile(file):
     for iEvent in range(total):
         tool.printProcessStatus(iEvent, total, 'Looping file [%s]' % (file))
         tree.GetEntry(iEvent)
+        if not makeWholeTools2.passCut(tree):
+            continue
         name = getSampleName(tree.sampleName)
         if name in yieldsDict['1M'].keys():
             if tree.Category == '0M':
@@ -124,6 +127,6 @@ def calcSystematics(file_norm, file_up, file_down):
     print ''
 
 
-calcSystematics(file_norm = '/nfs_scratch/zmao/samples_Iso/datacard/combined_iso1.0_one1To4_iso_normal__withDYEmbed.root', 
-                file_up = '/nfs_scratch/zmao/samples_Iso/datacard/combined_iso1.0_one1To4_iso_bSysUp__withDYEmbed.root',
-                file_down = '/nfs_scratch/zmao/samples_Iso/datacard/combined_iso1.0_one1To4_iso_bSysDown__withDYEmbed.root')
+calcSystematics(file_norm = '/nfs_scratch/zmao/samples_Iso/datacard/combined_iso1.0_one1To4_iso_normal__withDYEmbed_massWindow.root', 
+                file_up = '/nfs_scratch/zmao/samples_Iso/datacard/combined_iso1.0_one1To4_iso_bSysUp__withDYEmbed_massWindow.root',
+                file_down = '/nfs_scratch/zmao/samples_Iso/datacard/combined_iso1.0_one1To4_iso_bSysDown__withDYEmbed_massWindow.root')

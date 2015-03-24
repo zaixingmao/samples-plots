@@ -11,6 +11,7 @@ import kinfit
 from cutSampleTools import *
 import trigger
 import data_certification
+from makeWholeTools2 import findRightPair
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
@@ -43,7 +44,7 @@ kinfit.setup()
 
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 'CSVJ1','CSVJ1Pt','CSVJ1Eta','CSVJ1Phi', 'CSVJ1Mass',
+    names = ['mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 'CSVJ1','CSVJ1Pt','CSVJ1Eta','CSVJ1Phi', 'CSVJ1Mass',
              'CSVJ2', 'CSVJ2Pt', 'CSVJ2Eta', 'CSVJ2Phi', 'CSVJ2Mass', 'dRTauTau', 'dRJJ', 'dRhh', 'mTop1', 'mTop2',
              'pZ_new', 'pZV_new', 'pZ_new2', 'pZV_new2', 'triggerEff', 'triggerEff1', 'triggerEff2', 'metTau1DPhi', 'metTau2DPhi',
              'metJ1DPhi', 'metJ2DPhi', 'metTauPairDPhi', 'metJetPairDPhi', 'metSvTauPairDPhi', 'dRGenJet1Match', 'dRGenJet2Match',
@@ -52,7 +53,7 @@ def setUpFloatVarsDict():
              'CSVJ1Vtx3deL', 'CSVJ1VtxPt', 'CSVJ1vtxMass', 'CSVJ1JECUnc', 'CSVJ1Ntot', 'CSVJ1SoftLeptPtRel', 'CSVJ1SoftLeptPt', 'CSVJ1SoftLeptdR', 
              'CSVJ2PtUncorr', 'CSVJ2Et', 'CSVJ2Mt', 'CSVJ2ptLeadTrk', 'CSVJ2Vtx3dL', 'CSVJ2Vtx3deL', 'CSVJ2VtxPt', 'CSVJ2JECUnc', 
              'CSVJ2Ntot', 'CSVJ2SoftLeptPtRel', 'CSVJ2SoftLeptPt', 'CSVJ2SoftLeptdR', 'chi2KinFit', 'chi2KinFit2', 'fMassKinFit', 'PUWeight', 
-             'xs', 'decayModeWeight1', 'decayModeWeight2', 'decayModeWeight',
+             'xs', 'decayModeWeight1', 'decayModeWeight2', 'decayModeWeight', 'fMass'
             ]
     for iName in names:
         varDict[iName] = array('f', [0.])
@@ -166,6 +167,7 @@ def loop_one_sample(iSample, iLocation, iXS):
             break
         if iChain.svMass.size() == 0:
             continue
+        rightPair = findRightPair(iChain, options.pairChoice)
 
         jetsList = [(iChain.J1CSVbtag, J1.SetCoordinates(iChain.J1Pt, iChain.J1Eta, iChain.J1Phi, iChain.J1Mass), 'J1'),
                     (iChain.J2CSVbtag, J2.SetCoordinates(iChain.J2Pt, iChain.J2Eta, iChain.J2Phi, iChain.J2Mass), 'J2'),
@@ -173,9 +175,9 @@ def loop_one_sample(iSample, iLocation, iXS):
                     (iChain.J4CSVbtag, J4.SetCoordinates(iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass), 'J4'),
                     (iChain.J5CSVbtag, J5.SetCoordinates(iChain.J5Pt, iChain.J5Eta, iChain.J5Phi, iChain.J5Mass), 'J5'),
                     (iChain.J6CSVbtag, J6.SetCoordinates(iChain.J6Pt, iChain.J6Eta, iChain.J6Phi, iChain.J6Mass), 'J6')]
-        sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
+        sv4Vec.SetCoordinates(iChain.svPt.at(rightPair), iChain.svEta.at(rightPair), iChain.svPhi.at(rightPair), iChain.svMass.at(rightPair))
         bb = lvClass()
-        bb, floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2, floatVarsDict['fullMass'][0], floatVarsDict['dRJJ'][0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
+        bb, floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2, floatVarsDict['fMass'][0], floatVarsDict['dRJJ'][0], j1Name, j2Name = findFullMass(iTree = iChain, rightPair = rightPair, jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
 
         charVarsDict['category'][:31] = findCategory(floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0])
 
@@ -249,8 +251,6 @@ def loop_one_sample(iSample, iLocation, iXS):
         floatVarsDict['phiJJ'][0] = bb.phi()
         floatVarsDict['mJJ'][0] = bb.mass()
 
-        rightPair = findRightPair(iChain, options.pairChoice)
-
         #separate sample into ZLL and ZTT category:
         intVarsDict['ZTT'][0] = 0
         intVarsDict['ZLL'][0] = 0
@@ -302,7 +302,7 @@ def loop_one_sample(iSample, iLocation, iXS):
                 floatVarsDict['chi2KinFit2'][0] = 200
 
         #decayModeWeight
-        if (isData and isEmbedded) or (isSignal):
+        if (isData and isEmbedded) or (isSignal) or ('DY' in iSample):
             floatVarsDict['decayModeWeight1'][0], floatVarsDict['decayModeWeight2'][0] = getDecayModeWeight(iChain, rightPair)
         else:
             floatVarsDict['decayModeWeight1'][0] = 1.0

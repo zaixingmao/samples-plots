@@ -5,7 +5,7 @@ import varsList
 import FWCore.ParameterSet.Config as cms
 import math
 import os
-
+from makeWholeTools2 import findRightPair
 r.gSystem.Load("libFWCoreFWLite.so")
 r.AutoLibraryLoader.enable()
 # r.gSystem.Load("libPhysicsToolsUtilities.so")
@@ -13,37 +13,6 @@ r.AutoLibraryLoader.enable()
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 combinedJJ = lvClass()
 reWeight = 1.0
-def findRightPair(tree, choice = 'pt'):
-    if choice == 'pt':
-        return 0
-    elif choice == 'iso':
-        isoMin = 100.0
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) + tree.iso2.at(iPair)) < isoMin:
-                isoMin = tree.iso1.at(iPair) + tree.iso2.at(iPair)
-                bestPair = iPair
-        return bestPair
-    elif choice == 'region':
-        #Prioritize in OSTight
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
-                return iPair
-        #Prioritize in SSTight
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
-                return iPair
-        #Prioritize in OSRelax
-        for iPair in range(len(tree.pt1)):
-            if (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
-                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
-                    return iPair
-        #Prioritize in SSTight
-        for iPair in range(len(tree.pt1)):
-            if (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
-                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
-                    return iPair
-        #if not in any category, return the pt leading pair
-        return 0
 
 def findCategory(csv1, csv2):
     if csv1 < 0.679:
@@ -57,7 +26,7 @@ def setupLumiReWeight():
     location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
 #     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
-    reWeight = r.edm.LumiReWeighting("%sMC_Summer12_PU_S10-600bins.root" %location,"%sData_Pileup_2012_ReReco-600bins.root" %location,"pileup","pileup")
+    reWeight = r.edm.LumiReWeighting("%sMC_Summer12_PU_S10-600bins.root" %location,"%sData_Pileup_2012_ReRecoPixel-600bins.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
     return reWeight.weight(npu)
@@ -76,6 +45,20 @@ def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen.SetCoordinates(genPt, genEta, genPhi, 0)
     dR = r.Math.VectorUtil.DeltaR(tmpParticle, tmpGen)
     return dR
+
+def findDR_betweenTau(pt1, eta1, phi1, pt2, eta2, phi2, jpt, jeta, jphi):
+    tau1 = lvClass()
+    tau2 = lvClass()
+    jet = lvClass()
+    tau1.SetCoordinates(pt1, eta1, phi1, 0)
+    tau2.SetCoordinates(pt2, eta2, phi2, 0)
+    jet.SetCoordinates(jpt, jeta, jphi, 0)
+    dR1 = r.Math.VectorUtil.DeltaR(tau1, jet)
+    dR2 = r.Math.VectorUtil.DeltaR(tau2, jet)
+    if dR1 < dR2:
+        return dR1
+    else:
+        return dR2
 
 def findMinDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     minDR = 99999.9
@@ -183,13 +166,27 @@ def passCategory(iChain, separate, pairOption):
     print 'If it got to this point, check separate option: %s' %separate
 
 
-def findFullMass(jetsList = [], sv4Vec = '', ptThreshold = 20):
+def findFullMass(iTree, rightPair = 0, jetsList = [], sv4Vec = '', ptThreshold = 20):
     newList = []
     emptyV4 = lvClass()
     emptyV4.SetCoordinates(0,0,0,0)
     for i in range(len(jetsList)):
         if jetsList[i][1].pt() > ptThreshold and abs(jetsList[i][1].eta()) < 2.4:
-            newList.append(jetsList[i])
+            dR = findDR_betweenTau(iTree.pt1.at(rightPair),
+                                   iTree.eta1.at(rightPair),
+                                   iTree.phi1.at(rightPair),
+                                   iTree.pt2.at(rightPair),
+                                   iTree.eta2.at(rightPair),
+                                   iTree.phi2.at(rightPair), 
+                                   jetsList[i][1].pt(),
+                                   jetsList[i][1].eta(), 
+                                   jetsList[i][1].phi())
+
+            if dR > 0.5:
+                if iTree.EVENT == 179372769:
+                    print ''
+                    print dR, jetsList[i]
+                newList.append(jetsList[i])
     newList = sorted(newList, key=itemgetter(0), reverse=True)
     if len(newList) < 2:
         return emptyV4, -1.0, -1.0, emptyV4, emptyV4, 0.0, -1.0, 'J1', 'J1'

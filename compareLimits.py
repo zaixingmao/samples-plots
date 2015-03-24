@@ -66,6 +66,11 @@ def compareLimits(ifile, useForBand, nameForMain, nameForExtra):
     median2.SetLineStyle(2)
     median2.SetLineWidth(2)
 
+    diff = r.TGraph()
+    diff.SetLineColor(r.kBlue)
+    diff.SetLineStyle(2)
+    diff.SetLineWidth(2)
+
     if useForBand:
         notUseForBand = 0
     else:
@@ -78,7 +83,7 @@ def compareLimits(ifile, useForBand, nameForMain, nameForExtra):
         sig1Band.SetPoint(2*nPoints - 1 - i, bands[useForBand]["1Sig"][i*3], bands[useForBand]["1Sig"][i*3+1])
         median1.SetPoint(i, median[useForBand][i*2], median[useForBand][i*2+1])
         median2.SetPoint(i, median[notUseForBand][i*2], median[notUseForBand][i*2+1])
-
+        diff.SetPoint(i, median[0][i*2], 2*abs(median[0][i*2+1]-median[1][i*2+1])/(median[0][i*2+1]+median[1][i*2+1]))
 
     canv = r.TH1F('canv', '', 10, 260, 350)
     canv.SetXTitle("m_{H} [GeV]")
@@ -107,7 +112,7 @@ def compareLimits(ifile, useForBand, nameForMain, nameForExtra):
     l.AddEntry(sig2Band, "#pm 2#sigma Expected",  "F")
     l.AddEntry(median2, "Expected (%s)" %nameForExtra,  "L")
 
-    psfile = 'cutBasedVSBDT_limit.pdf'
+    psfile = '%sVS%s_limit.pdf' %(nameForMain, nameForExtra)
     c = r.TCanvas("c","Test", 800, 700)
     p = r.TPad("p","p",0.05,1,1.,0.05)
     p.Draw()
@@ -127,6 +132,49 @@ def compareLimits(ifile, useForBand, nameForMain, nameForExtra):
     l.Draw("same")
     canv.GetYaxis().Draw("A")
     canv.Draw("sameaxis")
-    c.Print('%s' %psfile)
+    c.Print('%s(' %psfile)
+    c.Clear()
+
+    canv2 = r.TH1F('canv2', '', 10, 260, 350)
+    canv2.SetXTitle("m_{H} [GeV]")
+    canv2.GetXaxis().SetLabelFont(62)
+    canv2.GetXaxis().SetLabelSize(0.045)
+    canv2.GetXaxis().SetLabelOffset(0.015)
+    canv2.GetXaxis().SetTitleSize(0.045)
+    canv2.GetXaxis().SetTitleFont(62)
+    canv2.GetXaxis().SetTitleColor(1)
+    canv2.GetXaxis().SetTitleOffset(1.05)
+    canv2.SetYTitle("Limit Differences")
+    canv2.GetYaxis().SetLabelFont(62)
+    canv2.GetYaxis().SetTitleFont(62)
+    canv2.GetYaxis().SetTitleOffset(1.25)
+    canv2.GetYaxis().SetTitleSize(0.045)
+    canv2.GetYaxis().SetLabelSize(0.045)
+    canv2.SetNdivisions(505, "X")
+
+    #Set Legend
+    l2 = r.TLegend(0.4, 0.65, 0.8, 0.85)
+    l2.SetBorderSize( 0 )
+    l2.SetFillStyle( 1001 )
+    l2.SetFillColor(r.kWhite)
+    l2.AddEntry(diff, "#frac{2 #times | %s - %s |}{%s + %s}" %(nameForMain, nameForExtra, nameForMain, nameForExtra), "L")
+
+    p2 = r.TPad("p2","p2",0.05,1,1.,0.05)
+    p2.Draw()
+    p2.cd()
+    r.gPad.SetTicky()
+    r.gPad.SetTickx()
+    p2.SetGrid()
+    canv2.SetMaximum(0.5)
+    canv2.Draw()
+    canv2.SetTitle("CMS, H #rightarrow #tau#tau, 19.7 fb^{-1} at 8 TeV")
+    r.gStyle.SetTitleX(0.33)
+    r.gStyle.SetTitleY(0.96)
+    r.gStyle.SetTitleFontSize(0.04)
+    diff.Draw("Lsame")
+    l2.Draw("same")
+    canv2.GetYaxis().Draw("A")
+    canv2.Draw("sameaxis")
+    c.Print('%s)' %psfile)
 
 compareLimits(ifile = options.inputFile, useForBand = options.useForBand, nameForMain = options.nameForMain, nameForExtra = options.nameForExtra)

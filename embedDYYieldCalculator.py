@@ -54,7 +54,7 @@ def getRightBTagCatName(bTagSelection):
     return bTagSelection[0:2], bTagSelection[2:4]
 
 
-def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOption = 'pt', nBtag = '', doDraw = False):
+def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOption = 'iso', nBtag = '', doDraw = False):
 
     yieldForMediumCat = {}
     eventCounterForMediumCat = {}
@@ -113,7 +113,7 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
                                                                                       isEmbed = isEmbed,
                                                                                       usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
                                                                                       nBtag = nBtag)
-            if signSelection == None or isoSelection == None:
+            if signSelection == None or isoSelection == None or bTagSelection == None:
                 continue
             looseTag, mediumTag = getRightBTagCatName(bTagSelection)
 
@@ -125,6 +125,9 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
                 tmpEventYield = iTree.triggerEff*iTree.decayModeWeight
             else:
                 tmpEventYield = iTree.triggerEff
+
+            if  massWindow and not makeWholeTools2.passCut(iTree, pairOption):
+                continue
 
             #calculate inclusiveYield
             if (signSelection == "OS") and (isoSelection == "Tight"):
@@ -138,8 +141,6 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
                         continue
                     inclusiveYields[name] += tmpEventYield*iTree.xs*lumi*iTree.PUWeight/(iTree.initEvents+0.0)
             else:
-                continue
-            if  massWindow and not makeWholeTools2.passCut(iTree, pairOption):
                 continue
                 
             fillValue = iTree.fMassKinFit
@@ -213,6 +214,26 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
                         delta_denomA = delta_dy_inclusive,
                         delta_denomB = delta_tt_inclusive)
 
+    sysUnc_xs_1M = calcSysUnc(sf = (yieldForMediumCat['DY_embed_1M']-yieldForMediumCat['tt_embed_1M'])/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed']), 
+                        numA = yieldForMediumCat['DY_embed_1M'], 
+                        numB = yieldForMediumCat['tt_embed_1M'],
+                        denomA = inclusiveYields['DY_embed'],
+                        denomB = inclusiveYields['tt_embed'],
+                        delta_numA = 0,
+                        delta_numB = yieldForMediumCat['tt_embed_1M']*0.1,
+                        delta_denomA = 0,
+                        delta_denomB = inclusiveYields['tt_embed']*0.1)
+
+    sysUnc_xs_2M = calcSysUnc(sf = (yieldForMediumCat['DY_embed_2M']-yieldForMediumCat['tt_embed_2M'])/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed']), 
+                        numA = yieldForMediumCat['DY_embed_2M'], 
+                        numB = yieldForMediumCat['tt_embed_2M'],
+                        denomA = inclusiveYields['DY_embed'],
+                        denomB = inclusiveYields['tt_embed'],
+                        delta_numA = 0,
+                        delta_numB = yieldForMediumCat['tt_embed_2M']*0.1,
+                        delta_denomA = 0,
+                        delta_denomB = inclusiveYields['tt_embed']*0.1)
+
     preScaleFactor = inclusiveYields['DY_inclusive']/(inclusiveYields['DY_embed'] - inclusiveYields['tt_embed'])
     scaleFactor_1M = preScaleFactor*(yieldForMediumCat['DY_embed_1M']-yieldForMediumCat['tt_embed_1M'])
     scaleFactor_2M = preScaleFactor*(yieldForMediumCat['DY_embed_2M']-yieldForMediumCat['tt_embed_2M'])
@@ -221,10 +242,57 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
     scaleFactor_1M2 = preScaleFactor2*(yieldForMediumCat['DY_embed_1M'])
     scaleFactor_2M2 = preScaleFactor2*(yieldForMediumCat['DY_embed_2M'])
 
-    print 'predicted DY in 1M: %.2f +/- %.2f%%' %(scaleFactor_1M, sysUnc_1M*inclusiveYields['DY_inclusive']/scaleFactor_1M*100)
-    print 'predicted DY in 2M: %.2f +/- %.2f%%' %(scaleFactor_2M, sysUnc_2M*inclusiveYields['DY_inclusive']/scaleFactor_2M*100)
-    print 'predicted DY+tt in 1M: %.2f' %scaleFactor_1M2
-    print 'predicted DY+tt in 2M: %.2f' %scaleFactor_2M2
+    print ''
+    print 'predicted DY in 1M: %.2fx(%.2f +/- %.2f - %.2f +/- %.2f)/(%.2f +/- %.2f - %.2f +/- %.2f) = %.2f +/- %.2f%% (statistical)' %(inclusiveYields['DY_inclusive'],
+                                                                         yieldForMediumCat['DY_embed_1M'],
+                                                                         calcSysUncSingle(yieldForMediumCat['DY_embed_1M'], eventCounterForMediumCat['DY_embed_1M']),
+                                                                         yieldForMediumCat['tt_embed_1M'],
+                                                                         calcSysUncSingle(yieldForMediumCat['tt_embed_1M'], eventCounterForMediumCat['tt_embed_1M']),
+                                                                         inclusiveYields['DY_embed'],
+                                                                         calcSysUncSingle(inclusiveYields['DY_embed'], eventCounterForInclusive['DY_embed']),
+                                                                         inclusiveYields['tt_embed'],
+                                                                         calcSysUncSingle(inclusiveYields['tt_embed'], eventCounterForInclusive['tt_embed']),
+                                                                         scaleFactor_1M,
+                                                                         sysUnc_1M*inclusiveYields['DY_inclusive']/scaleFactor_1M*100
+                                                                        )
+    print 'predicted DY in 2M: %.2fx(%.2f +/- %.2f - %.2f +/- %.2f)/(%.2f +/- %.2f - %.2f +/- %.2f) = %.2f +/- %.2f%% (statistical)' %(inclusiveYields['DY_inclusive'],
+                                                                         yieldForMediumCat['DY_embed_2M'],
+                                                                         calcSysUncSingle(yieldForMediumCat['DY_embed_2M'], eventCounterForMediumCat['DY_embed_2M']),
+                                                                         yieldForMediumCat['tt_embed_2M'],
+                                                                         calcSysUncSingle(yieldForMediumCat['tt_embed_2M'], eventCounterForMediumCat['tt_embed_2M']),
+                                                                         inclusiveYields['DY_embed'],
+                                                                         calcSysUncSingle(inclusiveYields['DY_embed'], eventCounterForInclusive['DY_embed']),
+                                                                         inclusiveYields['tt_embed'],
+                                                                         calcSysUncSingle(inclusiveYields['tt_embed'], eventCounterForInclusive['tt_embed']),
+                                                                         scaleFactor_2M,
+                                                                         sysUnc_2M*inclusiveYields['DY_inclusive']/scaleFactor_2M*100
+                                                                        )
+    print ''
+    print 'predicted DY in 1M: %.2fx(%.2f - %.2f +/- %.2f)/(%.2f - %.2f +/- %.2f) = %.2f +/- %.2f%% (tt_xs)' %(inclusiveYields['DY_inclusive'],
+                                                                         yieldForMediumCat['DY_embed_1M'],
+                                                                         yieldForMediumCat['tt_embed_1M'],
+                                                                         yieldForMediumCat['tt_embed_1M']*0.1,
+                                                                         inclusiveYields['DY_embed'],
+                                                                         inclusiveYields['tt_embed'],
+                                                                         inclusiveYields['tt_embed']*0.1,
+                                                                         scaleFactor_1M,
+                                                                         sysUnc_xs_1M*inclusiveYields['DY_inclusive']/scaleFactor_1M*100
+                                                                        )
+    print 'predicted DY in 2M: %.2fx(%.2f - %.2f +/- %.2f)/(%.2f - %.2f +/- %.2f) = %.2f +/- %.2f%% (tt_xs)' %(inclusiveYields['DY_inclusive'],
+                                                                         yieldForMediumCat['DY_embed_2M'],
+                                                                         yieldForMediumCat['tt_embed_2M'],
+                                                                         yieldForMediumCat['tt_embed_2M']*0.1,
+                                                                         inclusiveYields['DY_embed'],
+                                                                         inclusiveYields['tt_embed'],
+                                                                         inclusiveYields['tt_embed']*0.1,
+                                                                         scaleFactor_2M,
+                                                                         sysUnc_xs_2M*inclusiveYields['DY_inclusive']/scaleFactor_2M*100
+                                                                        )
+    print ''
+    print 'DY MC in 1M: %.2f' %yieldForMediumCat['DY_inclusive_1M']
+    print 'DY MC in 2M: %.2f' %yieldForMediumCat['DY_inclusive_2M']
+#     print 'predicted DY+tt in 1M: %.2f' %scaleFactor_1M2
+#     print 'predicted DY+tt in 2M: %.2f' %scaleFactor_2M2
 
 
     if doDraw:
@@ -255,10 +323,12 @@ def yieldCalculator(dy_mc, tt_full_mc, dy_embed, tt_embed, massWindow, pairOptio
 
     return scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor
 
-def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = '', ZLL = False):
+def l2MYieldCalculator(sample, massWindow, pairOption = 'iso', nBtag = '', ZLL = False):
 
     yieldForMediumCat = {}
     yieldForLooseCat = {}
+    eventCounterForMediumCat = {}
+    eventCounterForLooseCat = {}
 
     iFile =  r.TFile(sample)
     iTree = iFile.Get('eventTree')
@@ -266,6 +336,10 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = '', ZLL = 
     yieldForMediumCat['2M'] = 0.0
     yieldForLooseCat['1L'] = 0.0
     yieldForLooseCat['2L'] = 0.0
+    eventCounterForMediumCat['1M'] = 0.0
+    eventCounterForMediumCat['2M'] = 0.0
+    eventCounterForLooseCat['1L'] = 0.0
+    eventCounterForLooseCat['2L'] = 0.0
 
     total = iTree.GetEntries()
 
@@ -300,20 +374,28 @@ def l2MYieldCalculator(sample, massWindow, pairOption = 'pt', nBtag = '', ZLL = 
         #calculate category yield
         if (signSelection == "OS") and (isoSelection == "Tight") and (mediumTag != '0M'):
             yieldForMediumCat[mediumTag] += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
-
+            eventCounterForMediumCat[mediumTag] += 1
 
         #calculate loose cat yield for embed samples
         if (signSelection == "OS") and (isoSelection == "Tight") and (looseTag != '0L'):
             yieldForLooseCat[looseTag] += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
-
+            eventCounterForLooseCat[looseTag] += 1
     print ''
 
 
     scaleFactor_1M = yieldForMediumCat['1M']/yieldForLooseCat['1L']
     scaleFactor_2M = yieldForMediumCat['2M']/yieldForLooseCat['2L']
 
-    print '[%s]: %.2f (1L) \t  %.2f (2L)' %(sample, yieldForLooseCat['1L'], yieldForLooseCat['2L'])
-    print '[%s]: %.2f (1M) \t  %.2f (2M)' %(sample, yieldForMediumCat['1M'], yieldForMediumCat['2M'])
+    print '[%s] (1L): %.2f  %.0f'%(sample, yieldForLooseCat['1L'], eventCounterForLooseCat['1L'])
+    print '[%s] (2L): %.2f  %.0f'%(sample, yieldForLooseCat['2L'], eventCounterForLooseCat['2L'])
+    print '[%s] (1M): %.2f  %.0f'%(sample, yieldForMediumCat['1M'], eventCounterForMediumCat['1M'])
+    print '[%s] (2M): %.2f  %.0f'%(sample, yieldForMediumCat['2M'], eventCounterForMediumCat['2M'])
+
+    unc_1M = calcSysUncSingle(yieldForMediumCat['1M'], eventCounterForMediumCat['1M'])
+    unc_2M = calcSysUncSingle(yieldForMediumCat['2M'], eventCounterForMediumCat['2M'])
+
+    print '1M: %.2f +/- %.1f%%' %(yieldForMediumCat['1M'], unc_1M*100/yieldForMediumCat['1M'])
+    print '2M: %.2f +/- %.1f%%' %(yieldForMediumCat['2M'], unc_2M*100/yieldForMediumCat['2M'])
 
     return yieldForMediumCat['1M'], yieldForMediumCat['2M']
 
@@ -335,14 +417,21 @@ else:
 
 location = "samples_Iso"
 
-yieldCalculator(dy_mc = '/nfs_scratch/zmao/%s/tauESOn/%s/dy.root' %(location, shiftLocation),
-                tt_full_mc = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_all.root' %(location, shiftLocation),
-                dy_embed = '/nfs_scratch/zmao/%s/tauESOn/%s/DY_embed.root' %(location, shiftLocation2), 
-                tt_embed = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_embed_all.root' %(location, shiftLocation), 
-                massWindow = True,
-                pairOption = 'iso',
-                nBtag = nBtag,
-                doDraw = False,
-)
+# yieldCalculator(dy_mc = '/nfs_scratch/zmao/%s/tauESOn/%s/dy_OSTight.root' %(location, shiftLocation),
+#                 tt_full_mc = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_all.root' %(location, shiftLocation),
+#                 dy_embed = '/nfs_scratch/zmao/%s/tauESOn/%s/DY_embed.root' %(location, shiftLocation2), 
+#                 tt_embed = '/nfs_scratch/zmao/%s/tauESOff/%s/tt_embed_all.root' %(location, shiftLocation), 
+#                 massWindow = True,
+#                 pairOption = 'iso',
+#                 nBtag = nBtag,
+#                 doDraw = False,
+# )
 
-
+# massWindow = True
+# l2MYieldCalculator(sample = '/nfs_scratch/zmao/%s/tauESOff/%s/Electroweak_withSingleTop.root' %(location, shiftLocation), 
+#                    massWindow = massWindow,
+#                    nBtag = nBtag)
+# l2MYieldCalculator(sample = '/nfs_scratch/zmao/%s/tauESOn/%s/dy.root' %(location, shiftLocation), 
+#                    massWindow = massWindow,
+#                    nBtag = nBtag,
+#                    ZLL = True)

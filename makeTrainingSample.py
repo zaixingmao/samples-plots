@@ -25,10 +25,12 @@ def splitFileNames(inputName):
     fileNames.append(tmpName)
     return fileNames
 
-def setUpFloatVarsDict():
+def setUpFloatVarsDict(isEmbed = True):
     varDict = {}
     names = ['met1', 'iso1_1', 'iso2_1', 'svMass1', 'weight',
              'weightWithPU','EVENT1','EVENT2','EVENT3', 'EVENT4', 'sampleName2', 'category2']
+    if not isEmbed:
+        names.append("embeddedWeight")
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
@@ -45,6 +47,7 @@ def opts():
     parser.add_option("--relaxRegion", dest="relaxRegion", default = 'none', help="")
     parser.add_option("--bRegion", dest="bRegion", default = 'none', help="")
     parser.add_option("--useLooseForShape", dest="useLooseForShape", default = 0, help="")
+    parser.add_option("--pairSelection", dest="pairSelection", default = 'iso', help="")
 
     options, args = parser.parse_args()
     return options
@@ -64,7 +67,7 @@ def passCut(iTree, bTagSelection, bRegion, isData, isEmbed):
         if '0L' not in bTagSelection:
             return True
     if bRegion == 'none':
-            return True
+        return True
     return False
 
 
@@ -81,21 +84,41 @@ options = opts()
 iFile = options.inputFile
 ifile = r.TFile(iFile)
 iTree = ifile.Get("eventTree")
-print options.bRegion
+
 oString = options.signSelect + options.isoSelect + options.bRegion
 oFile = r.TFile("%s_%s.root" %(options.outputFile, oString),"recreate")
+
+iTree.SetBranchStatus("*",1)
+iTree.SetBranchStatus("tauDecayMode1",0)
+iTree.SetBranchStatus("tauDecayMode2",0)
+iTree.SetBranchStatus("tauLeadPFTrackPhi1",0)
+iTree.SetBranchStatus("tauLeadPFTrackPhi2",0)
+iTree.SetBranchStatus("tauLeadPFTrackEta1",0)
+iTree.SetBranchStatus("tauLeadPFTrackEta2",0)
+iTree.SetBranchStatus("tauLeadPFTrackPt1",0)
+iTree.SetBranchStatus("tauLeadPFTrackPt2",0)
+iTree.SetBranchStatus("leadPFTrackPoint_z",0)
+iTree.SetBranchStatus("leadPFTrackPoint_y",0)
+iTree.SetBranchStatus("leadPFTrackPoint_x",0)
+iTree.SetBranchStatus("PV_x",0)
+iTree.SetBranchStatus("PV_y",0)
+iTree.SetBranchStatus("PV_z",0)
+
+
 oTree = iTree.CloneTree(0)
 total = iTree.GetEntries()
 
-Lumi = 19.7
 
-floatVarsDict = setUpFloatVarsDict()
+Lumi = 19.7
+isData = False
+isEmbed = False
+isSignal = False
+if 'emb' in iFile:
+    isEmbed = True
+floatVarsDict = setUpFloatVarsDict(isEmbed)
 
 for iVar in floatVarsDict.keys():
     oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/f" %iVar)
-
-isData = False
-isEmbed = False
 
 #calculate yields
 looseYield_1 = 0.0
@@ -110,9 +133,7 @@ if int(options.useLooseForShape) != 0:
         iTree.GetEntry(i)
         if 'data' in iTree.sampleName:
             isData = True
-        if 'emb' in iTree.sampleName:
-            isEmbed = True
-        signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, 'pt', isData, options.relaxRegion)
+        signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, options.pairSelection, isData, options.relaxRegion, isEmbed, True)
         if options.isoSelect != isoSelection and options.isoSelect != 'none':
             continue
         if options.signSelect != signSelection and options.signSelect != 'none':
@@ -134,11 +155,15 @@ for i in range(total):
     r.gStyle.SetOptStat(0)
     tool.printProcessStatus(iCurrent=i, total=total, processName = 'Looping sample %s' %iFile)
     iTree.GetEntry(i)
+
     if 'data' in iTree.sampleName:
         isData = True
     if 'emb' in iTree.sampleName:
         isEmbed = True
-    signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, 'pt', isData, options.relaxRegion)
+    if 'H2hh' in iTree.sampleName:
+        isSignal = True
+
+    signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, options.pairSelection, isData, options.relaxRegion, isEmbed, True)
     if options.isoSelect != isoSelection and options.isoSelect != 'none':
         continue
     if options.signSelect != signSelection and options.signSelect != 'none':
@@ -156,12 +181,12 @@ for i in range(total):
         if isEmbed:
             if isData:
                 sampleName = 'DY_embed'
-                floatVarsDict['weight'][0] = iTree.triggerEff
+                floatVarsDict['weight'][0] = iTree.triggerEff*iTree.embeddedWeight*iTree.decayModeWeight
                 floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]
             else:
                 sampleName = 'tt_embed'
-                floatVarsDict['weight'][0] = iTree.xs*0.983*Lumi*iTree.triggerEff/(iTree.initEvents)
-                floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]
+                floatVarsDict['weight'][0] = iTree.xs*0.983*Lumi*iTree.triggerEff*iTree.embeddedWeight/(iTree.initEvents)
+                floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]*iTree.PUWeight
         elif isData:
             sampleName = 'dataOSRelax_all'
             if floatVarsDict['category2'][0] == 1:
@@ -172,6 +197,8 @@ for i in range(total):
                 floatVarsDict['weightWithPU'][0] = float(options.weightTwo)            
         else:
             floatVarsDict['weight'][0] = iTree.xs*Lumi*iTree.triggerEff/(iTree.initEvents)
+            if isSignal:
+                floatVarsDict['weight'][0] = floatVarsDict['weight'][0]*iTree.decayModeWeight
             floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]*iTree.PUWeight
             if int(options.useLooseForShape) != 0:
                 if floatVarsDict['category2'][0] == 1:
@@ -180,15 +207,11 @@ for i in range(total):
                     floatVarsDict['weightWithPU'][0] = floatVarsDict['weightWithPU'][0]*mediumYield_2/looseYield_2
 
         floatVarsDict['sampleName2'][0] = tool.nameEnDecoder(sampleName, 'encode')
-        step = struct.calcsize("i")/4
-        floatVarsDict['EVENT1'][0] = float(int(iTree.EVENT >> 8*(struct.calcsize("i")-step)))
-        floatVarsDict['EVENT2'][0] = float(int((iTree.EVENT<<8*step) >> 8*(struct.calcsize("i")-step)))
-        floatVarsDict['EVENT3'][0] = float(int((iTree.EVENT<<16*step) >> 8*(struct.calcsize("i")-step)))
-        floatVarsDict['EVENT4'][0] = float(int((iTree.EVENT<<24*step) >> 8*(struct.calcsize("i")-step)))
-        floatVarsDict['met1'][0] = iTree.met.at(0)
-        floatVarsDict['svMass1'][0] = iTree.svMass.at(0)
-        floatVarsDict['iso1_1'][0] = iTree.iso1.at(0)
-        floatVarsDict['iso2_1'][0] = iTree.iso2.at(0)
+        rightPair = makeWholeTools2.findRightPair(iTree, options.pairSelection)
+        floatVarsDict['met1'][0] = iTree.met.at(rightPair)
+        floatVarsDict['svMass1'][0] = iTree.svMass.at(rightPair)
+        floatVarsDict['iso1_1'][0] = iTree.iso1.at(rightPair)
+        floatVarsDict['iso2_1'][0] = iTree.iso2.at(rightPair)
 
         oTree.Fill()
 
