@@ -35,6 +35,20 @@ def freeLumiReWeight():
     global reWeight
     del reWeight
 
+def findRightPair(iChain, iEntry, bestPair, bestValue, pairChoice = 'pt'):
+    if pairChoice == 'pt':
+        currentValue = iChain.t1Pt + iChain.t2Pt
+        if currentValue > bestValue:
+            return iEntry, currentValue
+        else:
+            return bestPair, bestValue
+    else:
+        currentValue = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits + iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        if currentValue < bestValue:
+            return iEntry, currentValue
+        else:
+            return bestPair, bestValue
+
 def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen = lvClass()
     tmpParticle = lvClass()
@@ -278,6 +292,20 @@ def getRegVars(j1Name, j2Name, tChain):
     return PtUncorr1, Et1, Mt1, ptLeadTrk1, Vtx3dL1,Vtx3deL1, vtxMass1, VtxPt1, JECUnc1, float(Ntot1), SoftLepPtRel1, SoftLepPt1, SoftLepdR1, PtUncorr2, Et2, Mt2, ptLeadTrk2, Vtx3dL2,Vtx3deL2, vtxMass2, VtxPt2, JECUnc2, float(Ntot2), SoftLepPtRel2, SoftLepPt2, SoftLepdR2
 
 
+def passCut(iTree):
+    if iTree.charge != 0:
+        return False
+#     if iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits>1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits> 1:
+#         return False
+    if iTree.t1Pt < 45 or iTree.t2Pt < 45:
+        return False
+    if abs(iTree.t1Eta) > 2.1 or abs(iTree.t2Eta) > 2.1:
+        return False
+    if iTree.t1AgainstElectronVLooseMVA5 == 0 or iTree.t2AgainstMuonLoose3 == 0:
+        return False
+    if iTree.t1AgainstMuonLoose3 == 0 or iTree.t2AgainstMuonLoose3 == 0:
+        return False
+    return True
 
 
 

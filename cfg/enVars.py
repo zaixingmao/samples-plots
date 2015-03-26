@@ -1,20 +1,7 @@
 jetPtThreshold = 20
 corruptedROOTfiles = []
 
-preFix = '/hdfs/store/user/zmao/nt_'
-preFix2 = '/hdfs/store/user/elaird/nt_'
-
-# postFix = '_shift-SUB-TT'
-# postFix = '_tauESOff_tauUp_final-SUB-TT'
-postFix = '_tauESOn_bMisShift_final_metRecoilFix-SUB-TT'
-# postFix = '_tauESOn_tauShift_final_decayModeFix-SUB-TT'
-
-# # 
-# postFix = '_tauESOff_bSysShift_final_decayModeFix-SUB-TT'
-# postFix = '_tauESOff_bSysShift_final_metRecoilFix-SUB-TT'
-
-# postFix = '_tauESOff_bSys_final-SUB-TT'
-# postFix = '_tauESOff_jetShift_final_metRecoilFix-SUB-TT'
+preFix = '/hdfs/store/user/zmao/MiniAOD_Test/'
 
 postName = ""
 wScale = 36257.0/30400.0
@@ -25,7 +12,8 @@ dyScale2 = 1.19530260886
 dyScale3 = 1.25041471383
 dyScale4 = 1.27550090492
 
-sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix), 1000),
+sampleLocations = [
+                      ("VBF_H",     "%sVBF_HToTauTau_M-125_13TeV-powheg-pythia6" %(preFix), 1000),
 #                     ("H2hh270%s" %postName,     "%sH2hh270%s" %(preFix, postFix), 1000),
 #                     ("H2hh280%s" %postName,     "%sH2hh280%s" %(preFix, postFix), 1000),
 #                     ("H2hh290%s" %postName,     "%sH2hh290%s" %(preFix, postFix), 1000),
@@ -65,11 +53,11 @@ sampleLocations = [# ("H2hh260%s" %postName,     "%sH2hh260%s" %(preFix, postFix
 #                     ('dataD_doublemu_emb', '%sdoublemu_emb_D%s-data' %(preFix,postFix), 1),
 #                     ('tt_embed', '/hdfs/store/user/zmao/nt_ttjets_fulllept_emb%s/' %(postFix), 26197.5),
 # 
-                     ('DYJetsToLL%s' %postName, "%sdy%s" %(preFix, postFix), 3504000),
-                     ('DY1JetsToLL%s' %postName, "%sdy1%s" %(preFix, postFix), 561000),
-                     ('DY2JetsToLL%s' %postName, "%sdy2%s" %(preFix, postFix), 181000),
-                     ('DY3JetsToLL%s' %postName, "%sdy3%s" %(preFix, postFix), 51100),
-                     ('DY4JetsToLL%s' %postName, "%sdy4%s" %(preFix, postFix), 23000),
+#                      ('DYJetsToLL%s' %postName, "%sdy%s" %(preFix, postFix), 3504000),
+#                      ('DY1JetsToLL%s' %postName, "%sdy1%s" %(preFix, postFix), 561000),
+#                      ('DY2JetsToLL%s' %postName, "%sdy2%s" %(preFix, postFix), 181000),
+#                      ('DY3JetsToLL%s' %postName, "%sdy3%s" %(preFix, postFix), 51100),
+#                      ('DY4JetsToLL%s' %postName, "%sdy4%s" %(preFix, postFix), 23000),
 # # 
 #                    ('WJetsToLNu%s' %postName, "%swjets%s" %(preFix, postFix), 36257000),
 #                    ('W1JetsToLNu%s' %postName, "%sw1%s" %(preFix, postFix), 5400000),
