@@ -41,7 +41,8 @@ kinfit.setup()
 
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['genHMass', 'xs']
+    names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 'CSVJ1','CSVJ1Pt','CSVJ1Eta','CSVJ1Phi', 'CSVJ1Mass',
+             'CSVJ2', 'CSVJ2Pt', 'CSVJ2Eta', 'CSVJ2Phi', 'CSVJ2Mass', 'dRTauTau', 'dRJJ']
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
@@ -73,6 +74,32 @@ def opts():
 
     return options
 
+
+def saveExtra(iChain, floatVarsDict):
+    genTau1.SetCoordinates(iChain.t1GenPt, iChain.t1GenEta, iChain.t1GenPhi, iChain.t1GenMass)
+    genTau2.SetCoordinates(iChain.t2GenPt, iChain.t2GenEta, iChain.t2GenPhi, iChain.t2GenMass)
+    floatVarsDict['genHMass'][0] = (genTau1+genTau2).mass()
+
+    jetsList = [(iChain.jet1CSVBtag, J1.SetCoordinates(iChain.jet1Pt, iChain.jet1Eta, iChain.jet1Phi, iChain.jet1Mass), 'J1'),
+                (iChain.jet2CSVBtag, J2.SetCoordinates(iChain.jet2Pt, iChain.jet2Eta, iChain.jet2Phi, iChain.jet2Mass), 'J2'),
+                (iChain.jet3CSVBtag, J3.SetCoordinates(iChain.jet3Pt, iChain.jet3Eta, iChain.jet3Phi, iChain.jet3Mass), 'J3'),
+                (iChain.jet4CSVBtag, J4.SetCoordinates(iChain.jet4Pt, iChain.jet4Eta, iChain.jet4Phi, iChain.jet4Mass), 'J4'),
+                (iChain.jet5CSVBtag, J5.SetCoordinates(iChain.jet5Pt, iChain.jet5Eta, iChain.jet5Phi, iChain.jet5Mass), 'J5'),
+                (iChain.jet6CSVBtag, J6.SetCoordinates(iChain.jet6Pt, iChain.jet6Eta, iChain.jet6Phi, iChain.jet6Mass), 'J6')]
+
+    floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2 = findJetPair(iTree = iChain, jetsList = jetsList, ptThreshold = enVars.jetPtThreshold)
+
+    floatVarsDict['CSVJ1Pt'][0] = CSVJet1.pt()
+    floatVarsDict['CSVJ1Eta'][0] = CSVJet1.eta()
+    floatVarsDict['CSVJ2Pt'][0] = CSVJet2.pt()
+    floatVarsDict['CSVJ2Eta'][0] = CSVJet2.eta()
+    floatVarsDict['mJJ'][0] = (CSVJet1 + CSVJet2).mass()
+
+#     sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
+#     bb = lvClass()
+#     bb, floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2, floatVarsDict['fullMass'][0], floatVarsDict['dRJJ'][0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
+
+
 options = opts()
 
 r.gStyle.SetOptStat(0)
@@ -99,7 +126,6 @@ def loop_one_sample(iSample, iLocation, iXS):
     iChain = r.TChain("tt/final/Ntuple")
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
     iChain.SetBranchStatus("*",1)
-
     #set up vars dict
     charVarsDict = setUpCharVarsDict()
     floatVarsDict = setUpFloatVarsDict()
@@ -128,54 +154,48 @@ def loop_one_sample(iSample, iLocation, iXS):
     preRun = -1
     bestPair = -1
     bestValue = -1.0
+
+    preEvt = 0
+    preLumi = 0
+    preRun = 0
+
     if options.pairChoice == 'iso':
         bestValue = 999.0
 
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
+        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample), iEntry-1)
 
         if counter == int(options.nevents):
             break
 
-        bestPair, bestValue = findRightPair(iChain, iEntry, bestPair, bestValue, options.pairChoice)
-
-
-        if not passCut(iChain):
-            continue
-
-        #check if the next entry is the same event
-        curEvt = iChain.evt
-        curLumi = iChain.lumi
-        curRun = iChain.run
+        #save last event
         if iEntry == nEntries - 1:
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-
-            genTau1.SetCoordinates(iChain.t1GenPt, iChain.t1GenEta, iChain.t1GenPhi, iChain.t1GenMass)
-            genTau2.SetCoordinates(iChain.t2GenPt, iChain.t2GenEta, iChain.t2GenPhi, iChain.t2GenMass)
-            floatVarsDict['genHMass'][0] = (genTau1+genTau2).mass()
+            saveExtra(iChain, floatVarsDict)
             oTree.Fill()
             counter += 1
-            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample), iEntry-1)
+
+        if not passCut(iChain):
+            continue
+        if (preEvt == 0 and preLumi == 0 and preRun == 0) or (preEvt == iChain.evt and preLumi == iChain.lumi and preRun == iChain.run):
+            bestPair, bestValue = findRightPair(iChain, iEntry, bestPair, bestValue, options.pairChoice)
 
         else:
-            iChain.LoadTree(iEntry+1)
-            iChain.GetEntry(iEntry+1)
-            if (iChain.evt != curEvt) or (iChain.lumi != curLumi) or (iChain.run != curRun):
-                iChain.LoadTree(bestPair)
-                iChain.GetEntry(bestPair)
-                genTau1.SetCoordinates(iChain.t1GenPt, iChain.t1GenEta, iChain.t1GenPhi, iChain.t1GenMass)
-                genTau2.SetCoordinates(iChain.t2GenPt, iChain.t2GenEta, iChain.t2GenPhi, iChain.t2GenMass)
-                floatVarsDict['genHMass'][0] = (genTau1+genTau2).mass()
-
-                oTree.Fill()
-                counter += 1
-                tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample), iEntry-1)
-                bestPair = -1
-                bestValue = -1.0
-                if options.pairChoice == 'iso':
-                    bestValue = 999.0
+            iChain.LoadTree(bestPair)
+            iChain.GetEntry(bestPair)
+            saveExtra(iChain, floatVarsDict)
+            oTree.Fill()
+            counter += 1
+            bestPair = -1
+            bestValue = -1.0
+            if options.pairChoice == 'iso':
+                bestValue = 999.0
+        preEvt = iChain.evt
+        preLumi = iChain.lumi
+        preRun = iChain.run
 
     print '  -- saved %d events' %(counter)
     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')

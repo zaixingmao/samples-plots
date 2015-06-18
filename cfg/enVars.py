@@ -13,8 +13,9 @@ dyScale3 = 1.25041471383
 dyScale4 = 1.27550090492
 
 sampleLocations = [
-                      ("VBF_H",     "%sVBF_HToTauTau_M-125_13TeV-powheg-pythia6" %(preFix), 1000),
-#                     ("H2hh270%s" %postName,     "%sH2hh270%s" %(preFix, postFix), 1000),
+#                      ("VBF_H",     "%sVBF_HToTauTau_M-125_13TeV-powheg-pythia6" %(preFix), 1000),
+#     ("TTJets",     "%sTTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola" %(preFix), 424500),
+                    ("DYJetsToLL",     "%sDYJetsToLL_M-50_13TeV-madgraph-pythia8-tauola_v2" %(preFix), 5482000),
 #                     ("H2hh280%s" %postName,     "%sH2hh280%s" %(preFix, postFix), 1000),
 #                     ("H2hh290%s" %postName,     "%sH2hh290%s" %(preFix, postFix), 1000),
 #                     ("H2hh300%s" %postName,     "%sH2hh300%s" %(preFix, postFix), 1000),

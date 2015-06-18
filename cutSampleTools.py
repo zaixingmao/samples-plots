@@ -211,6 +211,30 @@ def findFullMass(iTree, rightPair = 0, jetsList = [], sv4Vec = '', ptThreshold =
 #         return emptyV4, -1.0, -1.0, emptyV4, emptyV4, 0.0, -1.0, 'J1', 'J1'
 
 
+def findJetPair(iTree, jetsList = [], ptThreshold = 20):
+    newList = []
+    emptyV4 = lvClass()
+    emptyV4.SetCoordinates(0,0,0,0)
+    for i in range(len(jetsList)):
+        if jetsList[i][1].pt() > ptThreshold and abs(jetsList[i][1].eta()) < 2.4:
+            dR = findDR_betweenTau(iTree.t1Pt,
+                                   iTree.t1Eta,
+                                   iTree.t1Phi,
+                                   iTree.t2Pt,
+                                   iTree.t2Eta,
+                                   iTree.t2Phi, 
+                                   jetsList[i][1].pt(),
+                                   jetsList[i][1].eta(), 
+                                   jetsList[i][1].phi())
+
+            if dR > 0.5:
+                newList.append(jetsList[i])
+    newList = sorted(newList, key=itemgetter(0), reverse=True)
+    if len(newList) < 2:
+        return -1.0, -1.0, emptyV4, emptyV4
+    return newList[0][0], newList[1][0], newList[0][1], newList[1][1]
+
+
 def findGenJet(j1Name, jet1, j2Name, jet2, tChain):
     genJet1 = lvClass()
     genJet2 = lvClass()

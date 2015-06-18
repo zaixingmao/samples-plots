@@ -106,7 +106,7 @@ def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents =
             added+=1
             if maxFileNumber-added == 0:
                 break
-            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName)
+            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName, iPrevious = added - 1)
     if printTotalEvents:
         nEntries = ch.GetEntries()
         print "  -- found %d events" %(nEntries)
@@ -321,7 +321,7 @@ def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
             tmpHist = ifile.Get("TT/results")
             firstBinSum+=tmpHist.GetBinContent(1)
             added+=1
-            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName)
+            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName, iPrevious = added -1)
     print ""
     return firstBinSum
 
@@ -347,7 +347,7 @@ def addHistFromFiles(dirName, histName, hist, xAxisLabels = ['']):
                 else:
                     hist.Fill(xAxisLabels[i], 0)
             added+=1.
-            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding Histogram from files in [%s]' %dirName)
+            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding Histogram from files in [%s]' %dirName, iPrevious = added - 1)
     print ""
 
 def addEventsCount2Hist(hist, count, labelName):
