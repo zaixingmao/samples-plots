@@ -41,8 +41,32 @@ kinfit.setup()
 
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 'CSVJ1','CSVJ1Pt','CSVJ1Eta','CSVJ1Phi', 'CSVJ1Mass',
-             'CSVJ2', 'CSVJ2Pt', 'CSVJ2Eta', 'CSVJ2Phi', 'CSVJ2Mass', 'dRTauTau', 'dRJJ']
+    names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 
+            'bjcsv_1','bjpt_1','bjeta_1','bjphi_1', 'bjmass_1', 'bjrawf_1','bjmva_1','bjpfid_1', 'bjpuid_1',
+            'bjcsv_2','bjpt_2','bjeta_2','bjphi_2', 'bjmass_2', 'bjrawf_2','bjmva_2','bjpfid_2', 'bjpuid_2','dRTauTau', 'dRJJ']
+
+    for iName in names:
+        varDict[iName] = array('f', [0.])
+    return varDict
+
+def setUpSyncVarsDict():
+    varDict = {}
+    names = ['weight', 'puweight','npv', 'npu',
+            'pt_1', 'phi_1', 'eta_1','m_1','q_1','d0_1', 'dZ_1', 'mt_1', 'iso_1', 'id_m_loose_1', 'id_m_medium_1', 'id_m_tight_1', 'id_m_tightnovtx_1', 'id_m_highpt_1',
+            'id_e_mva_nt_loose_1', 'id_e_mva_nt_loose_1', 'id_e_cut_veto_1', 'id_e_cut_loose_1', 'id_e_cut_medium_1', 'id_e_cut_tight_1', 'trigweight_1', 
+            'againstElectronLooseMVA5_1','againstElectronMediumMVA5_1', 'againstElectronTightMVA5_1', 'againstElectronVLooseMVA5_1', 'againstElectronVTightMVA5_1', 'againstMuonLoose3_1', 'againstMuonTight3_1', 
+            'byCombinedIsolationDeltaBetaCorrRaw3Hits_1', 'byIsolationMVA3newDMwoLTraw_1', 'byIsolationMVA3oldDMwoLTraw_1', 'byIsolationMVA3newDMwLTraw_1', 'byIsolationMVA3oldDMwLTraw_1',
+            'chargedIsoPtSum_1', 'decayModeFinding_1', 'decayModeFindingNewDMs_1', 'neutralIsoPtSum_1', 'puCorrPtSum_1',
+            'pt_2', 'phi_2', 'eta_2','m_2','q_2','d0_2', 'dZ_2', 'mt_2', 'iso_2', 'id_m_loose_2', 'id_m_medium_2', 'id_m_tight_2', 'id_m_tightnovtx_2', 'id_m_highpt_2',
+            'id_e_mva_nt_loose_2', 'id_e_mva_nt_loose_2', 'id_e_cut_veto_2', 'id_e_cut_loose_2', 'id_e_cut_medium_2', 'id_e_cut_tight_2', 'trigweight_2', 'againstElectronLooseMVA5_2',
+            'againstElectronMediumMVA5_2', 'againstElectronTightMVA5_2', 'againstElectronVLooseMVA5_2', 'againstElectronVTightMVA5_2', 'againstMuonLoose3_2', 'againstMuonTight3_2', 
+            'byCombinedIsolationDeltaBetaCorrRaw3Hits_2', 'byIsolationMVA3newDMwoLTraw_2', 'byIsolationMVA3oldDMwoLTraw_2', 'byIsolationMVA3newDMwLTraw_2', 'byIsolationMVA3oldDMwLTraw_2',
+            'chargedIsoPtSum_2', 'decayModeFinding_2', 'decayModeFindingNewDMs_2', 'neutralIsoPtSum_2', 'puCorrPtSum_2',
+            'pth', 'm_vis', 'm_sv', 'pt_sv', 'eta_sv', 'phi_sv', 'met_sv',
+            'jpt_1', 'jeta_1', 'jphi_1', 'jrawf_1', 'jmva_1', 'jpfid_1', 'jpuid_1', 'jcsv_1',
+            'jpt_2', 'jeta_2', 'jphi_2', 'jrawf_2', 'jmva_2', 'jpfid_2', 'jpuid_2', 'jcsv_2']
+
+
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
@@ -67,37 +91,96 @@ def opts():
     parser.add_option("-n", dest="nevents", default="-1", help="amount of events to be saved")
     parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
     parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
-    parser.add_option("--pair", dest="pairChoice", default="pt", help="which pair")
-
+    parser.add_option("--pair", dest="pairChoice", default="iso", help="which pair")
+    parser.add_option("--sync", dest="sync", default=False, action="store_true", help="which pair")
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     options, args = parser.parse_args()
 
     return options
 
 
-def saveExtra(iChain, floatVarsDict):
+def saveExtra(iChain, floatVarsDict, syncVarsDict, sync):
     genTau1.SetCoordinates(iChain.t1GenPt, iChain.t1GenEta, iChain.t1GenPhi, iChain.t1GenMass)
     genTau2.SetCoordinates(iChain.t2GenPt, iChain.t2GenEta, iChain.t2GenPhi, iChain.t2GenMass)
     floatVarsDict['genHMass'][0] = (genTau1+genTau2).mass()
 
-    jetsList = [(iChain.jet1CSVBtag, J1.SetCoordinates(iChain.jet1Pt, iChain.jet1Eta, iChain.jet1Phi, iChain.jet1Mass), 'J1'),
-                (iChain.jet2CSVBtag, J2.SetCoordinates(iChain.jet2Pt, iChain.jet2Eta, iChain.jet2Phi, iChain.jet2Mass), 'J2'),
-                (iChain.jet3CSVBtag, J3.SetCoordinates(iChain.jet3Pt, iChain.jet3Eta, iChain.jet3Phi, iChain.jet3Mass), 'J3'),
-                (iChain.jet4CSVBtag, J4.SetCoordinates(iChain.jet4Pt, iChain.jet4Eta, iChain.jet4Phi, iChain.jet4Mass), 'J4'),
-                (iChain.jet5CSVBtag, J5.SetCoordinates(iChain.jet5Pt, iChain.jet5Eta, iChain.jet5Phi, iChain.jet5Mass), 'J5'),
-                (iChain.jet6CSVBtag, J6.SetCoordinates(iChain.jet6Pt, iChain.jet6Eta, iChain.jet6Phi, iChain.jet6Mass), 'J6')]
+    jetsList = [(iChain.jet1CSVBtag, J1.SetCoordinates(iChain.jet1Pt, iChain.jet1Eta, iChain.jet1Phi, iChain.jet1Mass), iChain.jet1PUMVA),
+                (iChain.jet2CSVBtag, J2.SetCoordinates(iChain.jet2Pt, iChain.jet2Eta, iChain.jet2Phi, iChain.jet2Mass), iChain.jet2PUMVA),
+                (iChain.jet3CSVBtag, J3.SetCoordinates(iChain.jet3Pt, iChain.jet3Eta, iChain.jet3Phi, iChain.jet3Mass), iChain.jet3PUMVA),
+                (iChain.jet4CSVBtag, J4.SetCoordinates(iChain.jet4Pt, iChain.jet4Eta, iChain.jet4Phi, iChain.jet4Mass), iChain.jet4PUMVA),
+                (iChain.jet5CSVBtag, J5.SetCoordinates(iChain.jet5Pt, iChain.jet5Eta, iChain.jet5Phi, iChain.jet5Mass), iChain.jet5PUMVA),
+                (iChain.jet6CSVBtag, J6.SetCoordinates(iChain.jet6Pt, iChain.jet6Eta, iChain.jet6Phi, iChain.jet6Mass), iChain.jet6PUMVA)]
 
-    floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2 = findJetPair(iTree = iChain, jetsList = jetsList, ptThreshold = enVars.jetPtThreshold)
+    floatVarsDict['bjcsv_1'][0], floatVarsDict['bjcsv_2'][0], CSVJet1, CSVJet2, floatVarsDict['bjmva_1'][0], floatVarsDict['bjmva_2'][0] = findJetPair(iTree = iChain, jetsList = jetsList, ptThreshold = enVars.jetPtThreshold)
 
-    floatVarsDict['CSVJ1Pt'][0] = CSVJet1.pt()
-    floatVarsDict['CSVJ1Eta'][0] = CSVJet1.eta()
-    floatVarsDict['CSVJ2Pt'][0] = CSVJet2.pt()
-    floatVarsDict['CSVJ2Eta'][0] = CSVJet2.eta()
+    floatVarsDict['bjpt_1'][0] = CSVJet1.pt()
+    floatVarsDict['bjeta_1'][0] = CSVJet1.eta()
+    floatVarsDict['bjpt_2'][0] = CSVJet2.pt()
+    floatVarsDict['bjeta_2'][0] = CSVJet2.eta()
     floatVarsDict['mJJ'][0] = (CSVJet1 + CSVJet2).mass()
 
-#     sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
-#     bb = lvClass()
-#     bb, floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2, floatVarsDict['fullMass'][0], floatVarsDict['dRJJ'][0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
+    if sync:
+        syncVarsDict['npv'][0] = iChain.nvtx
+        syncVarsDict['npu'][0] = iChain.nTruePU
+        syncVarsDict['pt_1'][0] = iChain.t1Pt
+        syncVarsDict['phi_1'][0] = iChain.t1Phi
+        syncVarsDict['m_1'][0] = iChain.t1Mass
+        syncVarsDict['q_1'][0] = iChain.t1Charge
+        syncVarsDict['mt_1'][0] = iChain.t1MtToMET
+        syncVarsDict['iso_1'][0] =  iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        syncVarsDict['againstElectronLooseMVA5_1'][0] = iChain.t1AgainstElectronLooseMVA5
+        syncVarsDict['againstElectronMediumMVA5_1'][0] = iChain.t1AgainstElectronMediumMVA5
+        syncVarsDict['againstElectronTightMVA5_1'][0] = iChain.t1AgainstElectronTightMVA5
+        syncVarsDict['againstElectronVLooseMVA5_1'][0] = iChain.t1AgainstElectronVLooseMVA5
+        syncVarsDict['againstElectronVTightMVA5_1'][0] = iChain.t1AgainstElectronVTightMVA5
+        syncVarsDict['againstMuonLoose3_1'][0] = iChain.t1AgainstMuonLoose3
+        syncVarsDict['againstMuonTight3_1'][0] = iChain.t1AgainstMuonTight3
+        syncVarsDict['byCombinedIsolationDeltaBetaCorrRaw3Hits_1'][0] = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        syncVarsDict['byIsolationMVA3newDMwoLTraw_1'][0] = iChain.t1ByIsolationMVA3newDMwoLTraw
+        syncVarsDict['byIsolationMVA3oldDMwoLTraw_1'][0] = iChain.t1ByIsolationMVA3oldDMwoLTraw
+        syncVarsDict['byIsolationMVA3newDMwLTraw_1'][0] = iChain.t1ByIsolationMVA3newDMwLTraw
+        syncVarsDict['byIsolationMVA3oldDMwLTraw_1'][0] = iChain.t1ByIsolationMVA3oldDMwLTraw
+        syncVarsDict['chargedIsoPtSum_1'][0] = iChain.t1ChargedIsoPtSum
+        syncVarsDict['decayModeFinding_1'][0] = iChain.t1DecayModeFinding
+        syncVarsDict['decayModeFindingNewDMs_1'][0] = iChain.t1DecayModeFindingNewDMs
+        syncVarsDict['neutralIsoPtSum_1'][0] = iChain.t1NeutralIsoPtSum
+        syncVarsDict['puCorrPtSum_1'][0] = iChain.t1PuCorrPtSum
+
+        syncVarsDict['pt_2'][0] = iChain.t2Pt
+        syncVarsDict['phi_2'][0] = iChain.t2Phi
+        syncVarsDict['m_2'][0] = iChain.t2Mass
+        syncVarsDict['q_2'][0] = iChain.t2Charge
+        syncVarsDict['mt_2'][0] = iChain.t2MtToMET
+        syncVarsDict['iso_2'][0] =  iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        syncVarsDict['againstElectronLooseMVA5_2'][0] = iChain.t2AgainstElectronLooseMVA5
+        syncVarsDict['againstElectronMediumMVA5_2'][0] = iChain.t2AgainstElectronMediumMVA5
+        syncVarsDict['againstElectronTightMVA5_2'][0] = iChain.t2AgainstElectronTightMVA5
+        syncVarsDict['againstElectronVLooseMVA5_2'][0] = iChain.t2AgainstElectronVLooseMVA5
+        syncVarsDict['againstElectronVTightMVA5_2'][0] = iChain.t2AgainstElectronVTightMVA5
+        syncVarsDict['againstMuonLoose3_2'][0] = iChain.t2AgainstMuonLoose3
+        syncVarsDict['againstMuonTight3_2'][0] = iChain.t2AgainstMuonTight3
+        syncVarsDict['byCombinedIsolationDeltaBetaCorrRaw3Hits_2'][0] = iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        syncVarsDict['byIsolationMVA3newDMwoLTraw_2'][0] = iChain.t2ByIsolationMVA3newDMwoLTraw
+        syncVarsDict['byIsolationMVA3oldDMwoLTraw_2'][0] = iChain.t2ByIsolationMVA3oldDMwoLTraw
+        syncVarsDict['byIsolationMVA3newDMwLTraw_2'][0] = iChain.t2ByIsolationMVA3newDMwLTraw
+        syncVarsDict['byIsolationMVA3oldDMwLTraw_2'][0] = iChain.t2ByIsolationMVA3oldDMwLTraw
+        syncVarsDict['chargedIsoPtSum_2'][0] = iChain.t2ChargedIsoPtSum
+        syncVarsDict['decayModeFinding_2'][0] = iChain.t2DecayModeFinding
+        syncVarsDict['decayModeFindingNewDMs_2'][0] = iChain.t2DecayModeFindingNewDMs
+        syncVarsDict['neutralIsoPtSum_2'][0] = iChain.t2NeutralIsoPtSum
+        syncVarsDict['puCorrPtSum_2'][0] = iChain.t2PuCorrPtSum
+
+        syncVarsDict['m_vis'][0] = iChain.t1_t2_Mass
+        syncVarsDict['m_sv'][0] = iChain.t1_t2_SVfitMass
+
+        syncVarsDict['jpt_1'][0] = iChain.jet1Pt
+        syncVarsDict['jeta_1'][0] = iChain.jet1Eta
+        syncVarsDict['jphi_1'][0] = iChain.jet1Phi
+        syncVarsDict['jmva_1'][0] = iChain.jet1PUMVA
+        syncVarsDict['jpt_2'][0] = iChain.jet2Pt
+        syncVarsDict['jeta_2'][0] = iChain.jet2Eta
+        syncVarsDict['jphi_2'][0] = iChain.jet2Phi
+        syncVarsDict['jmva_2'][0] = iChain.jet2PUMVA
 
 
 options = opts()
@@ -117,6 +200,8 @@ def loop_one_sample(iSample, iLocation, iXS):
         isSignal = True
     else:
         isSignal = False
+
+    sync = options.sync
         
     cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
     tool.addHistFromFiles(dirName=iLocation, histName = "tt/cutFlow", hist = cutFlow, xAxisLabels=xLabels)
@@ -130,11 +215,15 @@ def loop_one_sample(iSample, iLocation, iXS):
     charVarsDict = setUpCharVarsDict()
     floatVarsDict = setUpFloatVarsDict()
     intVarsDict = setUpIntVarsDict()
+    syncVarsDict = None
 
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
     iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
-    iFile = r.TFile("%s/%s.root" %(options.location,iSample),"recreate")
+    if sync:
+        iFile = r.TFile("%s/%s_SYNC.root" %(options.location,iSample),"recreate")
+    else:
+        iFile = r.TFile("%s/%s.root" %(options.location,iSample),"recreate")
 
     #setup branches
     for iVar in charVarsDict.keys():
@@ -143,6 +232,11 @@ def loop_one_sample(iSample, iLocation, iXS):
         oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/F" %iVar)
     for iVar in intVarsDict.keys():
         oTree.Branch("%s" %iVar, intVarsDict[iVar], "%s/I" %iVar)
+    
+    if sync:
+        syncVarsDict = setUpSyncVarsDict()
+        for iVar in syncVarsDict.keys():
+            oTree.Branch("%s" %iVar, syncVarsDict[iVar], "%s/F" %iVar)
 
     charVarsDict['sampleName'][:31] = iSample
     intVarsDict['initEvents'][0] = int(cutFlow.GetBinContent(1))
@@ -174,7 +268,7 @@ def loop_one_sample(iSample, iLocation, iXS):
         if iEntry == nEntries - 1:
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            saveExtra(iChain, floatVarsDict)
+            saveExtra(iChain, floatVarsDict, syncVarsDict, sync)
             oTree.Fill()
             counter += 1
 
@@ -186,7 +280,7 @@ def loop_one_sample(iSample, iLocation, iXS):
         else:
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            saveExtra(iChain, floatVarsDict)
+            saveExtra(iChain, floatVarsDict, syncVarsDict, sync)
             oTree.Fill()
             counter += 1
             bestPair = -1

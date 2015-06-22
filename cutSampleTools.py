@@ -5,7 +5,7 @@ import varsList
 import FWCore.ParameterSet.Config as cms
 import math
 import os
-from makeWholeTools2 import findRightPair
+# from makeWholeTools2 import findRightPair
 r.gSystem.Load("libFWCoreFWLite.so")
 r.AutoLibraryLoader.enable()
 # r.gSystem.Load("libPhysicsToolsUtilities.so")
@@ -231,8 +231,8 @@ def findJetPair(iTree, jetsList = [], ptThreshold = 20):
                 newList.append(jetsList[i])
     newList = sorted(newList, key=itemgetter(0), reverse=True)
     if len(newList) < 2:
-        return -1.0, -1.0, emptyV4, emptyV4
-    return newList[0][0], newList[1][0], newList[0][1], newList[1][1]
+        return -1.0, -1.0, emptyV4, emptyV4, -9999, -9999
+    return newList[0][0], newList[1][0], newList[0][1], newList[1][1], newList[0][2], newList[1][2]
 
 
 def findGenJet(j1Name, jet1, j2Name, jet2, tChain):
@@ -317,17 +317,21 @@ def getRegVars(j1Name, j2Name, tChain):
 
 
 def passCut(iTree):
-    if iTree.charge != 0:
-        return False
-#     if iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits>1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits> 1:
+#     if iTree.charge != 0:
 #         return False
+    if iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits>=1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits>=1:
+        return False
+    if iTree.t1DecayModeFindingNewDMs < 0.5 or iTree.t1DecayModeFindingNewDMs < 0.5:
+        return False
     if iTree.t1Pt < 45 or iTree.t2Pt < 45:
         return False
     if abs(iTree.t1Eta) > 2.1 or abs(iTree.t2Eta) > 2.1:
         return False
-    if iTree.t1AgainstElectronVLooseMVA5 == 0 or iTree.t2AgainstMuonLoose3 == 0:
+    if iTree.t1AgainstElectronVLooseMVA5 == 0 or iTree.t2AgainstElectronVLooseMVA5 == 0:
         return False
     if iTree.t1AgainstMuonLoose3 == 0 or iTree.t2AgainstMuonLoose3 == 0:
+        return False
+    if abs(iTree.t1VZ - iTree.pvZ) >= 0.2 or abs(iTree.t1VZ - iTree.pvZ) >= 0.2:
         return False
     return True
 

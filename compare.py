@@ -3,6 +3,7 @@
 import ROOT as r
 import tool
 import os
+import math
 
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)
@@ -19,11 +20,12 @@ def passCut(tree, which):
         if tree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits > 1.5 or tree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits > 1.5:
             return False
 
-#     if tree.CSVJ1 < 0.679 or tree.CSVJ1Pt < 20.0:
-#         return False
-#     if tree.CSVJ2 < 0.679 or tree.CSVJ2Pt < 20.0:
-#         return False
+    if tree.CSVJ1 > 0.679 or tree.CSVJ1Pt < 20.0:
+        return False
+    if tree.CSVJ2 > 0.679 or tree.CSVJ2Pt < 20.0:
+        return False
     return True
+
 
 def getVarValue(tree, varName, which):
 
@@ -85,6 +87,17 @@ def readFile(file, hist, varName, which):
 
     nEntries = tree.GetEntries()
 
+    if which == '13TeV':
+        yields = 0.0
+        scale = 0.0
+    else:
+        yields = 0.0
+        scale = 0.0
+        yields_had = 0.0
+        scale_had = 0.0
+        yields_semi = 0.0
+        scale_semi = 0.0
+
     for i in range(nEntries):
         tool.printProcessStatus(i, nEntries, 'Looping file %s for %s' % (file, varName), i-1)
         tree.GetEntry(i)
@@ -92,13 +105,29 @@ def readFile(file, hist, varName, which):
             continue
         if which == '13TeV':
             hist.Fill(getVarValue(tree, varName, which))
+            yields += 1.0
+            scale = (tree.xs + 0.0)/(tree.initEvents + 0.0)
         else:
             hist.Fill(getVarValue(tree, varName, which), tree.xs/(tree.initEvents+0.0))
+            if tree.sampleName == "tt_all":
+                yields += 1.0
+                scale = (tree.xs + 0.0)/(tree.initEvents + 0.0)
+            if tree.sampleName == "tthad_all":
+                yields_had += 1.0
+                scale_had = (tree.xs + 0.0)/(tree.initEvents + 0.0)
+            if tree.sampleName == "ttsemi_all":
+                yields_semi += 1.0
+                scale_semi = (tree.xs + 0.0)/(tree.initEvents + 0.0)
+
     if which == '13TeV':
         hist.Sumw2()
-        hist.Scale(tree.xs/(tree.initEvents+0.0))
+        hist.Scale((tree.xs+0.0)/(tree.initEvents+0.0))
+        unc = math.sqrt(yields+0.0)*scale
+    else:
+        unc = math.sqrt(yields+0.0)*scale + math.sqrt(yields_had+0.0)*scale_had + math.sqrt(yields_semi+0.0)*scale_semi
 
     print ''
+    return unc
 
 def buildHistDict(vars2compare):
     dict = {}
@@ -114,28 +143,28 @@ def main():
     file_8TeV = '/nfs_scratch/zmao/samples_Iso/tauESOn/normal/dy.root'#'/nfs_scratch/zmao/samples_Iso/tauESOff/normal/TT.root'#
 
     vars2compare = [("tau1Pt", [50, 30, 230]),
-                    ("tau2Pt", [50, 30, 230]),
-                    ("tau1Eta", [25, -2.5, 2.5]),
-                    ("tau2Eta", [25, -2.5, 2.5]),
-                    ("tau1Iso", [40, 0, 2.]),
-                    ("tau2Iso", [40, 0, 2.]),
-                    ("J1Pt", [50, 30, 230]),
-                    ("J2Pt", [50, 30, 230]),
-                    ("J1Eta", [40, -4, 4]),
-                    ("J2Eta", [40, -4, 4]),
-                    ("J1CSVbTag", [50, 0, 1]),
-                    ("J2CSVbTag", [50, 0, 1]),
-
-                    ("CSVJ1Pt", [50, 30, 230]),
-                    ("CSVJ2Pt", [50, 30, 230]),
-                    ("CSVJ1Eta", [40, -4, 4]),
-                    ("CSVJ2Eta", [40, -4, 4]),
-                    ("CSVJ1", [50, 0, 1]),
-                    ("CSVJ2", [50, 0, 1]),
-
-                    ("svMass", [35, 0, 350]),
-                    ("met", [25, 0, 200]),
-                    ("mJJ", [50, 0, 500])
+#                     ("tau2Pt", [50, 30, 230]),
+#                     ("tau1Eta", [25, -2.5, 2.5]),
+#                     ("tau2Eta", [25, -2.5, 2.5]),
+#                     ("tau1Iso", [40, 0, 2.]),
+#                     ("tau2Iso", [40, 0, 2.]),
+#                     ("J1Pt", [50, 30, 230]),
+#                     ("J2Pt", [50, 30, 230]),
+#                     ("J1Eta", [40, -4, 4]),
+#                     ("J2Eta", [40, -4, 4]),
+#                     ("J1CSVbTag", [50, 0, 1]),
+#                     ("J2CSVbTag", [50, 0, 1]),
+# 
+#                     ("CSVJ1Pt", [50, 30, 230]),
+#                     ("CSVJ2Pt", [50, 30, 230]),
+#                     ("CSVJ1Eta", [40, -4, 4]),
+#                     ("CSVJ2Eta", [40, -4, 4]),
+#                     ("CSVJ1", [50, 0, 1]),
+#                     ("CSVJ2", [50, 0, 1]),
+# 
+#                     ("svMass", [35, 0, 350]),
+#                     ("met", [25, 0, 200]),
+#                     ("mJJ", [50, 0, 500])
 
 ]
 
@@ -147,12 +176,12 @@ def main():
 
     counter = 0
     for iVar, Range in vars2compare:
-        readFile(file = file_13TeV, hist = histDicts[iVar]['13TeV'], varName = iVar, which = '13TeV')
-        readFile(file = file_8TeV, hist = histDicts[iVar]['8TeV'], varName = iVar, which = '8TeV')
+        unc13TeV = readFile(file = file_13TeV, hist = histDicts[iVar]['13TeV'], varName = iVar, which = '13TeV')
+        unc8TeV = readFile(file = file_8TeV, hist = histDicts[iVar]['8TeV'], varName = iVar, which = '8TeV')
 
         #normalization
-        histDicts[iVar]['13TeV'].Scale(1.0/histDicts[iVar]['13TeV'].Integral(0, histDicts[iVar]['13TeV'].GetNbinsX()+1))
-        histDicts[iVar]['8TeV'].Scale(1.0/histDicts[iVar]['8TeV'].Integral(0, histDicts[iVar]['8TeV'].GetNbinsX()+1))
+#         histDicts[iVar]['13TeV'].Scale(1.0/histDicts[iVar]['13TeV'].Integral(0, histDicts[iVar]['13TeV'].GetNbinsX()+1))
+#         histDicts[iVar]['8TeV'].Scale(1.0/histDicts[iVar]['8TeV'].Integral(0, histDicts[iVar]['8TeV'].GetNbinsX()+1))
 
         counter += 1
         c.Clear()
@@ -177,8 +206,8 @@ def main():
             l.Draw('same')
             c.Print('%s' %psfile)
 
-        print "13TeV Integral: %.2f (fb)" %(histDicts[iVar]['13TeV'].Integral(0, histDicts[iVar]['13TeV'].GetNbinsX()+1)) 
-        print "8TeV Integral : %.2f (fb)" %(histDicts[iVar]['8TeV'].Integral(0, histDicts[iVar]['8TeV'].GetNbinsX()+1)) 
+        print "13TeV Integral: %.2f +- %.2f (fb)" %(histDicts[iVar]['13TeV'].Integral(0, histDicts[iVar]['13TeV'].GetNbinsX()+1), unc13TeV) 
+        print "8TeV Integral : %.2f +- %.2f (fb)" %(histDicts[iVar]['8TeV'].Integral(0, histDicts[iVar]['8TeV'].GetNbinsX()+1), unc8TeV) 
 
     c.Close()
 
