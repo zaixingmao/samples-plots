@@ -319,19 +319,25 @@ def getRegVars(j1Name, j2Name, tChain):
 def passCut(iTree):
 #     if iTree.charge != 0:
 #         return False
-    if iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits>=1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits>=1:
-        return False
+#     if iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits>=5.0 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits>=5.0:
+#         return False
     if iTree.t1DecayModeFindingNewDMs < 0.5 or iTree.t1DecayModeFindingNewDMs < 0.5:
         return False
     if iTree.t1Pt < 45 or iTree.t2Pt < 45:
         return False
     if abs(iTree.t1Eta) > 2.1 or abs(iTree.t2Eta) > 2.1:
         return False
-    if iTree.t1AgainstElectronVLooseMVA5 == 0 or iTree.t2AgainstElectronVLooseMVA5 == 0:
+    if abs(iTree.t1Eta) > 2.1 or abs(iTree.t2Eta) > 2.1:
         return False
-    if iTree.t1AgainstMuonLoose3 == 0 or iTree.t2AgainstMuonLoose3 == 0:
+    if (iTree.t1DiIsoTau + iTree.t1DiPFTau40  + iTree.t1DiTauJet) != 3:
         return False
-    if abs(iTree.t1VZ - iTree.pvZ) >= 0.2 or abs(iTree.t1VZ - iTree.pvZ) >= 0.2:
+    if (iTree.t2DiIsoTau + iTree.t2DiPFTau40  + iTree.t2DiTauJet) != 3:
+        return False
+#     if iTree.t1AgainstElectronVLooseMVA5 == 0 or iTree.t2AgainstElectronVLooseMVA5 == 0:
+#         return False
+#     if iTree.t1AgainstMuonLoose3 == 0 or iTree.t2AgainstMuonLoose3 == 0:
+#         return False
+    if abs(iTree.t1VZ - iTree.pvZ) >= 0.2 or abs(iTree.t2VZ - iTree.pvZ) >= 0.2:
         return False
     return True
 
