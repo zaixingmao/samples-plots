@@ -45,12 +45,16 @@ def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
         if value1 == 0:
             if value2 == -10000:
                 lineColor = bcolors.OKGREEN
-            outline1 += '%snull\033[0m\t' %(lineColor)
+            outline1 += '%s%s\033[0m\t' %(lineColor, p)
+            outline1 = outline1 % value1
+
         else:
             outline1 += '%s%s\033[0m\t' %(lineColor, p)
             outline1 = outline1 % value1
         if value2 == -10000:
-            outline2 += '%snull\033[0m\t' %(lineColor)
+            outline2 += '%s%s\033[0m\t' %(lineColor, p)
+            outline2 = outline2 % value2
+
         else:
             outline2 += '%s%s\033[0m\t' %(lineColor, p)
             outline2 = outline2 % value2
@@ -96,29 +100,34 @@ def addVars(iTree):
     tau2 = lvClass()
     jet2 = lvClass()
     tau2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
-    jet2.SetCoordinates(iTree.bpt_2, iTree.beta_2, iTree.bphi_2, 0)
+#     jet2.SetCoordinates(iTree.bpt_2, iTree.beta_2, iTree.bphi_2, 0)
 
     a = ['evtNumber', iTree.evt, 
-            'mvaMet', iTree.mvamet, 
-#             'mvaMet', iTree.mvamet, 
 #             'mvaPhi', iTree.mvametphi, 
-#             'lumi', iTree.lumi, 
-#             'run', iTree.run, 
+            'lumi', iTree.lumi, 
+            'lumi', iTree.lumi, 
+            'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
 #             'iso1', iTree.iso_1, 
-#             'Com1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
+            'Com1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
 
-#             'phi1', iTree.phi_1, 
+            'phi1', iTree.phi_1, 
 #             'mass1', iTree1.m_1,
             'pt2', iTree.pt_2, 
             'eta2', iTree.eta_2, 
 #             'iso2', iTree.iso_2, 
-#             'Com2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
+            'Com2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
 #             'tw_2', iTree.trigweight_2, 
 
-#             'phi2', iTree.phi_2, 
+            'phi2', iTree.phi_2, 
+
+            'met', iTree.met, 
+            'metphi', iTree.metphi, 
+            'mvamet', iTree.mvamet, 
+            'mvamet', iTree.mvametphi, 
+
 #             'mass2', iTree1.m_2,
 #             'jptraw1', iTree.jptraw_1,
 #             'jpt_1', iTree.jpt_1, 
@@ -132,15 +141,15 @@ def addVars(iTree):
 # 
 #             'npv', iTree.npv,
 # 
-            'bcsv_1', iTree.bcsv_1,
-            'bpt_1', iTree.bpt_1,
-            'beta_1', iTree.beta_1,
-            'bphi_1', iTree.bphi_1,
-            'bcsv_2', iTree.bcsv_2,
-            'bpt_2', iTree.bpt_2,
-            'beta_2', iTree.beta_2,
-            'bphi_2', iTree.bphi_2,
-            'dr2', r.Math.VectorUtil.DeltaR(tau2, jet2),
+#             'bcsv_1', iTree.bcsv_1,
+#             'bpt_1', iTree.bpt_1,
+#             'beta_1', iTree.beta_1,
+#             'bphi_1', iTree.bphi_1,
+#             'bcsv_2', iTree.bcsv_2,
+#             'bpt_2', iTree.bpt_2,
+#             'beta_2', iTree.beta_2,
+#             'bphi_2', iTree.bphi_2,
+#             'dr2', r.Math.VectorUtil.DeltaR(tau2, jet2),
 #             'bcsv_3', iTree.bcsv_3,
 #             'bpt_3', iTree.bpt_3,
 #             'beta_3', iTree.beta_3,
@@ -148,8 +157,8 @@ def addVars(iTree):
 #             'cov00', iTree.mvacov00,
 #             'cov01', iTree.mvacov01,
 #             'cov10', iTree.mvacov10,
-            'mJJ', iTree.m_bb,
-            'svMass', iTree.m_sv
+#             'mJJ', iTree.m_bb,
+#             'svMass', iTree.m_sv
             ]
     return a
 
@@ -173,15 +182,14 @@ common events, it prints out the values of several variables.  If
 which the MVAMET agrees.  Likewise for --subset=diff.
 """
     parser = optparse.OptionParser(description=desc)
-    parser.add_option("--f2", dest="location2", default='/nfs_scratch/zmao/fromLogin05/dataSync/dataSync_SSRelax_D.root', help="location of file 1")
-#     parser.add_option("--f2", dest="location2", default='/afs/cern.ch/user/k/kandroso/public/HTohhSync/sync_GGH_hh_bbtt_tautau.root', help="location of file 2")
-    parser.add_option("--f1", dest="location1", default='/nfs_scratch/zmao/fromLogin05/dataSync/Tau_SS_AntiIso_A.root', help="location of file 2")
+    parser.add_option("--f2", dest="location2", default='/nfs_scratch/zmao/test/VBF_H_all_SYNC.root', help="location of file 1")
+    parser.add_option("--f1", dest="location1", default='/nfs_scratch/zmao/test/SYNCFILE_VBF_HToTauTau_M-125_tt_phys14.root', help="location of file 2")
 
     parser.add_option("--n2", dest="name2", default='Brown: ', help="inst name of file 1")
-    parser.add_option("--n1", dest="name1", default='INFN:  ', help="inst name of file 2")
+    parser.add_option("--n1", dest="name1", default='Imperial:  ', help="inst name of file 2")
 
-    parser.add_option("--t2", dest="tree2", default='TauCheck', help="tree name of file 1")
-    parser.add_option("--t1", dest="tree1", default='syncTree', help="tree name of file 2")
+    parser.add_option("--t2", dest="tree2", default='Ntuple', help="tree name of file 1")
+    parser.add_option("--t1", dest="tree1", default='TauCheck', help="tree name of file 2")
     parser.add_option("--evN", dest="eventNumber", default=-1, help="look at specific event")
     parser.add_option("--subset", dest="style", default='diff', help="diff, same or all")
     parser.add_option("--nPair", dest="nTauPairs", default=0, help="Print number of tau pairs")
