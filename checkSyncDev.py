@@ -95,7 +95,10 @@ def printSingleInfo(name, varsList):
 
 def getVetoValue(veto):
     if isinstance(veto, float):
-        return int(veto)
+        if veto > 1:
+            return 1
+        else:
+            return int(veto)
     else:
         out = ' '.join(format(ord(x), 'b') for x in veto)
         return int(out)
@@ -110,11 +113,14 @@ def addVars(iTree):
     a = ['evtNumber', iTree.evt, 
 #             'mvaPhi', iTree.mvametphi, 
             'lumi', iTree.lumi, 
+            'eleVeto', getVetoValue(iTree.extraelec_veto),
+
             'lumi', iTree.lumi, 
 #           'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
 #             'iso1', iTree.iso_1, 
+
             'iso1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
 
@@ -285,16 +291,16 @@ def checkSyncDev(options):
 #             if not (runRange[0] < varsList2[j][5] <= runRange[1]):
 #                 continue 
             if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
-                diff = varsList1[i][5]/varsList2[j][5]
+                diff = (varsList1[i][5]+1.0)/(varsList2[j][5]+1.0)
                 printInfo(name1, varsList1[i], name2, varsList2[j])
                 return 1
             elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
                 matchedEvents += 1
-                diff = varsList1[i][5]/varsList2[j][5]
+                diff = (varsList1[i][5]+1.0)/(varsList2[j][5]+1.0)
                 mvaMet2.Fill(diff)
                 indexFound2.append(j)
-                if diff != 1 and (options.style == 'diff' or options.style == 'all'):
+                if diff != 1.0 and (options.style == 'diff' or options.style == 'all'):
                     printInfo(name1, varsList1[i], name2, varsList2[j])
                     differentEvents += 1
                 elif diff == 1 and (options.style == 'same' or options.style == 'all'):
