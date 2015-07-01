@@ -104,19 +104,49 @@ def opts():
 
     return options
 
-def getCrossCleanJets(jetsList, tausList):
+def getCrossCleanJets(jetsList, tausList, type = 'jet', iChain = None):
     goodJets = []
-    for iCSV, iJet, iJetMVA in jetsList:
-        if iJet.pt() > 30 and abs(iJet.eta()) < 4.7:
-            if r.Math.VectorUtil.DeltaR(iJet, tausList[0]) > 0.5 and r.Math.VectorUtil.DeltaR(iJet, tausList[1]) > 0.5:
-                goodJets.append(iJet)
+    nGoodJets = 0
+
+    jetCuts = {}
+    if type == 'jet':
+        jetCuts['pt'] = 30.0
+        jetCuts['bTag'] = -99999
+        jetCuts['eta'] = 4.7
+
+    else:
+        jetCuts['pt'] = 20.0
+        jetCuts['bTag'] = 0.814
+        jetCuts['eta'] = 2.4
+
+    for iCSV, iJet, iJetMVA, PFLoose in jetsList:
+#         if iChain != None:
+#             if (iChain.evt == 821):
+#                 print 'jetPt: %.1f' %iJet.pt()
+#                 print 'jetEta: %.1f' %iJet.eta()
+#                 print 'jet_dR1: %.1f' %r.Math.VectorUtil.DeltaR(iJet, tausList[0])
+#                 print 'jet_dR2: %.1f' %r.Math.VectorUtil.DeltaR(iJet, tausList[1])
+#                 print 'jet_PFLoose: %.1f' %PFLoose
+#                 print 'jet_PULoose: %.1f' %puJetId(abs(iJet.eta()), iJetMVA)
+#                 print ' '
+
+        if iJet.pt() > jetCuts['pt'] and abs(iJet.eta()) < jetCuts['eta'] and iCSV > jetCuts['bTag']:
+            if r.Math.VectorUtil.DeltaR(iJet, tausList[0]) > 0.5 and r.Math.VectorUtil.DeltaR(iJet, tausList[1]) > 0.5:                
+                if (not puJetId(abs(iJet.eta()), iJetMVA)) or (not PFLoose):
+                    continue
+                nGoodJets += 1
+                if type == 'jet':
+                    goodJets.append((iJet.pt(), iJet, iJetMVA))
+                else:
+                    goodJets.append((iCSV, iJet, iJetMVA))
     while len(goodJets) < 6:
-        goodJets.append(emptyJets)
+        goodJets.append((-9999.,emptyJets, -9999.))
+    goodJets = sorted(goodJets, key=itemgetter(0), reverse=True)
+    return goodJets, nGoodJets
 
-    return goodJets
 
 
-def saveExtra(iChain, floatVarsDict, syncVarsDict, sync):
+def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync):
     genTau1.SetCoordinates(iChain.t1GenPt, iChain.t1GenEta, iChain.t1GenPhi, iChain.t1GenMass)
     genTau2.SetCoordinates(iChain.t2GenPt, iChain.t2GenEta, iChain.t2GenPhi, iChain.t2GenMass)
 
@@ -125,20 +155,25 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, sync):
 
     floatVarsDict['genHMass'][0] = (genTau1+genTau2).mass()
 
-    jetsList = [(iChain.jet1CSVBtag, J1.SetCoordinates(iChain.jet1Pt, iChain.jet1Eta, iChain.jet1Phi, iChain.jet1Mass), iChain.jet1PUMVA),
-                (iChain.jet2CSVBtag, J2.SetCoordinates(iChain.jet2Pt, iChain.jet2Eta, iChain.jet2Phi, iChain.jet2Mass), iChain.jet2PUMVA),
-                (iChain.jet3CSVBtag, J3.SetCoordinates(iChain.jet3Pt, iChain.jet3Eta, iChain.jet3Phi, iChain.jet3Mass), iChain.jet3PUMVA),
-                (iChain.jet4CSVBtag, J4.SetCoordinates(iChain.jet4Pt, iChain.jet4Eta, iChain.jet4Phi, iChain.jet4Mass), iChain.jet4PUMVA),
-                (iChain.jet5CSVBtag, J5.SetCoordinates(iChain.jet5Pt, iChain.jet5Eta, iChain.jet5Phi, iChain.jet5Mass), iChain.jet5PUMVA),
-                (iChain.jet6CSVBtag, J6.SetCoordinates(iChain.jet6Pt, iChain.jet6Eta, iChain.jet6Phi, iChain.jet6Mass), iChain.jet6PUMVA)]
+    jetsList = [(iChain.jet1CSVBtag, J1.SetCoordinates(iChain.jet1Pt, iChain.jet1Eta, iChain.jet1Phi, iChain.jet1Mass), iChain.jet1PUMVA, iChain.jet1PFJetIDLoose),
+                (iChain.jet2CSVBtag, J2.SetCoordinates(iChain.jet2Pt, iChain.jet2Eta, iChain.jet2Phi, iChain.jet2Mass), iChain.jet2PUMVA, iChain.jet2PFJetIDLoose),
+                (iChain.jet3CSVBtag, J3.SetCoordinates(iChain.jet3Pt, iChain.jet3Eta, iChain.jet3Phi, iChain.jet3Mass), iChain.jet3PUMVA, iChain.jet3PFJetIDLoose),
+                (iChain.jet4CSVBtag, J4.SetCoordinates(iChain.jet4Pt, iChain.jet4Eta, iChain.jet4Phi, iChain.jet4Mass), iChain.jet4PUMVA, iChain.jet4PFJetIDLoose),
+                (iChain.jet5CSVBtag, J5.SetCoordinates(iChain.jet5Pt, iChain.jet5Eta, iChain.jet5Phi, iChain.jet5Mass), iChain.jet5PUMVA, iChain.jet5PFJetIDLoose),
+                (iChain.jet6CSVBtag, J6.SetCoordinates(iChain.jet6Pt, iChain.jet6Eta, iChain.jet6Phi, iChain.jet6Mass), iChain.jet6PUMVA, iChain.jet6PFJetIDLoose)]
 
-    floatVarsDict['bjcsv_1'][0], floatVarsDict['bjcsv_2'][0], CSVJet1, CSVJet2, floatVarsDict['bjmva_1'][0], floatVarsDict['bjmva_2'][0] = findJetPair(iTree = iChain, jetsList = jetsList, ptThreshold = enVars.jetPtThreshold)
+    bJets, intVarsDict['nbtag'][0] = getCrossCleanJets(jetsList = jetsList, tausList = [tau1, tau2], type = 'b', iChain = None)
 
-    floatVarsDict['bjpt_1'][0] = CSVJet1.pt()
-    floatVarsDict['bjeta_1'][0] = CSVJet1.eta()
-    floatVarsDict['bjpt_2'][0] = CSVJet2.pt()
-    floatVarsDict['bjeta_2'][0] = CSVJet2.eta()
-    floatVarsDict['mJJ'][0] = (CSVJet1 + CSVJet2).mass()
+    floatVarsDict['bjcsv_1'][0] = bJets[0][0]
+    floatVarsDict['bjcsv_2'][0] = bJets[1][0] 
+    floatVarsDict['bjmva_1'][0] = bJets[0][2]
+    floatVarsDict['bjmva_2'][0] = bJets[1][2]
+
+    floatVarsDict['bjpt_1'][0] = bJets[0][1].pt()
+    floatVarsDict['bjeta_1'][0] =bJets[0][1].eta()
+    floatVarsDict['bjpt_2'][0] = bJets[1][1].pt()
+    floatVarsDict['bjeta_2'][0] = bJets[1][1].eta()
+    floatVarsDict['mJJ'][0] = (bJets[0][1] + bJets[1][1]).mass()
 
     if sync:
         syncVarsDict['npv'][0] = iChain.nvtx
@@ -156,7 +191,7 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, sync):
         syncVarsDict['phi_%s' %leading][0] = iChain.t1Phi
         syncVarsDict['m_%s' %leading][0] = iChain.t1Mass
         syncVarsDict['q_%s' %leading][0] = iChain.t1Charge
-        syncVarsDict['mt_%s' %leading][0] = iChain.t1MtToMET
+        syncVarsDict['mt_%s' %leading][0] = iChain.t1MtToPFMET
         syncVarsDict['iso_%s' %leading][0] =  iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits
         syncVarsDict['againstElectronLooseMVA5_%s' %leading][0] = iChain.t1AgainstElectronLooseMVA5
         syncVarsDict['againstElectronMediumMVA5_%s' %leading][0] = iChain.t1AgainstElectronMediumMVA5
@@ -181,7 +216,7 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, sync):
         syncVarsDict['phi_%s' %subleading][0] = iChain.t2Phi
         syncVarsDict['m_%s' %subleading][0] = iChain.t2Mass
         syncVarsDict['q_%s' %subleading][0] = iChain.t2Charge
-        syncVarsDict['mt_%s' %subleading][0] = iChain.t2MtToMET
+        syncVarsDict['mt_%s' %subleading][0] = iChain.t2MtToPFMET
         syncVarsDict['iso_%s' %subleading][0] =  iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
         syncVarsDict['againstElectronLooseMVA5_%s' %subleading][0] = iChain.t2AgainstElectronLooseMVA5
         syncVarsDict['againstElectronMediumMVA5_%s' %subleading][0] = iChain.t2AgainstElectronMediumMVA5
@@ -208,15 +243,18 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, sync):
         syncVarsDict['mvamet'][0] = iChain.mvametEt
         syncVarsDict['mvametphi'][0] = iChain.mvametPhi
 
-        goodJets = getCrossCleanJets(jetsList = jetsList, tausList = [tau1, tau2])
+        goodJets, intVarsDict['njets'][0] = getCrossCleanJets(jetsList = jetsList, tausList = [tau1, tau2], type = 'jet', iChain = iChain)
+        syncVarsDict['jcsv_1'][0] = goodJets[0][0]
+        syncVarsDict['jpt_1'][0] = goodJets[0][1].pt()
+        syncVarsDict['jeta_1'][0] = goodJets[0][1].eta()
+        syncVarsDict['jphi_1'][0] = goodJets[0][1].phi()
+        syncVarsDict['jmva_1'][0] = goodJets[0][2]
 
-        syncVarsDict['jpt_1'][0] = goodJets[0].pt()
-        syncVarsDict['jeta_1'][0] = goodJets[0].eta()
-        syncVarsDict['jphi_1'][0] = goodJets[0].phi()
-
-        syncVarsDict['jpt_2'][0] = goodJets[1].pt()
-        syncVarsDict['jeta_2'][0] = goodJets[1].eta()
-        syncVarsDict['jphi_2'][0] = goodJets[1].phi()
+        syncVarsDict['jcsv_2'][0] = goodJets[1][0]
+        syncVarsDict['jpt_2'][0] = goodJets[1][1].pt()
+        syncVarsDict['jeta_2'][0] = goodJets[1][1].eta()
+        syncVarsDict['jphi_2'][0] = goodJets[1][1].phi()
+        syncVarsDict['jmva_2'][0] = goodJets[1][2]
 
 
 options = opts()
@@ -283,14 +321,13 @@ def loop_one_sample(iSample, iLocation, iXS):
     preLumi = -1
     preRun = -1
     bestPair = -1
-    bestValue = -1.0
+    ptValue = -1.0
+    isoValue = 9999.0
 
     preEvt = 0
     preLumi = 0
     preRun = 0
 
-    if options.pairChoice == 'iso':
-        bestValue = 999.0
 
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
@@ -303,54 +340,50 @@ def loop_one_sample(iSample, iLocation, iXS):
         #save last event
         if iEntry == nEntries - 1:
             if passCut(iChain):
-                bestPair, bestValue = findRightPair(iChain, iEntry, bestPair, bestValue, options.pairChoice)
+                bestPair, isoValue, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, options.pairChoice)
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            saveExtra(iChain, floatVarsDict, syncVarsDict, sync)
+            saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync)
             oTree.Fill()
             counter += 1
 
 
 
-        if (iChain.evt == 226635) and (iChain.lumi == 2267):
-            print ''
-            print 'tau1 pt: %.2f' %iChain.t1Pt
-            print 'tau1 eta: %.2f' %iChain.t1Eta
-            print 'tau1 phi: %.2f' %iChain.t1Phi
-            print 'tau1 iso: %.2f' %iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits
-            print 'tau1 dZ: %.2f' %iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits
-
-            print 'tau2 pt: %.2f' %iChain.t2Pt
-            print 'tau2 eta: %.2f' %iChain.t2Eta
-            print 'tau2 phi: %.2f' %iChain.t2Phi
-            print 'tau2 iso: %.2f' %iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
-            print 'tau2 dZ: %.2f' %iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits
+#         if (iChain.evt == 821):# and (iChain.lumi == 4882):
+#             print ''
+#             print 'jet1 pt: %.2f' %iChain.jet1Pt
+#             print 'jet1 eta: %.2f' %iChain.jet1Eta
+#             print 'jet1 phi: %.2f' %iChain.jet1Phi
+#             print 'jet1 trigger: %.2f' %(iChain.t1DiIsoTau + iChain.t1DiPFTau40  + iChain.t1DiTauJet)
+# 
+#             print 'jet2 pt: %.2f' %iChain.jet2Pt
+#             print 'jet2 eta: %.2f' %iChain.jet2Eta
+#             print 'jet2 phi: %.2f' %iChain.jet2Phi
 
 
         if not passCut(iChain):
             continue
 
         if (preEvt == 0 and preLumi == 0 and preRun == 0) or (preEvt == iChain.evt and preLumi == iChain.lumi and preRun == iChain.run):
-            bestPair, bestValue = findRightPair(iChain, iEntry, bestPair, bestValue, options.pairChoice)
+            bestPair, isoValue, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, options.pairChoice)
 
         elif bestPair != -1:
             #store best pair
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            saveExtra(iChain, floatVarsDict, syncVarsDict, sync)
+            saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync)
             oTree.Fill()
 
             #reset best pair info
             counter += 1
             bestPair = -1
-            bestValue = -1.0
-            if options.pairChoice == 'iso':
-                bestValue = 999.0
+            ptValue = -1.0
+            isoValue = 999.0
 
             #reload to current entry
             iChain.LoadTree(iEntry)
             iChain.GetEntry(iEntry)
-            bestPair, bestValue = findRightPair(iChain, iEntry, bestPair, bestValue, options.pairChoice)
+            bestPair, isoValue, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, options.pairChoice)
 
 
         preEvt = iChain.evt
