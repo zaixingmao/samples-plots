@@ -27,6 +27,8 @@ J3 = lvClass()
 J4 = lvClass()
 J5 = lvClass()
 J6 = lvClass()
+J7 = lvClass()
+J8 = lvClass()
 
 matchedGenJet = lvClass()
 mGenJet1 = lvClass()
@@ -139,7 +141,7 @@ def getCrossCleanJets(jetsList, tausList, type = 'jet', iChain = None):
                     goodJets.append((iJet.pt(), iJet, iJetMVA))
                 else:
                     goodJets.append((iCSV, iJet, iJetMVA))
-    while len(goodJets) < 6:
+    while len(goodJets) < 8:
         goodJets.append((-9999.,emptyJets, -9999.))
     goodJets = sorted(goodJets, key=itemgetter(0), reverse=True)
     return goodJets, nGoodJets
@@ -160,7 +162,10 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync):
                 (iChain.jet3CSVBtag, J3.SetCoordinates(iChain.jet3Pt, iChain.jet3Eta, iChain.jet3Phi, iChain.jet3Mass), iChain.jet3PUMVA, iChain.jet3PFJetIDLoose),
                 (iChain.jet4CSVBtag, J4.SetCoordinates(iChain.jet4Pt, iChain.jet4Eta, iChain.jet4Phi, iChain.jet4Mass), iChain.jet4PUMVA, iChain.jet4PFJetIDLoose),
                 (iChain.jet5CSVBtag, J5.SetCoordinates(iChain.jet5Pt, iChain.jet5Eta, iChain.jet5Phi, iChain.jet5Mass), iChain.jet5PUMVA, iChain.jet5PFJetIDLoose),
-                (iChain.jet6CSVBtag, J6.SetCoordinates(iChain.jet6Pt, iChain.jet6Eta, iChain.jet6Phi, iChain.jet6Mass), iChain.jet6PUMVA, iChain.jet6PFJetIDLoose)]
+                (iChain.jet6CSVBtag, J6.SetCoordinates(iChain.jet6Pt, iChain.jet6Eta, iChain.jet6Phi, iChain.jet6Mass), iChain.jet6PUMVA, iChain.jet6PFJetIDLoose),
+                (iChain.jet7CSVBtag, J7.SetCoordinates(iChain.jet7Pt, iChain.jet7Eta, iChain.jet7Phi, iChain.jet7Mass), iChain.jet7PUMVA, iChain.jet7PFJetIDLoose),
+                (iChain.jet8CSVBtag, J8.SetCoordinates(iChain.jet8Pt, iChain.jet8Eta, iChain.jet8Phi, iChain.jet8Mass), iChain.jet8PUMVA, iChain.jet8PFJetIDLoose)]
+
 
     bJets, intVarsDict['nbtag'][0] = getCrossCleanJets(jetsList = jetsList, tausList = [tau1, tau2], type = 'b', iChain = None)
 
