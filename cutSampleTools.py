@@ -14,6 +14,22 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 combinedJJ = lvClass()
 reWeight = 1.0
 
+
+loose_53X_WP = [
+    (0, 2.5, -0.63),
+    (2.5, 2.75, -0.60),
+    (2.75, 3.0, -0.55),
+    (3.0, 5.2, -0.45),
+    ]
+
+def puJetId(jetEta, jetFullDiscriminant):
+    wp = loose_53X_WP
+    for etamin, etamax, cut in wp:
+        if not(jetEta>=etamin and jetEta<etamax):
+            continue
+        return jetFullDiscriminant>cut
+
+
 def findCategory(csv1, csv2):
     if csv1 < 0.679:
         return 'none'
@@ -35,19 +51,23 @@ def freeLumiReWeight():
     global reWeight
     del reWeight
 
-def findRightPair(iChain, iEntry, bestPair, bestValue, pairChoice = 'pt'):
+def findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, pairChoice = 'pt'):
+    currentIsoValue = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits + iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
+    currentPtValue = iChain.t1Pt + iChain.t2Pt
     if pairChoice == 'pt':
-        currentValue = iChain.t1Pt + iChain.t2Pt
-        if currentValue > bestValue:
-            return iEntry, currentValue
+        if currentPtValue > ptValue:
+            return iEntry, currentIsoValue, currentPtValue
+        elif currentPtValue == ptValue and currentIsoValue < isoValue:
+            return iEntry, currentPtValue, currentIsoValue
         else:
-            return bestPair, bestValue
+            return bestPair, isoValue, ptValue
     else:
-        currentValue = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits + iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
-        if currentValue < bestValue:
-            return iEntry, currentValue
+        if currentIsoValue < isoValue:
+            return iEntry, currentIsoValue, currentPtValue
+        elif currentIsoValue == isoValue and currentPtValue > ptValue:
+            return iEntry, currentIsoValue, currentPtValue
         else:
-            return bestPair, bestValue
+            return bestPair, isoValue, ptValue
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen = lvClass()
@@ -333,12 +353,16 @@ def passCut(iTree):
         return False
     if (iTree.t2DiIsoTau + iTree.t2DiPFTau40  + iTree.t2DiTauJet) != 3:
         return False
+    if (iTree.t1_t2_DR) <= 0.5:
+        return False
+    if not (iTree.doubleTauPass):
+        return False
 #     if iTree.t1AgainstElectronVLooseMVA5 == 0 or iTree.t2AgainstElectronVLooseMVA5 == 0:
 #         return False
 #     if iTree.t1AgainstMuonLoose3 == 0 or iTree.t2AgainstMuonLoose3 == 0:
 #         return False
-    if abs(iTree.t1VZ - iTree.pvZ) >= 0.2 or abs(iTree.t2VZ - iTree.pvZ) >= 0.2:
-        return False
+#     if abs(iTree.t1VZ - iTree.pvZ) >= 0.2 or abs(iTree.t2VZ - iTree.pvZ) >= 0.2:
+#         return False
     return True
 
 
