@@ -36,25 +36,26 @@ def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
     outline2 = '%s: ' % name2.rjust(nChar)
     foundDifferent = False
     for i in range(2, len(varsList1)/2):
+        if varsList1[i*2] == "lumi" or varsList1[i*2] == 'njets':
+            p = "%0.0f"
+        elif 'dZ' in varsList1[i*2]:
+            p = "%0.3f"
+        else:
+            p = "%0.2f"
         value1 = varsList1[i*2+1]
         value2 = varsList2[i*2+1]
         lineColor = color(value1, value2)
         dashes += '--------'
-#         if lineColor == bcolors.OKGREEN:
-#             continue        
-        if value1 == 0:
-            if value2 == -10000:
+    
+        if value1 == -9999:
+            if value2 == -9999:
                 lineColor = bcolors.OKGREEN
-            outline1 += '%s%s\033[0m\t' %(lineColor, p)
-            outline1 = outline1 % value1
-
+            outline1 += '%snull\033[0m\t' %(lineColor)
         else:
             outline1 += '%s%s\033[0m\t' %(lineColor, p)
             outline1 = outline1 % value1
-        if value2 == -10000:
-            outline2 += '%s%s\033[0m\t' %(lineColor, p)
-            outline2 = outline2 % value2
-
+        if value2 == -9999:
+            outline2 += '%snull\033[0m\t' %(lineColor)
         else:
             outline2 += '%s%s\033[0m\t' %(lineColor, p)
             outline2 = outline2 % value2
@@ -94,6 +95,11 @@ def printSingleInfo(name, varsList):
     print dashes
 
 def getVetoValue(veto):
+    if veto > 1:
+        return 1
+    else:
+        return int(veto)
+
     if isinstance(veto, float):
         if veto > 1:
             return 1
@@ -110,18 +116,19 @@ def addVars(iTree):
     tau2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 #     jet2.SetCoordinates(iTree.bpt_2, iTree.beta_2, iTree.bphi_2, 0)
  
-    a = ['evtNumber', iTree.evt, 
+    a = ['evtNumber', int(iTree.evt), 
 #             'mvaPhi', iTree.mvametphi, 
-            'lumi', iTree.lumi, 
+#             'muVeto', getVetoValue(iTree.extramuon_veto),
+            'eleVeto', getVetoValue(iTree.extraelec_veto),
             'eleVeto', getVetoValue(iTree.extraelec_veto),
 
-            'lumi', iTree.lumi, 
+            'lumi', int(iTree.lumi), 
 #           'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
 #             'iso1', iTree.iso_1, 
 
-            'iso1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
+#             'iso1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
 
             'phi1', iTree.phi_1, 
@@ -129,7 +136,7 @@ def addVars(iTree):
             'pt2', iTree.pt_2, 
             'eta2', iTree.eta_2, 
 #             'iso2', iTree.iso_2, 
-            'iso2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
+#             'iso2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
 #             'tw_2', iTree.trigweight_2, 
 
             'phi2', iTree.phi_2, 
@@ -148,18 +155,21 @@ def addVars(iTree):
 
 #             'mass2', iTree1.m_2,
 #             'jptraw1', iTree.jptraw_1,
-#             'jpt_1', iTree.jpt_1, 
-#             'jeta_1', iTree.jeta_1, 
-#             'jphi_1', iTree.jphi_1, 
-            'jmva_1', iTree.jmva_1, 
+            'jpt_1', iTree.jpt_1, 
+            'jeta_1', iTree.jeta_1, 
+            'jphi_1', iTree.jphi_1, 
+#             'jmva_1', iTree.jmva_1, 
 
 #             'jptraw2', iTree.jptraw_2,
-#             'jpt_2', iTree.jpt_2, 
+            'jpt_2', iTree.jpt_2, 
 #             'jeta_2', iTree.jeta_2, 
 #             'jphi_2', iTree.jphi_2,
             'jmva_2', iTree.jmva_2, 
 # 
 #             'npv', iTree.npv,
+            'dZ_1', iTree.dZ_1, 
+            'dZ_2', iTree.dZ_2, 
+
 # 
 #             'bcsv_1', iTree.bjcsv_1,
 #             'bpt_1', iTree.bjpt_1,
@@ -202,8 +212,8 @@ common events, it prints out the values of several variables.  If
 which the MVAMET agrees.  Likewise for --subset=diff.
 """
     parser = optparse.OptionParser(description=desc)
-    parser.add_option("--f2", dest="location2", default='/nfs_scratch/zmao/test/VBF_H_all_SYNC.root', help="location of file 1")
-    parser.add_option("--f1", dest="location1", default='/nfs_scratch/zmao/test/SYNCFILE_VBF_HToTauTau_M-125_tt_phys14.root', help="location of file 2")
+    parser.add_option("--f2", dest="location2", default='/nfs_scratch/zmao/test/SUSY-160_all_SYNC.root', help="location of file 1")
+    parser.add_option("--f1", dest="location1", default='/nfs_scratch/zmao/test/SYNCFILE_SUSYGluGluToHToTauTau_M-160_tt_spring15.root', help="location of file 2")
 
     parser.add_option("--n2", dest="name2", default='Brown: ', help="inst name of file 1")
     parser.add_option("--n1", dest="name1", default='IC   : ', help="inst name of file 2")
@@ -291,19 +301,19 @@ def checkSyncDev(options):
 #             if not (runRange[0] < varsList2[j][5] <= runRange[1]):
 #                 continue 
             if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
-                diff = (varsList1[i][5]+1.0)/(varsList2[j][5]+1.0)
+                diff = (varsList1[i][5]+1.0) - (varsList2[j][5]+1.0)
                 printInfo(name1, varsList1[i], name2, varsList2[j])
                 return 1
             elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
                 matchedEvents += 1
-                diff = (varsList1[i][5]+1.0)/(varsList2[j][5]+1.0)
+                diff = 0 if varsList1[i][5] == varsList2[j][5] else 1
                 mvaMet2.Fill(diff)
                 indexFound2.append(j)
-                if diff != 1.0 and (options.style == 'diff' or options.style == 'all'):
+                if diff != 0.0 and (options.style == 'diff' or options.style == 'all'):
                     printInfo(name1, varsList1[i], name2, varsList2[j])
                     differentEvents += 1
-                elif diff == 1 and (options.style == 'same' or options.style == 'all'):
+                elif diff == 0 and (options.style == 'same' or options.style == 'all'):
                     printInfo(name1, varsList1[i], name2, varsList2[j])
                     sameEvents += 1
                 break
