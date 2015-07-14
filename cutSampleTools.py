@@ -51,28 +51,33 @@ def freeLumiReWeight():
     global reWeight
     del reWeight
 
-def findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, pairChoice = 'pt', FS = 'tt'):
+def findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice = 'pt', FS = 'tt'):
     if FS == 'tt':
+        currentIsoValue_1 = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        currentPtValue_1 = iChain.t1Pt
         currentIsoValue = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits + iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
         currentPtValue = iChain.t1Pt + iChain.t2Pt
     elif FS == 'et':
+        currentIsoValue_1 = iChain.eRelIso
         currentIsoValue = iChain.eRelIso + iChain.tByCombinedIsolationDeltaBetaCorrRaw3Hits
         currentPtValue = iChain.ePt + iChain.tPt
+        currentPtValue_1 = iChain.ePt
 
-    if pairChoice == 'pt':
-        if currentPtValue > ptValue:
-            return iEntry, currentIsoValue, currentPtValue
-        elif currentPtValue == ptValue and currentIsoValue < isoValue:
-            return iEntry, currentPtValue, currentIsoValue
+    if pairChoice == 'iso':
+        # most isolated candidate 1
+        if currentIsoValue_1 < isoValue_1:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
+        # highest candidate 1 pt
+        elif currentIsoValue_1 == isoValue_1 and currentPtValue_1 > ptValue_1:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
+        # most isolated candidate 2
+        elif currentIsoValue_1 == isoValue_1 and currentPtValue_1 == ptValue_1 and currentIsoValue < isoValue:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
+        # highest candidate 1 pt
+        elif currentIsoValue_1 == isoValue_1 and currentPtValue_1 == ptValue_1 and currentIsoValue == isoValue and currentPtValue > ptValue:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
         else:
-            return bestPair, isoValue, ptValue
-    else:
-        if currentIsoValue < isoValue:
-            return iEntry, currentIsoValue, currentPtValue
-        elif currentIsoValue == isoValue and currentPtValue > ptValue:
-            return iEntry, currentIsoValue, currentPtValue
-        else:
-            return bestPair, isoValue, ptValue
+            return bestPair, isoValue_1, isoValue, ptValue_1, ptValue
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen = lvClass()

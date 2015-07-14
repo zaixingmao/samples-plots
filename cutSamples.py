@@ -160,7 +160,10 @@ def loop_one_sample(iSample, iLocation, iXS):
     preRun = -1
     bestPair = -1
     ptValue = -1.0
+    ptValue_1 = -1.0
+
     isoValue = 9999.0
+    isoValue_1 = 9999.0
 
     preEvt = 0
     preLumi = 0
@@ -178,7 +181,7 @@ def loop_one_sample(iSample, iLocation, iXS):
         #save last event
         if iEntry == nEntries - 1:
             if passCut(iChain, options.FS):
-                bestPair, isoValue, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, options.pairChoice, options.FS)
+                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, options.FS)
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
             syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, options.FS)
@@ -189,7 +192,7 @@ def loop_one_sample(iSample, iLocation, iXS):
             continue
 
         if (preEvt == 0 and preLumi == 0 and preRun == 0) or (preEvt == iChain.evt and preLumi == iChain.lumi and preRun == iChain.run):
-            bestPair, isoValue, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, options.pairChoice, options.FS)
+            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, options.FS)
 
         elif bestPair != -1:
             #store best pair
@@ -203,11 +206,13 @@ def loop_one_sample(iSample, iLocation, iXS):
             bestPair = -1
             ptValue = -1.0
             isoValue = 999.0
+            ptValue_1 = -1.0
+            isoValue_1 = 999.0
 
             #reload to current entry
             iChain.LoadTree(iEntry)
             iChain.GetEntry(iEntry)
-            bestPair, isoValue, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, options.pairChoice, options.FS)
+            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, options.FS)
 
 
         preEvt = iChain.evt
