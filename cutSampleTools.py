@@ -51,9 +51,14 @@ def freeLumiReWeight():
     global reWeight
     del reWeight
 
-def findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, pairChoice = 'pt'):
-    currentIsoValue = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits + iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
-    currentPtValue = iChain.t1Pt + iChain.t2Pt
+def findRightPair(iChain, iEntry, bestPair, isoValue, ptValue, pairChoice = 'pt', FS = 'tt'):
+    if FS == 'tt':
+        currentIsoValue = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits + iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        currentPtValue = iChain.t1Pt + iChain.t2Pt
+    elif FS == 'et':
+        currentIsoValue = iChain.eRelIso + iChain.tByCombinedIsolationDeltaBetaCorrRaw3Hits
+        currentPtValue = iChain.ePt + iChain.tPt
+
     if pairChoice == 'pt':
         if currentPtValue > ptValue:
             return iEntry, currentIsoValue, currentPtValue
@@ -336,33 +341,38 @@ def getRegVars(j1Name, j2Name, tChain):
     return PtUncorr1, Et1, Mt1, ptLeadTrk1, Vtx3dL1,Vtx3deL1, vtxMass1, VtxPt1, JECUnc1, float(Ntot1), SoftLepPtRel1, SoftLepPt1, SoftLepdR1, PtUncorr2, Et2, Mt2, ptLeadTrk2, Vtx3dL2,Vtx3deL2, vtxMass2, VtxPt2, JECUnc2, float(Ntot2), SoftLepPtRel2, SoftLepPt2, SoftLepdR2
 
 
-def passCut(iTree):
-#     if iTree.charge != 0:
-#         return False
-#     if iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits>=5.0 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits>=5.0:
-#         return False
-    if iTree.t1DecayModeFindingNewDMs < 0.5 or iTree.t1DecayModeFindingNewDMs < 0.5:
-        return False
-    if iTree.t1Pt < 45 or iTree.t2Pt < 45:
-        return False
-    if abs(iTree.t1Eta) > 2.1 or abs(iTree.t2Eta) > 2.1:
-        return False
-    if abs(iTree.t1Eta) > 2.1 or abs(iTree.t2Eta) > 2.1:
-        return False
-    if (iTree.t1DiIsoTau + iTree.t1DiPFTau40  + iTree.t1DiTauJet) != 3:
-        return False
-    if (iTree.t2DiIsoTau + iTree.t2DiPFTau40  + iTree.t2DiTauJet) != 3:
-        return False
-    if (iTree.t1_t2_DR) <= 0.5:
-        return False
-    if not (iTree.doubleTauPass):
-        return False
-#     if iTree.t1AgainstElectronVLooseMVA5 == 0 or iTree.t2AgainstElectronVLooseMVA5 == 0:
-#         return False
-#     if iTree.t1AgainstMuonLoose3 == 0 or iTree.t2AgainstMuonLoose3 == 0:
-#         return False
-#     if abs(iTree.t1VZ - iTree.pvZ) >= 0.2 or abs(iTree.t2VZ - iTree.pvZ) >= 0.2:
-#         return False
+def passCut(iTree, FS):
+    #event, lumi
+    deBugEvent = []
+
+    showDeBugStatus = False
+    for iEvent, iLumi in deBugEvent:
+        if iEvent == iTree.evt and iLumi == iTree.lumi:
+            showDeBugStatus = True
+            print 'tracking event: %.0f, lumi: %0.f' %(iEvent, iLumi)
+
+    if FS == 'tt':
+        cuts = {'ID': 0 if (iTree.t1DecayModeFindingNewDMs < 0.5 or iTree.t2DecayModeFindingNewDMs < 0.5) else 1,
+                'ptEta': 0 if (iTree.t1Pt < 45 or iTree.t2Pt < 45 or abs(iTree.t1Eta) > 2.1 or abs(iTree.t2Eta) > 2.1) else 1,
+                'triggerMatch': 0 if (iTree.t1DiPFTau40 + iTree.t2DiPFTau40) < 2 else 1,
+                'dR': 0 if (iTree.t1_t2_DR) <= 0.5 else 1,
+                'HLT': 1 if iTree.doubleTauPass else 1,
+                'dZ': 0 if abs(iTree.t1dZ) >= 0.2 or abs(iTree.t2dZ) >= 0.2 else 1,
+                }
+    elif FS == 'et':
+        cuts = {'ID': 0 if (iTree.tDecayModeFindingNewDMs < 0.5 or iTree.eMVANonTrigWP80 < 0.5) else 1,
+                'ptEta': 0 if (iTree.tPt < 20 or iTree.ePt < 23 or abs(iTree.tEta) > 2.3 or abs(iTree.eEta) > 2.1) else 1,
+                'triggerMatch': 0 if( (iTree.eEle22 + iTree.eOverlapEle22 + iTree.tTau20 + iTree.tTauOverlapEle + iTree.eTauPass) < 5 and (iTree.eSingleEle + iTree.singleEPass) < 2) else 1,
+                'dR': 0 if (iTree.e_t_DR) <= 0.5 else 1,
+                'dZ': 0 if abs(iTree.tdZ) >= 0.2 or abs(iTree.edZ) >= 0.2 else 1,
+                }
+
+    for iCut in cuts.keys():
+        if not cuts[iCut]:     
+            if showDeBugStatus:
+                print 'failed at %s' %iCut
+            return False
+
     return True
 
 
