@@ -3,6 +3,7 @@
 import ROOT as r
 from operator import itemgetter
 import optparse
+import tool
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
@@ -119,14 +120,13 @@ def addVars(iTree):
     a = ['evtNumber', int(iTree.evt), 
 #             'mvaPhi', iTree.mvametphi, 
 #             'muVeto', getVetoValue(iTree.extramuon_veto),
-            'eleVeto', getVetoValue(iTree.extraelec_veto),
-            'eleVeto', getVetoValue(iTree.extraelec_veto),
+            'pt1', iTree.pt_1, 
 
             'lumi', int(iTree.lumi), 
 #           'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
-#             'iso1', iTree.iso_1, 
+            'iso1', iTree.iso_1, 
 
 #             'iso1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
@@ -136,7 +136,7 @@ def addVars(iTree):
             'pt2', iTree.pt_2, 
             'eta2', iTree.eta_2, 
 #             'iso2', iTree.iso_2, 
-#             'iso2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
+            'iso2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
 #             'tw_2', iTree.trigweight_2, 
 
             'phi2', iTree.phi_2, 
@@ -146,8 +146,8 @@ def addVars(iTree):
 #             'mvamet', iTree.mvamet, 
 #             'mvametphi', iTree.mvametphi, 
 
-            'eleVeto', getVetoValue(iTree.extraelec_veto),
-            'muVeto', getVetoValue(iTree.extramuon_veto),
+#             'eleVeto', getVetoValue(iTree.extraelec_veto),
+#             'muVeto', getVetoValue(iTree.extramuon_veto),
 
 #             'muVeto', int(iTree.extramuon_veto), 
 
@@ -263,19 +263,21 @@ def checkSyncDev(options):
     varsList2 = []
 
     for i in range(total1):
+        tool.printProcessStatus(i, total1, 'reading file1', i-1)
         iTree1.GetEntry(i)
         if int(options.nTauPairs):
             varsList1.append(addVars2(iTree1))
         else:
             varsList1.append(addVars(iTree1))
-
+    print ''
     for i in range(total2):
+        tool.printProcessStatus(i, total2, 'reading file2', i-1)
         iTree2.GetEntry(i)
         if int(options.nTauPairs):
             varsList2.append(addVars3(iTree2))
         else:
             varsList2.append(addVars(iTree2))
-
+    print ''
     varsList1 = sorted(varsList1, key=itemgetter(1), reverse=False)
     varsList2 = sorted(varsList2, key=itemgetter(1), reverse=False)
 
@@ -301,13 +303,13 @@ def checkSyncDev(options):
 #             if not (runRange[0] < varsList2[j][5] <= runRange[1]):
 #                 continue 
             if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
-                diff = (varsList1[i][5]+1.0) - (varsList2[j][5]+1.0)
+                diff = (varsList1[i][3]+1.0) - (varsList2[j][3]+1.0)
                 printInfo(name1, varsList1[i], name2, varsList2[j])
                 return 1
             elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
     #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
                 matchedEvents += 1
-                diff = 0 if varsList1[i][5] == varsList2[j][5] else 1
+                diff = 0 if varsList1[i][3] == varsList2[j][3] else 1
                 mvaMet2.Fill(diff)
                 indexFound2.append(j)
                 if diff != 0.0 and (options.style == 'diff' or options.style == 'all'):

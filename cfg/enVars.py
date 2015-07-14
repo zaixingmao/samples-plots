@@ -1,7 +1,7 @@
 jetPtThreshold = 20
 corruptedROOTfiles = []
 
-preFix = '/hdfs/store/user/zmao/eTauTake2_et/'
+preFix = '/hdfs/store/user/zmao/sync_take2_et/'
 
 postName = ""
 wScale = 36257.0/30400.0
