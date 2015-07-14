@@ -1,7 +1,7 @@
 jetPtThreshold = 20
 corruptedROOTfiles = []
 
-preFix = '/hdfs/store/user/zmao/SYNC3/'
+preFix = '/hdfs/store/user/zmao/eTauTake2_et/'
 
 postName = ""
 wScale = 36257.0/30400.0
@@ -13,7 +13,9 @@ dyScale3 = 1.25041471383
 dyScale4 = 1.27550090492
 
 sampleLocations = [
-                     ("VBF_H",     "%sVBF_HToTauTau_M-125_13TeV-powheg-pythia6" %(preFix), 1000),
+#                     ("VBF_H",     "%sVBF_HToTauTau_M-125_13TeV-powheg-pythia6" %(preFix), 1000),
+                     ("SUSY-160",     "%s/SUSYGluGluToHToTauTau_M-160_TuneCUETP8M1_13TeV-pythia8" %(preFix), 1000),
+
 #                      ("VBF_H",     "/nfs_scratch/zmao/tmp/72x", 1000),
 #                      ("VBF_H_74x",     "/nfs_scratch/zmao/tmp/74x", 1000),
 #     ("TTJets",     "%sTTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola" %(preFix), 424500),
