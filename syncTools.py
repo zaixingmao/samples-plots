@@ -52,7 +52,36 @@ def getCrossCleanJets(jetsList, lepList, type = 'jet', iChain = None):
     goodJets = sorted(goodJets, key=itemgetter(0), reverse=True)
     return goodJets, nPt20GoodJets, nPt30GoodJets
 
+commonVarsDict = {"pt_": "Pt",
+                 "eta_": "Eta",
+                 'phi_': 'Phi',
+                 'm_': 'Mass',
+                 'q_': 'Charge',
+                 'mt_': 'MtToPFMET',
+                 'dZ_': 'dZ',
+                 'dXY_': 'dXY',
+                }
+tauVarsDict = {'iso_': 'ByCombinedIsolationDeltaBetaCorrRaw3Hits',
+              'againstElectronLooseMVA5_': 'AgainstElectronLooseMVA5',
+              'againstElectronMediumMVA5_': 'AgainstElectronMediumMVA5',
+              'againstElectronTightMVA5_': 'AgainstElectronTightMVA5',
+              'againstElectronVLooseMVA5_': 'AgainstElectronVLooseMVA5',
+              'againstElectronVTightMVA5_': 'AgainstElectronVTightMVA5',
+              'againstMuonLoose3_': 'AgainstMuonLoose3',
+              'againstMuonTight3_': 'AgainstMuonTight3',
+              'byCombinedIsolationDeltaBetaCorrRaw3Hits_': 'ByCombinedIsolationDeltaBetaCorrRaw3Hits',
+              'byIsolationMVA3newDMwoLTraw_': 'ByIsolationMVA3newDMwoLTraw',
+              'byIsolationMVA3oldDMwoLTraw_': 'ByIsolationMVA3oldDMwoLTraw',
+              'byIsolationMVA3newDMwLTraw_': 'ByIsolationMVA3newDMwLTraw',
+              'byIsolationMVA3oldDMwLTraw_': 'ByIsolationMVA3oldDMwLTraw',
+              'chargedIsoPtSum_': 'ChargedIsoPtSum',
+              'decayModeFinding_': 'DecayModeFinding',
+              'decayModeFindingNewDMs_': 'DecayModeFindingNewDMs',
+              'neutralIsoPtSum_': 'NeutralIsoPtSum',
+              'puCorrPtSum_': 'PuCorrPtSum'
+              }
 
+eMuVarsDict = {'iso_': 'RelIso'}
 
 def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
     if FS == 'tt':
@@ -62,9 +91,13 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         else:
             object_1 = 't2'
             object_2 = 't1'
-    elif FS == 'et':
-        object_1 = 'e'
-        object_2 = 't'
+    elif FS == 'em':
+        object_1 = 'm'
+        object_2 = 'e'
+    else:
+        object_1 = FS[0]
+        object_2 = FS[1]
+
     lep1.SetCoordinates(getattr(iChain, '%sPt' %object_1),
                         getattr(iChain, '%sEta' %object_1),
                         getattr(iChain, '%sPhi' %object_1),
@@ -101,63 +134,30 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['npv'][0] = iChain.nvtx
         syncVarsDict['npu'][0] = iChain.nTruePU
 
-        syncVarsDict['pt_1'][0] = getattr(iChain, '%sPt' %object_1)
-        syncVarsDict['eta_1'][0] = getattr(iChain, '%sEta' %object_1)
-        syncVarsDict['phi_1'][0] = getattr(iChain, '%sPhi' %object_1)
-        syncVarsDict['m_1'][0] = getattr(iChain, '%sMass' %object_1)
-        syncVarsDict['q_1'][0] = getattr(iChain, '%sCharge' %object_1)
-        syncVarsDict['mt_1'][0] = getattr(iChain, '%sMtToPFMET' %object_1)
-        syncVarsDict['dZ_1'][0] = getattr(iChain, '%sdZ' %object_1)
-        if FS == 'tt':    
-            syncVarsDict['iso_1'][0] = getattr(iChain, '%sByCombinedIsolationDeltaBetaCorrRaw3Hits' %object_1)
-            syncVarsDict['againstElectronLooseMVA5_1'][0] = getattr(iChain, '%sAgainstElectronLooseMVA5' %object_1)
-            syncVarsDict['againstElectronMediumMVA5_1'][0] = getattr(iChain, '%sAgainstElectronMediumMVA5' %object_1)
-            syncVarsDict['againstElectronTightMVA5_1'][0] = getattr(iChain, '%sAgainstElectronTightMVA5' %object_1)
-            syncVarsDict['againstElectronVLooseMVA5_1'][0] = getattr(iChain, '%sAgainstElectronVLooseMVA5' %object_1)
-            syncVarsDict['againstElectronVTightMVA5_1'][0] = getattr(iChain, '%sAgainstElectronVTightMVA5' %object_1)
-            syncVarsDict['againstMuonLoose3_1'][0] = getattr(iChain, '%sAgainstMuonLoose3' %object_1)
-            syncVarsDict['againstMuonTight3_1'][0] = getattr(iChain, '%sAgainstMuonTight3' %object_1)
-            syncVarsDict['byCombinedIsolationDeltaBetaCorrRaw3Hits_1'][0] = getattr(iChain, '%sByCombinedIsolationDeltaBetaCorrRaw3Hits' %object_1)
-            syncVarsDict['byIsolationMVA3newDMwoLTraw_1'][0] = getattr(iChain, '%sByIsolationMVA3newDMwoLTraw' %object_1)
-            syncVarsDict['byIsolationMVA3oldDMwoLTraw_1'][0] = getattr(iChain, '%sByIsolationMVA3oldDMwoLTraw' %object_1)
-            syncVarsDict['byIsolationMVA3newDMwLTraw_1'][0] = getattr(iChain, '%sByIsolationMVA3newDMwLTraw' %object_1)
-            syncVarsDict['byIsolationMVA3oldDMwLTraw_1'][0] = getattr(iChain, '%sByIsolationMVA3oldDMwLTraw' %object_1)
-            syncVarsDict['chargedIsoPtSum_1'][0] = getattr(iChain, '%sChargedIsoPtSum' %object_1)
-            syncVarsDict['decayModeFinding_1'][0] = getattr(iChain, '%sDecayModeFinding' %object_1)
-            syncVarsDict['decayModeFindingNewDMs_1'][0] = getattr(iChain, '%sDecayModeFindingNewDMs' %object_1)
-            syncVarsDict['neutralIsoPtSum_1'][0] = getattr(iChain, '%sNeutralIsoPtSum' %object_1)
-            syncVarsDict['puCorrPtSum_1'][0] = getattr(iChain, '%sPuCorrPtSum' %object_1)
+        for ikey in commonVarsDict.keys():
+            syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey]))
+            syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))
+
+        if 't' in object_1:
+            for ikey in tauVarsDict.keys():
+                syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, tauVarsDict[ikey]))
+        else:
+            for ikey in eMuVarsDict.keys():
+                syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, eMuVarsDict[ikey]))
+
+        if 't' in object_2:
+            for ikey in tauVarsDict.keys():
+                syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, tauVarsDict[ikey]))
+        else:
+            for ikey in eMuVarsDict.keys():
+                syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, eMuVarsDict[ikey]))
+
+        if FS == 'tt':
             syncVarsDict['m_vis'][0] = getattr(iChain, 't1_t2_Mass')
-
-        elif FS == 'et':
-            syncVarsDict['iso_1'][0] = getattr(iChain, '%sRelIso' %object_1)
+        if FS == 'em':
+            syncVarsDict['m_vis'][0] = getattr(iChain, 'e_m_Mass')
+        else:
             syncVarsDict['m_vis'][0] = getattr(iChain, '%s_%s_Mass' %(object_1, object_2))
-
-        syncVarsDict['pt_2'][0] = getattr(iChain, '%sPt' %object_2)
-        syncVarsDict['eta_2'][0] = getattr(iChain, '%sEta' %object_2)
-        syncVarsDict['phi_2'][0] = getattr(iChain, '%sPhi' %object_2)
-        syncVarsDict['m_2'][0] = getattr(iChain, '%sMass' %object_2)
-        syncVarsDict['q_2'][0] = getattr(iChain, '%sCharge' %object_2)
-        syncVarsDict['mt_2'][0] = getattr(iChain, '%sMtToPFMET' %object_2)
-        syncVarsDict['dZ_2'][0] = getattr(iChain, '%sdZ' %object_2)
-        syncVarsDict['iso_2'][0] =  getattr(iChain, '%sByCombinedIsolationDeltaBetaCorrRaw3Hits' %object_2)
-        syncVarsDict['againstElectronLooseMVA5_2'][0] = getattr(iChain, '%sAgainstElectronLooseMVA5' %object_2)
-        syncVarsDict['againstElectronMediumMVA5_2'][0] = getattr(iChain, '%sAgainstElectronMediumMVA5' %object_2)
-        syncVarsDict['againstElectronTightMVA5_2'][0] = getattr(iChain, '%sAgainstElectronTightMVA5' %object_2)
-        syncVarsDict['againstElectronVLooseMVA5_2'][0] = getattr(iChain, '%sAgainstElectronVLooseMVA5' %object_2)
-        syncVarsDict['againstElectronVTightMVA5_2'][0] = getattr(iChain, '%sAgainstElectronVTightMVA5' %object_2)
-        syncVarsDict['againstMuonLoose3_2'][0] = getattr(iChain, '%sAgainstMuonLoose3' %object_2)
-        syncVarsDict['againstMuonTight3_2'][0] = getattr(iChain, '%sAgainstMuonTight3' %object_2)
-        syncVarsDict['byCombinedIsolationDeltaBetaCorrRaw3Hits_2'][0] = getattr(iChain, '%sByCombinedIsolationDeltaBetaCorrRaw3Hits' %object_2)
-        syncVarsDict['byIsolationMVA3newDMwoLTraw_2'][0] = getattr(iChain, '%sByIsolationMVA3newDMwoLTraw' %object_2)
-        syncVarsDict['byIsolationMVA3oldDMwoLTraw_2'][0] = getattr(iChain, '%sByIsolationMVA3oldDMwoLTraw' %object_2)
-        syncVarsDict['byIsolationMVA3newDMwLTraw_2'][0] = getattr(iChain, '%sByIsolationMVA3newDMwLTraw' %object_2)
-        syncVarsDict['byIsolationMVA3oldDMwLTraw_2'][0] = getattr(iChain, '%sByIsolationMVA3oldDMwLTraw' %object_2)
-        syncVarsDict['chargedIsoPtSum_2'][0] = getattr(iChain, '%sChargedIsoPtSum' %object_2)
-        syncVarsDict['decayModeFinding_2'][0] = getattr(iChain, '%sDecayModeFinding' %object_2)
-        syncVarsDict['decayModeFindingNewDMs_2'][0] = getattr(iChain, '%sDecayModeFindingNewDMs' %object_2)
-        syncVarsDict['neutralIsoPtSum_2'][0] = getattr(iChain, '%sNeutralIsoPtSum' %object_2)
-        syncVarsDict['puCorrPtSum_2'][0] = getattr(iChain, '%sPuCorrPtSum' %object_2)
 
         syncVarsDict['met'][0] = iChain.pfMetEt
         syncVarsDict['metphi'][0] = iChain.pfMetPhi

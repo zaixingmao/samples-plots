@@ -31,7 +31,14 @@ sv4Vec = lvClass()
 
 # kinfit.setup()
 
-
+def expandFinalStates(FS):
+    finalStates = [x.strip() for x in FS.split(',')]
+    for iFS in finalStates:
+        if iFS not in ['tt', 'et', 'mt', 'em']:
+            print 'ERROR::Final state [%s] not supported, please choose [tt, et, mt, em]' %iFS
+            return False
+    return finalStates
+ 
 def setUpFloatVarsDict():
     varDict = {}
     names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 
@@ -45,12 +52,12 @@ def setUpFloatVarsDict():
 def setUpSyncVarsDict():
     varDict = {}
     names = ['weight', 'puweight','npv', 'npu',
-            'pt_1', 'phi_1', 'eta_1','m_1','q_1','d0_1', 'dZ_1', 'mt_1', 'iso_1', 'id_m_loose_1', 'id_m_medium_1', 'id_m_tight_1', 'id_m_tightnovtx_1', 'id_m_highpt_1',
+            'pt_1', 'phi_1', 'eta_1','m_1','q_1','d0_1', 'dZ_1', 'dXY_1', 'mt_1', 'iso_1', 'id_m_loose_1', 'id_m_medium_1', 'id_m_tight_1', 'id_m_tightnovtx_1', 'id_m_highpt_1',
             'id_e_mva_nt_loose_1', 'id_e_mva_nt_loose_1', 'id_e_cut_veto_1', 'id_e_cut_loose_1', 'id_e_cut_medium_1', 'id_e_cut_tight_1', 'trigweight_1', 
             'againstElectronLooseMVA5_1','againstElectronMediumMVA5_1', 'againstElectronTightMVA5_1', 'againstElectronVLooseMVA5_1', 'againstElectronVTightMVA5_1', 'againstMuonLoose3_1', 'againstMuonTight3_1', 
             'byCombinedIsolationDeltaBetaCorrRaw3Hits_1', 'byIsolationMVA3newDMwoLTraw_1', 'byIsolationMVA3oldDMwoLTraw_1', 'byIsolationMVA3newDMwLTraw_1', 'byIsolationMVA3oldDMwLTraw_1',
             'chargedIsoPtSum_1', 'decayModeFinding_1', 'decayModeFindingNewDMs_1', 'neutralIsoPtSum_1', 'puCorrPtSum_1',
-            'pt_2', 'phi_2', 'eta_2','m_2','q_2','d0_2', 'dZ_2', 'mt_2', 'iso_2', 'id_m_loose_2', 'id_m_medium_2', 'id_m_tight_2', 'id_m_tightnovtx_2', 'id_m_highpt_2',
+            'pt_2', 'phi_2', 'eta_2','m_2','q_2','d0_2', 'dZ_2', 'dXY_2', 'mt_2', 'iso_2', 'id_m_loose_2', 'id_m_medium_2', 'id_m_tight_2', 'id_m_tightnovtx_2', 'id_m_highpt_2',
             'id_e_mva_nt_loose_2', 'id_e_mva_nt_loose_2', 'id_e_cut_veto_2', 'id_e_cut_loose_2', 'id_e_cut_medium_2', 'id_e_cut_tight_2', 'trigweight_2', 'againstElectronLooseMVA5_2',
             'againstElectronMediumMVA5_2', 'againstElectronTightMVA5_2', 'againstElectronVLooseMVA5_2', 'againstElectronVTightMVA5_2', 'againstMuonLoose3_2', 'againstMuonTight3_2', 
             'byCombinedIsolationDeltaBetaCorrRaw3Hits_2', 'byIsolationMVA3newDMwoLTraw_2', 'byIsolationMVA3oldDMwoLTraw_2', 'byIsolationMVA3newDMwLTraw_2', 'byIsolationMVA3oldDMwLTraw_2',
@@ -98,7 +105,9 @@ options = opts()
 
 r.gStyle.SetOptStat(0)
 
-def loop_one_sample(iSample, iLocation, iXS):
+def loop_one_sample(iSample, iLocation, iXS, finalState):
+    print 'Ntuplizing sample [%s] for channel [%s]' %(iSample, finalState)
+
     if 'data' in iSample:
         isData = True
     else:
@@ -115,11 +124,11 @@ def loop_one_sample(iSample, iLocation, iXS):
     sync = options.sync
         
     cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
-    tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %options.FS, hist = cutFlow, xAxisLabels=xLabels)
+    tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %finalState, hist = cutFlow, xAxisLabels=xLabels)
     cutFlow.SetName('preselection')
 
     folderName = options.folderName
-    iChain = r.TChain("%s/final/Ntuple" %options.FS)
+    iChain = r.TChain("%s/final/Ntuple" %finalState)
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
     iChain.SetBranchStatus("*",1)
     #set up vars dict
@@ -132,9 +141,9 @@ def loop_one_sample(iSample, iLocation, iXS):
     oTree = iChain.GetTree().CloneTree(0)
     iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
     if sync:
-        outputFileName = "%s/%s_SYNC_%s.root" %(options.location,iSample, options.FS)
+        outputFileName = "%s/%s_SYNC_%s.root" %(options.location,iSample, finalState)
     else:
-        outputFileName = "%s/%s_%s.root" %(options.location,iSample, options.FS)
+        outputFileName = "%s/%s_%s.root" %(options.location,iSample, finalState)
     iFile = r.TFile(outputFileName,"recreate")
 
     #setup branches
@@ -180,25 +189,25 @@ def loop_one_sample(iSample, iLocation, iXS):
 
         #save last event
         if iEntry == nEntries - 1:
-            if passCut(iChain, options.FS):
-                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, options.FS)
+            if passCut(iChain, finalState):
+                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, options.FS)
+            syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
             oTree.Fill()
             counter += 1
 
-        if not passCut(iChain, options.FS):
+        if not passCut(iChain, finalState):
             continue
 
         if (preEvt == 0 and preLumi == 0 and preRun == 0) or (preEvt == iChain.evt and preLumi == iChain.lumi and preRun == iChain.run):
-            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, options.FS)
+            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
 
         elif bestPair != -1:
             #store best pair
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, options.FS)
+            syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
             oTree.Fill()
 
             #reset best pair info
@@ -212,7 +221,7 @@ def loop_one_sample(iSample, iLocation, iXS):
             #reload to current entry
             iChain.LoadTree(iEntry)
             iChain.GetEntry(iEntry)
-            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, options.FS)
+            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
 
 
         preEvt = iChain.evt
@@ -229,8 +238,12 @@ def loop_one_sample(iSample, iLocation, iXS):
 
 def go():
 #     setupLumiReWeight()
+    finalStates = expandFinalStates(options.FS)
+    if not finalStates:
+        return 0
     for iSample, iLocation, xs in enVars.sampleLocations:
-        loop_one_sample(iSample, iLocation, float(xs))
+        for iFS in finalStates:
+            loop_one_sample(iSample, iLocation, float(xs), iFS)
 #     freeLumiReWeight()
 
 
