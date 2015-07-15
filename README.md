@@ -15,7 +15,8 @@ cd ..
 
 ####make samples from ntuples
 * Specify samples location, name in `cfg/enVars.py`
-* `./cutSamples.py -l LOCATIONOFOUTPUTFILE`
+* `./cutSamples.py -l LOCATIONOFOUTPUTFILE --sync --FS=tt,et`
+* cutSamples currently supports [tt, et, mt, em]
 
 ######to combined data, since we have A, B, C, D
 1. generate A, B, C, D separately in the same location
