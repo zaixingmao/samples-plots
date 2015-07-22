@@ -40,7 +40,7 @@ def printInfo(name1="", varsList1=[], name2="", varsList2=[]):
         if varsList1[i*2] == "lumi" or varsList1[i*2] == 'njets':
             p = "%0.0f"
         elif 'dZ' in varsList1[i*2]:
-            p = "%0.3f"
+            p = "%0.10f"
         else:
             p = "%0.2f"
         value1 = varsList1[i*2+1]
@@ -110,65 +110,68 @@ def getVetoValue(veto):
         out = ' '.join(format(ord(x), 'b') for x in veto)
         return int(out)
 
-def addVars(iTree):
 
+def addVars(iTree):
+    tau1 = lvClass()
     tau2 = lvClass()
     jet2 = lvClass()
+    tau1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_2)
     tau2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 #     jet2.SetCoordinates(iTree.bpt_2, iTree.beta_2, iTree.bphi_2, 0)
  
     a = ['evtNumber', int(iTree.evt), 
 #             'mvaPhi', iTree.mvametphi, 
 #             'muVeto', getVetoValue(iTree.extramuon_veto),
-            'pt1', iTree.pt_1, 
+            'dZ_1', iTree.dZ_1, 
 
             'lumi', int(iTree.lumi), 
 #           'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
             'iso1', iTree.iso_1, 
+            'dZ_1', iTree.dZ_1, 
 
 #             'iso1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
 
-            'phi1', iTree.phi_1, 
+#             'phi1', iTree.phi_1, 
 #             'mass1', iTree1.m_1,
-            'pt2', iTree.pt_2, 
-            'eta2', iTree.eta_2, 
+#             'pt2', iTree.pt_2, 
+#             'eta2', iTree.eta_2, 
 #             'iso2', iTree.iso_2, 
-            'iso2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
+#             'iso2', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_2, 
 #             'tw_2', iTree.trigweight_2, 
 
-            'phi2', iTree.phi_2, 
-
-            'met', iTree.met, 
-            'metphi', iTree.metphi, 
+#             'phi2', iTree.phi_2, 
+#             'dR', r.Math.VectorUtil.DeltaR(tau1, tau2),
+#             'met', iTree.met, 
+#             'metphi', iTree.metphi, 
 #             'mvamet', iTree.mvamet, 
 #             'mvametphi', iTree.mvametphi, 
 
-#             'eleVeto', getVetoValue(iTree.extraelec_veto),
-#             'muVeto', getVetoValue(iTree.extramuon_veto),
+#            'eleVeto', getVetoValue(iTree.extraelec_veto),
+#            'muVeto', getVetoValue(iTree.extramuon_veto),
 
 #             'muVeto', int(iTree.extramuon_veto), 
 
-            'njets', iTree.njets, 
+#             'njets', iTree.njets, 
 
 #             'mass2', iTree1.m_2,
 #             'jptraw1', iTree.jptraw_1,
-            'jpt_1', iTree.jpt_1, 
-            'jeta_1', iTree.jeta_1, 
-            'jphi_1', iTree.jphi_1, 
+#             'jpt_1', iTree.jpt_1, 
+#             'jeta_1', iTree.jeta_1, 
+#             'jphi_1', iTree.jphi_1, 
 #             'jmva_1', iTree.jmva_1, 
 
 #             'jptraw2', iTree.jptraw_2,
-            'jpt_2', iTree.jpt_2, 
+#             'jpt_2', iTree.jpt_2, 
 #             'jeta_2', iTree.jeta_2, 
 #             'jphi_2', iTree.jphi_2,
-            'jmva_2', iTree.jmva_2, 
+#             'jmva_2', iTree.jmva_2, 
 # 
 #             'npv', iTree.npv,
-            'dZ_1', iTree.dZ_1, 
-            'dZ_2', iTree.dZ_2, 
+ #            'dZ_1', iTree.dZ_1, 
+#             'dZ_2', iTree.dZ_2, 
 
 # 
 #             'bcsv_1', iTree.bjcsv_1,
@@ -183,7 +186,7 @@ def addVars(iTree):
 #             'bcsv_3', iTree.bcsv_3,
 #             'bpt_3', iTree.bpt_3,
 #             'beta_3', iTree.beta_3,
-            'NBTags', iTree.nbtag,
+#             'NBTags', iTree.nbtag,
 #             'cov00', iTree.mvacov00,
 #             'cov01', iTree.mvacov01,
 #             'cov10', iTree.mvacov10,

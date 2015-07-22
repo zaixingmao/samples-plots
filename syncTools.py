@@ -91,9 +91,6 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         else:
             object_1 = 't2'
             object_2 = 't1'
-    elif FS == 'em':
-        object_1 = 'm'
-        object_2 = 'e'
     else:
         object_1 = FS[0]
         object_2 = FS[1]
@@ -154,8 +151,6 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
 
         if FS == 'tt':
             syncVarsDict['m_vis'][0] = getattr(iChain, 't1_t2_Mass')
-        if FS == 'em':
-            syncVarsDict['m_vis'][0] = getattr(iChain, 'e_m_Mass')
         else:
             syncVarsDict['m_vis'][0] = getattr(iChain, '%s_%s_Mass' %(object_1, object_2))
 
