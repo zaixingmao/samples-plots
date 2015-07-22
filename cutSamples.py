@@ -52,12 +52,12 @@ def setUpFloatVarsDict():
 def setUpSyncVarsDict():
     varDict = {}
     names = ['weight', 'puweight','npv', 'npu',
-            'pt_1', 'phi_1', 'eta_1','m_1','q_1','d0_1', 'dZ_1', 'dXY_1', 'mt_1', 'iso_1', 'id_m_loose_1', 'id_m_medium_1', 'id_m_tight_1', 'id_m_tightnovtx_1', 'id_m_highpt_1',
+            'pt_1', 'phi_1', 'eta_1','m_1','q_1','d0_1', 'dZ_1', 'mt_1', 'iso_1', 'id_m_loose_1', 'id_m_medium_1', 'id_m_tight_1', 'id_m_tightnovtx_1', 'id_m_highpt_1',
             'id_e_mva_nt_loose_1', 'id_e_mva_nt_loose_1', 'id_e_cut_veto_1', 'id_e_cut_loose_1', 'id_e_cut_medium_1', 'id_e_cut_tight_1', 'trigweight_1', 
             'againstElectronLooseMVA5_1','againstElectronMediumMVA5_1', 'againstElectronTightMVA5_1', 'againstElectronVLooseMVA5_1', 'againstElectronVTightMVA5_1', 'againstMuonLoose3_1', 'againstMuonTight3_1', 
             'byCombinedIsolationDeltaBetaCorrRaw3Hits_1', 'byIsolationMVA3newDMwoLTraw_1', 'byIsolationMVA3oldDMwoLTraw_1', 'byIsolationMVA3newDMwLTraw_1', 'byIsolationMVA3oldDMwLTraw_1',
             'chargedIsoPtSum_1', 'decayModeFinding_1', 'decayModeFindingNewDMs_1', 'neutralIsoPtSum_1', 'puCorrPtSum_1',
-            'pt_2', 'phi_2', 'eta_2','m_2','q_2','d0_2', 'dZ_2', 'dXY_2', 'mt_2', 'iso_2', 'id_m_loose_2', 'id_m_medium_2', 'id_m_tight_2', 'id_m_tightnovtx_2', 'id_m_highpt_2',
+            'pt_2', 'phi_2', 'eta_2','m_2','q_2','d0_2', 'dZ_2', 'mt_2', 'iso_2', 'id_m_loose_2', 'id_m_medium_2', 'id_m_tight_2', 'id_m_tightnovtx_2', 'id_m_highpt_2',
             'id_e_mva_nt_loose_2', 'id_e_mva_nt_loose_2', 'id_e_cut_veto_2', 'id_e_cut_loose_2', 'id_e_cut_medium_2', 'id_e_cut_tight_2', 'trigweight_2', 'againstElectronLooseMVA5_2',
             'againstElectronMediumMVA5_2', 'againstElectronTightMVA5_2', 'againstElectronVLooseMVA5_2', 'againstElectronVTightMVA5_2', 'againstMuonLoose3_2', 'againstMuonTight3_2', 
             'byCombinedIsolationDeltaBetaCorrRaw3Hits_2', 'byIsolationMVA3newDMwoLTraw_2', 'byIsolationMVA3oldDMwoLTraw_2', 'byIsolationMVA3newDMwLTraw_2', 'byIsolationMVA3oldDMwLTraw_2',
@@ -65,7 +65,9 @@ def setUpSyncVarsDict():
             'pth', 'm_vis', 'm_sv', 'pt_sv', 'eta_sv', 'phi_sv', 'met_sv',
             'met', 'metphi', 'mvamet', 'mvametphi', 'pzetavis', 'pzetamiss',
             'jpt_1', 'jeta_1', 'jphi_1', 'jrawf_1', 'jmva_1', 'jpfid_1', 'jpuid_1', 'jcsv_1',
-            'jpt_2', 'jeta_2', 'jphi_2', 'jrawf_2', 'jmva_2', 'jpfid_2', 'jpuid_2', 'jcsv_2']
+            'jpt_2', 'jeta_2', 'jphi_2', 'jrawf_2', 'jmva_2', 'jpfid_2', 'jpuid_2', 'jcsv_2',
+            'dXY_1','dXY_2'
+            ]
 
     for iName in names:
         varDict[iName] = array('f', [0.])
@@ -184,24 +186,24 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
         iChain.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s' %(outputFileName), iEntry-1)
 
+        passCuts = passCut(iChain, finalState)
+
         if counter == int(options.nevents):
             break
 
-        #save last event
-        if iEntry == nEntries - 1:
-            if passCut(iChain, finalState):
-                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
-            iChain.LoadTree(bestPair)
-            iChain.GetEntry(bestPair)
-            syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
-            oTree.Fill()
-            counter += 1
-
-        if not passCut(iChain, finalState):
+        if (not passCuts) and (iEntry != nEntries - 1):
             continue
 
         if (preEvt == 0 and preLumi == 0 and preRun == 0) or (preEvt == iChain.evt and preLumi == iChain.lumi and preRun == iChain.run):
-            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
+            if passCuts:
+                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
+
+            if (iEntry == nEntries - 1): #save last event
+                iChain.LoadTree(bestPair)
+                iChain.GetEntry(bestPair)
+                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                oTree.Fill()
+                counter += 1
 
         elif bestPair != -1:
             #store best pair
@@ -222,6 +224,11 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
             iChain.LoadTree(iEntry)
             iChain.GetEntry(iEntry)
             bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
+
+            if (iEntry == nEntries - 1) and passCuts:  #save last event, it's already loaded with the current value
+                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                oTree.Fill()
+                counter += 1
 
 
         preEvt = iChain.evt
