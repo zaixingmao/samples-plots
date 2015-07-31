@@ -412,24 +412,22 @@ def triggerMatch(iTree, channel = 'tt'):
 
 def passCut(iTree, FS):
     #event, lumi
-    deBugEvent = []
+    deBugEvent = [(1734, 9), (3031, 16), (8089, 42), (21868, 113)]
     showDeBugStatus = False
 
-#     HLTandFilter = {'muTau': ['mMuTau', 'mMuTauOverlap', 'tTau20AgainstMuon', 'tTauOverlapMu'],
-#                           'singleMu24': ['mIsoMu24'],
-# #                           'singleMu27': ['mIsoMu27']
-#                    }
+    HLTandFilter = {'eTau': ['eEle22', 'eOverlapEle22', 'tTau20', 'tTauOverlapEle'],
+                    'singleE': ['eSingleEle']}
 
     for iEvent, iLumi in deBugEvent:
         if iEvent == iTree.evt and iLumi == iTree.lumi:
             showDeBugStatus = True
             print 'tracking event: %i  lumi: %i' %(iEvent, iLumi)
-            print iTree.mPt, iTree.tPt
+            print iTree.ePt, iTree.tPt
 
-#             for iHLT in HLTandFilter.keys():
-#                 print "HLT_%s: %i" %(iHLT, getattr(iTree, '%sPass' %iHLT))
-#                 for ihlt_filter in HLTandFilter[iHLT]:
-#                     print "\t \t hltfilter_%s: %i" %(ihlt_filter, getattr(iTree, '%s' %ihlt_filter))
+            for iHLT in HLTandFilter.keys():
+                print "HLT_%s: %i" %(iHLT, getattr(iTree, '%sPass' %iHLT))
+                for ihlt_filter in HLTandFilter[iHLT]:
+                    print "\t \t hltfilter_%s: %i" %(ihlt_filter, getattr(iTree, '%s' %ihlt_filter))
 
     if FS == 'tt':
         cuts = {'ID': 0 if (iTree.t1DecayModeFindingNewDMs < 0.5 or iTree.t2DecayModeFindingNewDMs < 0.5) else 1,

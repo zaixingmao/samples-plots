@@ -76,7 +76,7 @@ def setUpSyncVarsDict():
 
 def setUpIntVarsDict():
     varDict = {}
-    names = ['nElectrons', 'nMuons', 'initEvents', 'ZTT', 'ZLL', 'njets', 'nbtag', 'njetspt20']
+    names = ['nElectrons', 'nMuons', 'initEvents', 'ZTT', 'ZLL', 'njets', 'nbtag', 'njetspt20', 'njetingap20', 'njetingap']
     for iName in names:
         varDict[iName] = array('i', [0])
     return varDict

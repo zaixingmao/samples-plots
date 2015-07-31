@@ -17,10 +17,22 @@ J8 = lvClass()
 emptyJets = lvClass()
 emptyJets.SetCoordinates(-9999, -9999, -9999, -9999)
 
+def getNJetinGap(jets):
+    njetingap = 0
+    if len(jets) <= 2:
+        return njetingap
+
+    etaMin = abs(jets[0].eta()) if abs(jets[0].eta()) < abs(jets[1].eta()) else abs(jets[1].eta())
+    etaMax = abs(jets[0].eta()) if abs(jets[0].eta()) > abs(jets[1].eta()) else abs(jets[1].eta())
+    for iJet in jets:
+        if etaMin < abs(iJet.eta()) < etaMax:
+            njetingap += 1
+    return njetingap
+
 def getCrossCleanJets(jetsList, lepList, type = 'jet', iChain = None):
     goodJets = []
-    nPt20GoodJets = 0
-    nPt30GoodJets = 0
+    pt20GoodJets = []
+    pt30GoodJets = []
 
     jetCuts = {}
     if type == 'jet':
@@ -40,9 +52,9 @@ def getCrossCleanJets(jetsList, lepList, type = 'jet', iChain = None):
                 if (not PFLoose):
                     continue
                 if iJet.pt() > 20:
-                    nPt20GoodJets += 1
+                    pt20GoodJets.append(iJet)
                 if iJet.pt() > 30:
-                    nPt30GoodJets += 1
+                    pt30GoodJets.append(iJet)
                 if type == 'jet':
                     goodJets.append((iJet.pt(), iJet, iJetMVA))
                 else:
@@ -50,7 +62,7 @@ def getCrossCleanJets(jetsList, lepList, type = 'jet', iChain = None):
     while len(goodJets) < 8:
         goodJets.append((-9999.,emptyJets, -9999.))
     goodJets = sorted(goodJets, key=itemgetter(0), reverse=True)
-    return goodJets, nPt20GoodJets, nPt30GoodJets
+    return goodJets, pt20GoodJets, pt30GoodJets
 
 commonVarsDict = {"pt_": "Pt",
                  "eta_": "Eta",
@@ -114,8 +126,9 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
                 (iChain.jet8CSVBtag, J8.SetCoordinates(iChain.jet8Pt, iChain.jet8Eta, iChain.jet8Phi, iChain.jet8Mass), iChain.jet8PUMVA, iChain.jet8PFJetIDLoose)]
 
 
-    bJets, intVarsDict['nbtag'][0], nPt30bjets = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'b', iChain = None)
+    bJets, pt20bjets, pt30bjets = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'b', iChain = None)
 
+    intVarsDict['nbtag'][0] = len(pt20bjets)
     floatVarsDict['bjcsv_1'][0] = bJets[0][0]
     floatVarsDict['bjcsv_2'][0] = bJets[1][0] 
     floatVarsDict['bjmva_1'][0] = bJets[0][2]
@@ -151,6 +164,11 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
 
         if FS == 'tt':
             syncVarsDict['m_vis'][0] = getattr(iChain, 't1_t2_Mass')
+ #            syncVarsDict['m_sv'][0] = getattr(iChain, 't1_t2_SVfit').Pt()
+#             syncVarsDict['pt_sv'][0] = getattr(iChain, 't1_t2_SVfit').Eta()
+#             syncVarsDict['eta_sv'][0] = getattr(iChain, 't1_t2_SVfit').Phi()
+#             syncVarsDict['phi_sv'][0] = getattr(iChain, 't1_t2_SVfit').M()
+
         else:
             syncVarsDict['m_vis'][0] = getattr(iChain, '%s_%s_Mass' %(object_1, object_2))
 
@@ -158,8 +176,14 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['metphi'][0] = iChain.pfMetPhi
 #         syncVarsDict['mvamet'][0] = iChain.mvametEt
 #         syncVarsDict['mvametphi'][0] = iChain.mvametPhi
+        
 
-        goodJets, intVarsDict['njetspt20'][0], intVarsDict['njets'][0] = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'jet', iChain = iChain)
+        goodJets, pt20jets, pt30jets = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'jet', iChain = iChain)
+        intVarsDict['njetspt20'][0] = len(pt20jets)
+        intVarsDict['njets'][0] = len(pt30jets)
+        intVarsDict['njetingap20'][0] = getNJetinGap(pt20jets)
+        intVarsDict['njetingap'][0] = getNJetinGap(pt30jets)
+
         syncVarsDict['jcsv_1'][0] = goodJets[0][0]
         syncVarsDict['jpt_1'][0] = goodJets[0][1].pt()
         syncVarsDict['jeta_1'][0] = goodJets[0][1].eta()
