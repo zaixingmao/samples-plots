@@ -20,7 +20,7 @@ def opts():
     parser = optparse.OptionParser()
     parser.add_option("--l", dest="location", default='currentLocation', help="location for dump file")
     parser.add_option("--threshold", dest="threshold", default=4, help="threshold for dir size")
-    parser.add_option("--fileType", dest="fileType", default='patTuple_cfg', help="prefix of dir name")
+    parser.add_option("--fileType", dest="fileType", default='make_ntuples_cfg', help="prefix of dir name")
     options, args = parser.parse_args()
     return options
 
