@@ -98,6 +98,7 @@ def opts():
     parser.add_option("--sync", dest="sync", default=False, action="store_true", help="which pair")
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
+    parser.add_option("--inclusive", dest="inclusive", default=False, action="store_true", help="apply inclusive cut")
 
     options, args = parser.parse_args()
 
@@ -126,8 +127,13 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     sync = options.sync
         
     cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
+    eventCount = r.TH1F('eventCount', '', 1, -0.5, 0.5)
+    eventWeights = r.TH1F('eventWeights', '', 2, 0, 2)
+
     tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %finalState, hist = cutFlow, xAxisLabels=xLabels)
     cutFlow.SetName('preselection')
+    tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
+    print 'initEvents: %i' %eventCount.GetBinContent(1)
 
     folderName = options.folderName
     iChain = r.TChain("%s/final/Ntuple" %finalState)
@@ -162,7 +168,7 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
             oTree.Branch("%s" %iVar, syncVarsDict[iVar], "%s/F" %iVar)
 
     charVarsDict['sampleName'][:31] = iSample
-    intVarsDict['initEvents'][0] = int(cutFlow.GetBinContent(1))
+    intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
     floatVarsDict['xs'][0] = iXS
     counter = 0
 
@@ -179,14 +185,24 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     preEvt = 0
     preLumi = 0
     preRun = 0
-
+    weightedNEvents = 0
 
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s' %(outputFileName), iEntry-1)
 
-        passCuts = passCut(iChain, finalState)
+        if not isData:
+            if iChain.genEventWeight < 0:
+                weightedNEvents -= 1
+            else:
+                weightedNEvents += 1
+
+        type = 'baseline'
+        if options.inclusive:
+            type = 'inclusive'
+
+        passCuts = passCut(iChain, finalState, type, isData)
 
         if counter == int(options.nevents):
             break
@@ -239,6 +255,10 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
     cutFlow.Write()
+    eventWeights.Fill(0.5, nEntries)
+    eventWeights.Fill(1.5, weightedNEvents)
+    eventWeights.Write()
+    eventCount.Write()
     oTree.Write()
     iFile.Close()
 
