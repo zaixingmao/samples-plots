@@ -1,7 +1,8 @@
 jetPtThreshold = 20
 corruptedROOTfiles = []
 
-preFix = '/hdfs/store/user/zmao/testProduction50ns/'
+preFix = '/hdfs/store/user/zmao/testProduction50ns_noSVFit/'
+# preFix = '/hdfs/store/user/zmao/sync_combined_take3_m/'
 
 
 postName = ""
@@ -12,12 +13,21 @@ dyScale1 = 1.14624922102
 dyScale2 = 1.19530260886
 dyScale3 = 1.25041471383
 dyScale4 = 1.27550090492
-
 sampleLocations = [
 #                     ("VBF_H",     "%sVBF_HToTauTau_M-125_13TeV-powheg-pythia6" %(preFix), 1000),
-#                     ("SUSY-160",     "%s/SUSYGluGluToHToTauTau_M-160_TuneCUETP8M1_13TeV-pythia8" %(preFix), 1000),
-                     ("DY",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 1000),
-
+#                     ("DY",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 6025000),
+#                     ("data",     "/hdfs/store/user/zmao/dataTake2_t/data_Tau_Run2015B_PromptReco_50ns", 1),
+#                     ("data",     "/hdfs/store/user/zmao/dataTake2_noSVFit/data_MuonEG_Run2015B_PromptReco_50ns", 1),
+#                    ("data",     "/hdfs/store/user/zmao/dataTake2_noSVFit/data_Muon_Run2015B_PromptReco_50ns", 1),
+#                     ("data",     "/hdfs/store/user/zmao/dataTake3_noSVFit/data_Electron_Run2015B_PromptReco_50ns", 1),
+                    ("TTJets",     "%s/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 831760),
+#                     ("WJets",     "%s/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 61526700, 24089991),
+#                      ("WW",     "%s/WW_TuneCUETP8M1_13TeV-pythia8" %(preFix), 63210),
+#                      ("WZ",     "%s/WZ_TuneCUETP8M1_13TeV-pythia8" %(preFix), 22820),
+#                      ("ZZ",     "%s/ZZ_TuneCUETP8M1_13TeV-pythia8" %(preFix), 10320),
+#                      ("T",     "%s/ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35600),
+#                      ("antiT",     "%s/ST_tW_antitop_5f_mtop1755_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35600),
+#                     ("SUSY", "%sSUSYGluGluToHToTauTau_M-160_TuneCUETP8M1_13TeV-pythia8"  %(preFix), 1, 1),
 #                      ("VBF_H",     "/nfs_scratch/zmao/tmp/72x", 1000),
 #                      ("VBF_H_74x",     "/nfs_scratch/zmao/tmp/74x", 1000),
 #     ("TTJets",     "%sTTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola" %(preFix), 424500),
