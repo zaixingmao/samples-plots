@@ -304,7 +304,7 @@ def setMyLegend(lPosition, lHistList):
     l.SetFillStyle(0)
     l.SetBorderSize(0)
     for i in range(len(lHistList)):
-        l.AddEntry(lHistList[i][0], lHistList[i][1])
+        l.AddEntry(lHistList[i][0], lHistList[i][1], lHistList[i][2])
     return l
 
 def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
