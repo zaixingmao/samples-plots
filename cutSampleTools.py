@@ -418,85 +418,115 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
     return False
 
 def passCut(iTree, FS, type = 'baseline', isData = False):
-    #event, lumi
-    deBugEvent = [(531, 3), (754, 4), (1947, 10), (3761, 20)]
-    showDeBugStatus = False
-
-    HLTandFilter = {'eTau': ['eEle22', 'eOverlapEle22', 'tTau20', 'tTauOverlapEle'],
-                    'singleE': ['eSingleEle']}
-
-    for iEvent, iLumi in deBugEvent:
-        if iEvent == iTree.evt and iLumi == iTree.lumi:
-            showDeBugStatus = True
-            print 'tracking event: %i  lumi: %i' %(iEvent, iLumi)
-            print iTree.ePt, iTree.tPt
-
-            for iHLT in HLTandFilter.keys():
-                print "HLT_%s: %i" %(iHLT, getattr(iTree, '%sPass' %iHLT))
-                for ihlt_filter in HLTandFilter[iHLT]:
-                    print "\t \t hltfilter_%s: %i" %(ihlt_filter, getattr(iTree, '%s' %ihlt_filter))
-
+########tt
     if FS == 'tt':
-        cuts = {'ID': 0 if (iTree.t1DecayModeFindingNewDMs < 0.5 or iTree.t2DecayModeFindingNewDMs < 0.5) else 1,
-                'ptEta': 1 if (iTree.t1Pt > 45 and iTree.t2Pt > 45 and abs(iTree.t1Eta) < 2.1 and abs(iTree.t2Eta) < 2.1) else 0,
-                'tauChage': 1 if (abs(iTree.t1Charge) < 2 and abs(iTree.t2Charge) < 2) else 0,
-                'triggerMatch': 1 if triggerMatch(iTree, FS, isData) else 0,
-                'dR': 1 if (iTree.t1_t2_DR) > 0.5 else 0,
-                'HLT': 1 if iTree.doubleTauPass else 1,
-                'dZ': 1 if abs(iTree.t1dZ) < 0.2 and abs(iTree.t2dZ) < 0.2 else 0,
-                }
         if type == 'inclusive':
-            cuts['iso'] = 0 if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1) else 1
-            cuts['tau1'] = 1 if (iTree.t1AgainstElectronTightMVA5 > 0.5 and iTree.t1AgainstMuonLoose3 > 0.5) else 0
-            cuts['tau2'] = 1 if (iTree.t2AgainstElectronTightMVA5 > 0.5 and iTree.t2AgainstMuonLoose3 > 0.5) else 0
-            cuts['3rdLepton'] = 0 if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 0) else 1
+            if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1):
+                return 0, 'antiIso'
 
+        if type != 'baseline':
+            if not (iTree.t1AgainstElectronTightMVA5 > 0.5 and iTree.t1AgainstMuonLoose3 > 0.5):
+                return 0, 'againstTau1'
+            if not (iTree.t2AgainstElectronTightMVA5 > 0.5 and iTree.t2AgainstMuonLoose3 > 0.5):
+                return 0, 'againstTau2'
+            if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 0):
+                return 0, '3rdLepton'
+
+        if not (abs(iTree.t1dZ) < 0.2 and abs(iTree.t2dZ) < 0.2):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.t1_t2_DR > 0.5):
+            return 0, 'dR'
+        if (abs(iTree.t1Charge) > 1 or abs(iTree.t2Charge) > 1):
+            return 0, 'tauChage'
+
+########et
     elif FS == 'et':
-        cuts = {'ID': 0 if (iTree.tDecayModeFindingNewDMs < 0.5 or iTree.eMVANonTrigWP80 < 0.5) else 1,
-                'ptEta': 1 if (iTree.tPt > 20 and iTree.ePt > 23 and abs(iTree.tEta) < 2.3 and abs(iTree.eEta) < 2.1) else 0,
-                'tauChage': 1 if abs(iTree.tCharge) < 2 else 0,
-                'triggerMatch': 1 if triggerMatch(iTree, FS, isData) else 0,
-                'eID': 1 if (iTree.ePassConversionVeto and iTree.ePassNumberOfHits) else 0,
-                'dR': 1 if (iTree.e_t_DR) > 0.5 else 0,
-                'dZ': 1 if (abs(iTree.tdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045) else 0,
-                }
         if type == 'inclusive':
-            cuts['iso'] = 0 if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.5 or iTree.eRelIso >= 0.1) else 1
-            cuts['tau'] = 1 if (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5) else 0
-            cuts['3rdLepton'] = 0 if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0) else 1
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.5 or iTree.eRelIso >= 0.1):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.eRelIso <= 0.1):
+                return 0, 'antiIso'
+        if type == 'antiTauIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.eRelIso >= 0.1):
+                return 0, 'antiTauIso'
 
+        if type != 'baseline':
+            if not (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
+                return 0, 'tauAgainst'
+            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
+                return 0, '3rdLepton'
+
+        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.ePassConversionVeto and iTree.ePassNumberOfHits):
+            return 0, 'eID'
+        if (iTree.e_t_DR) <= 0.5:
+            return 0, 'dR'
+        if abs(iTree.tCharge) > 1:
+            return 0, 'tauCharge'
+
+########et
     elif FS == 'em':
-        cuts = {'ID': 0 if (iTree.eMVANonTrigWP80 < 0.5 or iTree.mIsMediumMuon < 0.5) else 1,
-                'ptEta': 1 if (iTree.ePt > 13 and iTree.mPt > 10 and abs(iTree.eEta) < 2.5 and abs(iTree.mEta) < 2.4) else 0,
-                'triggerMatch': 1 if triggerMatch(iTree, FS, isData) else 0,
-                'eID': 1 if (iTree.ePassConversionVeto and iTree.ePassNumberOfHits) else 0,
-                'dR': 1 if (iTree.e_m_DR) > 0.3 else 0,
-                'dZ': 1 if (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045) else 0,
-                }
         if type == 'inclusive':
-            cuts['iso'] = 0 if (iTree.mRelIso >= 0.15 or iTree.eRelIso >= 0.15) else 1
-            cuts['3rdLepton'] = 0 if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1) else 1
+            if (iTree.mRelIso >= 0.15 or iTree.eRelIso >= 0.15):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.mRelIso <= 0.15 or iTree.eRelIso <= 0.15):
+                return 0, 'antiIso'
+        if type != 'baseline':
+            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
+                return 0, '3rdLepton'
+        
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
+            return 0, 'dZ'
+        if not (iTree.ePassConversionVeto and iTree.ePassNumberOfHits):
+            return 0, 'eID'
+        if not (iTree.e_m_DR > 0.3):
+            return 0, 'dR'
+        if not (iTree.mPt > 10):
+            return 0, 'mPt'
 
+
+########mt
     elif FS == 'mt':
-        cuts = {'ID': 0 if (iTree.tDecayModeFindingNewDMs < 0.5 or iTree.mIsMediumMuon < 0.5) else 1,
-                'ptEta': 1 if (iTree.mPt > 18 and iTree.tPt > 20 and abs(iTree.mEta) < 2.1 and abs(iTree.tEta) < 2.3) else 0,
-                'tauChage': 1 if abs(iTree.tCharge) < 2 else 0,
-                'triggerMatch': 1 if triggerMatch(iTree, FS, isData) else 0,
-                'dR': 1 if (iTree.m_t_DR) > 0.5 else 0,
-                'dZ': 1 if (abs(iTree.tdZ) < 0.2 and abs(iTree.mdZ) < 0.2 and abs(iTree.mdXY) < 0.045) else 0,
-                }
         if type == 'inclusive':
-            cuts['iso'] = 0 if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.5 or iTree.mRelIso >= 0.1) else 1
-            cuts['tau'] = 1 if (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5) else 0
-            cuts['3rdLepton'] = 0 if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 1 or iTree.diMuon_veto > 0) else 1
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.5 or iTree.mRelIso >= 0.1):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso <= 0.1):
+                return 0, 'antiIso'
+        if type == 'antiTauIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso >= 0.1):
+                return 0, 'antiTauIso'
+        if type != 'baseline':
+            if (iTree.tAgainstElectronTightMVA5 < 0.5 or iTree.tAgainstMuonLoose3 < 0.5):
+                return 0, 'tauAgainst'
+            if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 1 or iTree.diMuon_veto > 0):
+                return 0, '3rdLepton'
 
+        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.mdZ) < 0.2 and abs(iTree.mdXY) < 0.045):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.m_t_DR > 0.5):
+            return 0, 'dR'
+        if abs(iTree.tCharge) > 1:
+            return 0, 'tauChage'
 
-    for iCut in cuts.keys():
-        if not cuts[iCut]:     
-            if showDeBugStatus:
-                print 'failed at %s' %iCut
-            return False
-    return True
+#     for iCut in cuts.keys():
+#         if not cuts[iCut]:
+#             return False, iCut
+    return 1, 'passed'
 
 
 
