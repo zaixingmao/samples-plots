@@ -99,6 +99,8 @@ def opts():
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
     parser.add_option("--inclusive", dest="inclusive", default=False, action="store_true", help="apply inclusive cut")
+    parser.add_option("--antiIso", dest="antiIso", default=False, action="store_true", help="apply inclusive cut")
+    parser.add_option("--antiTauIso", dest="antiTauIso", default=False, action="store_true", help="apply inclusive cut")
 
     options, args = parser.parse_args()
 
@@ -130,8 +132,8 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     eventCount = r.TH1F('eventCount', '', 1, -0.5, 0.5)
     eventWeights = r.TH1F('eventWeights', '', 2, 0, 2)
 
-    tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %finalState, hist = cutFlow, xAxisLabels=xLabels)
-    cutFlow.SetName('preselection')
+#     tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %finalState, hist = cutFlow, xAxisLabels=xLabels)
+#     cutFlow.SetName('preselection')
     tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
     print 'initEvents: %i' %eventCount.GetBinContent(1)
 
@@ -139,19 +141,28 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     iChain = r.TChain("%s/final/Ntuple" %finalState)
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
     iChain.SetBranchStatus("*",1)
+
     #set up vars dict
     charVarsDict = setUpCharVarsDict()
     floatVarsDict = setUpFloatVarsDict()
     intVarsDict = setUpIntVarsDict()
     syncVarsDict = None
 
+    type = 'baseline'
+    if options.inclusive:
+        type = 'inclusive'
+    if options.antiIso:
+        type = 'antiIso'
+    if options.antiTauIso:
+        type = 'antiTauIso'
+
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
     iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
     if sync:
-        outputFileName = "%s/%s_SYNC_%s.root" %(options.location,iSample, finalState)
+        outputFileName = "%s/%s_SYNC_%s_%s.root" %(options.location,iSample, finalState, type)
     else:
-        outputFileName = "%s/%s_%s.root" %(options.location,iSample, finalState)
+        outputFileName = "%s/%s_%s_%s.root" %(options.location,iSample, finalState, type)
     iFile = r.TFile(outputFileName,"recreate")
 
     #setup branches
@@ -187,6 +198,8 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     preRun = 0
     weightedNEvents = 0
 
+    cutCounter = {}
+
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
@@ -198,11 +211,11 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
             else:
                 weightedNEvents += 1
 
-        type = 'baseline'
-        if options.inclusive:
-            type = 'inclusive'
-
-        passCuts = passCut(iChain, finalState, type, isData)
+        passCuts, comment = passCut(iChain, finalState, type, isData)
+        if comment not in cutCounter.keys():
+            cutCounter[comment] = 1
+        else:
+            cutCounter[comment] += 1
 
         if counter == int(options.nevents):
             break
@@ -252,9 +265,10 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
         preRun = iChain.run
 
     print '  -- saved %d events' %(counter)
+    print cutCounter
     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
-    cutFlow.Write()
+#     cutFlow.Write()
     eventWeights.Fill(0.5, nEntries)
     eventWeights.Fill(1.5, weightedNEvents)
     eventWeights.Write()
