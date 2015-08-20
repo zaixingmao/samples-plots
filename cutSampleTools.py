@@ -42,7 +42,7 @@ def setupLumiReWeight():
     location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
 #     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
-    reWeight = r.edm.LumiReWeighting("%sMC_Summer12_PU_S10-600bins.root" %location,"%sData_Pileup_2012_ReRecoPixel-600bins.root" %location,"pileup","pileup")
+    reWeight = r.edm.LumiReWeighting("%sMC_600bins.root" %location,"%sdata_600bins.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
     return reWeight.weight(npu)
@@ -466,7 +466,7 @@ def passCut(iTree, FS, type = 'baseline', isData = False):
             return 0, 'dZ'
         if not triggerMatch(iTree, FS, isData):
             return 0, 'triggerMatch'
-        if not (iTree.ePassConversionVeto and iTree.ePassNumberOfHits):
+        if not (iTree.e_passConversionVeto and iTree.ePassNumberOfHits):
             return 0, 'eID'
         if (iTree.e_t_DR) <= 0.5:
             return 0, 'dR'
@@ -489,7 +489,7 @@ def passCut(iTree, FS, type = 'baseline', isData = False):
             return 0, 'triggerMatch'
         if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
             return 0, 'dZ'
-        if not (iTree.ePassConversionVeto and iTree.ePassNumberOfHits):
+        if not (iTree.e_passConversionVeto and iTree.ePassNumberOfHits):
             return 0, 'eID'
         if not (iTree.e_m_DR > 0.3):
             return 0, 'dR'
