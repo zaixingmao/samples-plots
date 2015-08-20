@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from operator import itemgetter
 import ROOT as r
+from cutSampleTools import *
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 lep1 = lvClass()
@@ -195,3 +196,5 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['jeta_2'][0] = goodJets[1][1].eta()
         syncVarsDict['jphi_2'][0] = goodJets[1][1].phi()
         syncVarsDict['jmva_2'][0] = goodJets[1][2]
+
+        syncVarsDict['puweight'][0] = getPUWeight(iChain.nTruePU)
