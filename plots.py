@@ -4,7 +4,8 @@ import ROOT as r
 import plots_cfg
 import tool
 import optparse
-
+import array
+import math
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
@@ -61,14 +62,45 @@ def getWJetsScale(histDict, varName, varBins):
         print (histDict['Observed'].Integral(intBin, len(varBins)+1) - histDict['Electroweak'].Integral(intBin, len(varBins)+1) - histDict['t#bar{t}'].Integral(intBin, len(varBins)+1) - histDict['Z#rightarrow#tau#tau'].Integral(intBin, len(varBins)+1))/histDict['WJets'].Integral(intBin, len(varBins)+1) + 1
 
 
+def ratioHistogram( num, den, relErrMax=0.25) :
+
+    def groupR(group) :
+        N,D = [float(sum(hist.GetBinContent(i) for i in group)) for hist in [num,den]]
+        return N/D if D else 0
+
+    def groupErr(group) :
+        N,D = [float(sum(hist.GetBinContent(i) for i in group)) for hist in [num,den]]
+        ne2,de2 = [sum(hist.GetBinError(i)**2 for i in group) for hist in [num,den]]
+        return math.sqrt( ne2/N**2 + de2/D**2 ) * N/D if N and D else 0
+
+    def regroup(groups) :
+        err,iG = max( (groupErr(g),groups.index(g)) for g in groups )
+        if err < relErrMax or len(groups)<3 : return groups
+        iH = max( [iG-1,iG+1], key = lambda i: groupErr(groups[i]) if 0<=i<len(groups) else -1 )
+        iLo,iHi = sorted([iG,iH])
+        return regroup(groups[:iLo] + [groups[iLo]+groups[iHi]] + groups[iHi+1:])
+
+    try :
+        groups = regroup( [(i,) for i in range(1,1+num.GetNbinsX())] )
+    except :
+        print 'Ratio failed:', num.GetName()
+        groups = [(i,) for i in range(1,1+num.GetNbinsX()) ]
+    ratio = r.TH1D("ratio"+num.GetName()+den.GetName(),"",len(groups), array.array('d', [num.GetBinLowEdge(min(g)) for g in groups ] + [num.GetXaxis().GetBinUpEdge(num.GetNbinsX())]) )
+    for i,g in enumerate(groups) :
+        ratio.SetBinContent(i+1,groupR(g))
+        ratio.SetBinError(i+1,groupErr(g))
+    return ratio
+
 def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, initEvents = 0):
     iSample += "%s.root" %FS
     file = r.TFile(iSample)    
     tree = file.Get('Ntuple')
     weight = 1.0
     nEntries = tree.GetEntries()
-    nPass = 0.0
-    nEvents_p_n = 0.0
+    nPass_OS = 0.0
+    nPass_SS = 0.0
+    nEvents_p_n_SS = 0.0
+    nEvents_p_n_OS = 0.0
     tmpHist = r.TH1F("tmp_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
     tmpHist_qcd = r.TH1F("tmp_qcd_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
 
@@ -76,8 +108,8 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, initEven
         tree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Looping sample %s' %(iSample), iEntry-1)
 
-        if not passCut(tree):
-            continue
+#         if not passCut(tree):
+#             continue
         if iCategory != 'Observed':
             weight = lumi*tree.xs/(initEvents+0.0)
             if tree.genEventWeight < 0:
@@ -129,11 +161,11 @@ def getQCDScale(histDict, varBins):
     return OS_MC_Miss/SS_MC_Miss
 
 
-def buildStackFromDict(histDict, FS):
+def buildStackFromDict(histDict, FS, option = 'width'):
     stack = r.THStack()
     for ikey, iColor in defaultOrder:
         if ikey in histDict.keys():
-            print '%s with %.2f events' %(ikey, histDict[ikey].Integral(0, histDict[ikey].GetNbinsX()+2))
+            print '%s with %.2f events' %(ikey, histDict[ikey].Integral(0, histDict[ikey].GetNbinsX()+2, option))
             stack.Add(histDict[ikey])
         else:
             print 'missing samples for %s' %ikey
@@ -154,10 +186,12 @@ def buildDelta(deltaName, histDict, bins, varName, unit):
     for ikey, icolor in defaultOrder:
         if ikey in histDict.keys():
             bkg.Add(histDict[ikey].Clone())
-    delta.Add(histDict["Observed"])
-    delta.Sumw2()
-    bkg.Sumw2()
-    delta.Divide(bkg)
+
+    delta = ratioHistogram(num = histDict["Observed"], den = bkg, relErrMax=0.25)
+#     delta.Add(histDict["Observed"])
+#     delta.Sumw2()
+#     bkg.Sumw2()
+#     delta.Divide(bkg)
     delta.SetTitle('; %s %s; data/MC' %(varName, unit))
     delta.SetMaximum(1.5)
     delta.SetMinimum(0.5)
@@ -202,12 +236,12 @@ def buildHists(varName, varBins, unit, FS, option = "width"):
         histDict[iCat].Sumw2()
         histDict[iCat].Scale(1, option)
 
-    bkgStack = buildStackFromDict(histDict, FS)
+    bkgStack = buildStackFromDict(histDict, FS, option)
     delta = buildDelta('%s_delta' %varName, histDict, varBins, varName, unit)
     return histDict, bkgStack, delta
 
 
-def setLegend(position, histDict, bins):
+def setLegend(position, histDict, bins, option = 'width'):
     histList = []
     histList.append((histDict['Observed'], 'Observed', 'lep'))
 
@@ -215,12 +249,12 @@ def setLegend(position, histDict, bins):
     for ikey, iColor in reversed(defaultOrder):
         if ikey in histDict.keys():
             if plots_cfg.addIntegrals:
-                histList.append((histDict[ikey], '%s (%.2f)' %(ikey, histDict[ikey].Integral(0, nbins+1)), 'f'))
+                histList.append((histDict[ikey], '%s (%.2f)' %(ikey, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
             else:
                 histList.append((histDict[ikey], '%s' %ikey, 'f'))
     return tool.setMyLegend(position, histList)
 
-def multiPlots(FS):
+def multiPlots(FS, option):
     psfile = '13TeV_%s.pdf' %(FS)
     c = r.TCanvas("c","Test", 600, 800)
 
@@ -238,7 +272,7 @@ def multiPlots(FS):
         p[len(p)-1].cd()
         r.gPad.SetTicky()
 
-        histDict, bkgStack, delta = buildHists(iVarName, iVarBins, iUnit, FS)
+        histDict, bkgStack, delta = buildHists(iVarName, iVarBins, iUnit, FS, option)
         iMax = 1.2*bkgStack.GetMaximum()
         bkgStack.SetMaximum(iMax)
         iMin = 0
@@ -255,7 +289,7 @@ def multiPlots(FS):
         histDict["Observed"].SetMarkerStyle(8)
         histDict["Observed"].SetMarkerSize(0.9)
         histDict["Observed"].Draw('PE same')
-        legends.append(setLegend(position, histDict, iVarBins))
+        legends.append(setLegend(position, histDict, iVarBins, option))
         legends[len(legends)-1].Draw('same')
         
         p_r[len(p)-1].cd()
@@ -290,10 +324,12 @@ def multiPlots(FS):
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
+    parser.add_option("--option", dest="option", default='', help="width")
+
     options, args = parser.parse_args()
     return options
 options = opts()
 
 finalStates = expandFinalStates(options.FS)
 for iFS in finalStates:
-    multiPlots(iFS)
+    multiPlots(iFS, options.option)
