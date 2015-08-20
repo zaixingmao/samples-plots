@@ -181,6 +181,7 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     charVarsDict['sampleName'][:31] = iSample
     intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
     floatVarsDict['xs'][0] = iXS
+    
     counter = 0
 
     preEvt = -1
@@ -278,14 +279,14 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
 
 
 def go():
-#     setupLumiReWeight()
+    setupLumiReWeight()
     finalStates = expandFinalStates(options.FS)
     if not finalStates:
         return 0
     for iSample, iLocation, xs in enVars.sampleLocations:
         for iFS in finalStates:
             loop_one_sample(iSample, iLocation, float(xs), iFS)
-#     freeLumiReWeight()
+    freeLumiReWeight()
 
 
 if __name__ == "__main__":
