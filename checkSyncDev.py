@@ -122,7 +122,7 @@ def addVars(iTree):
     a = ['evtNumber', int(iTree.evt), 
 #             'mvaPhi', iTree.mvametphi, 
 #             'muVeto', getVetoValue(iTree.extramuon_veto),
-            'eta1', iTree.eta_1, 
+            'mvamet', iTree.mvamet, 
 
             'lumi', int(iTree.lumi), 
 #           'run', iTree.run, 
@@ -147,9 +147,9 @@ def addVars(iTree):
 
 #             'phi2', iTree.phi_2, 
 #             'dR', r.Math.VectorUtil.DeltaR(tau1, tau2),
-            'met', iTree.met, 
+#             'met', iTree.met, 
 #             'metphi', iTree.metphi, 
-#             'mvamet', iTree.mvamet, 
+            'mvamet', iTree.mvamet, 
 #             'mvametphi', iTree.mvametphi, 
 
 #            'eleVeto', getVetoValue(iTree.extraelec_veto),
