@@ -76,9 +76,9 @@ def setUpSyncVarsDict():
 
 def setUpIntVarsDict():
     varDict = {}
-    names = ['nElectrons', 'nMuons', 'initEvents', 'ZTT', 'ZLL', 'njets', 'nbtag', 'njetspt20', 'njetingap20', 'njetingap']
+    names = ['nElectrons', 'nMuons', 'initEvents', 'ZTT', 'ZLL', 'njets', 'nbtag', 'njetspt20', 'njetingap20', 'njetingap', 'sumWeights']
     for iName in names:
-        varDict[iName] = array('i', [0])
+        varDict[iName] = array('l', [0])
     return varDict
 
 def setUpCharVarsDict():
@@ -101,6 +101,7 @@ def opts():
     parser.add_option("--inclusive", dest="inclusive", default=False, action="store_true", help="apply inclusive cut")
     parser.add_option("--antiIso", dest="antiIso", default=False, action="store_true", help="apply inclusive cut")
     parser.add_option("--antiTauIso", dest="antiTauIso", default=False, action="store_true", help="apply inclusive cut")
+    parser.add_option("--cat", dest="category", default='all', help="apply category cut")
 
     options, args = parser.parse_args()
 
@@ -128,15 +129,16 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
 
     sync = options.sync
         
-    cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
-    eventCount = r.TH1F('eventCount', '', 1, -0.5, 0.5)
-    eventWeights = r.TH1F('eventWeights', '', 2, 0, 2)
-
+    cutFlow = r.TH1D('cutFlow', '', len(xLabels), 0, len(xLabels))
+    eventCount = r.TH1D('eventCount', '', 1, -0.5, 0.5)
+    eventWeights = r.TH1D('eventWeights', '', 2, 0, 2)
+    eventCountWeighted = r.TH1D('eventCountWeighted', '', 1, -0.5, 0.5)
 #     tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %finalState, hist = cutFlow, xAxisLabels=xLabels)
 #     cutFlow.SetName('preselection')
     tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
     print 'initEvents: %i' %eventCount.GetBinContent(1)
-
+    tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
+    print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
     folderName = options.folderName
     iChain = r.TChain("%s/final/Ntuple" %finalState)
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
@@ -156,13 +158,17 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     if options.antiTauIso:
         type = 'antiTauIso'
 
+    cat = ''
+    if options.category != 'all':
+        cat = '_%s' %options.category
+    
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
     iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
     if sync:
-        outputFileName = "%s/%s_SYNC_%s_%s.root" %(options.location,iSample, finalState, type)
+        outputFileName = "%s/%s%s_SYNC_%s_%s.root" %(options.location, iSample, cat, finalState, type)
     else:
-        outputFileName = "%s/%s_%s_%s.root" %(options.location,iSample, finalState, type)
+        outputFileName = "%s/%s%s_%s_%s.root" %(options.location, iSample, cat, finalState, type)
     iFile = r.TFile(outputFileName,"recreate")
 
     #setup branches
@@ -171,7 +177,7 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     for iVar in floatVarsDict.keys():
         oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/F" %iVar)
     for iVar in intVarsDict.keys():
-        oTree.Branch("%s" %iVar, intVarsDict[iVar], "%s/I" %iVar)
+        oTree.Branch("%s" %iVar, intVarsDict[iVar], "%s/L" %iVar)
     
     if sync:
         syncVarsDict = setUpSyncVarsDict()
@@ -180,6 +186,8 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
 
     charVarsDict['sampleName'][:31] = iSample
     intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
+    intVarsDict['sumWeights'][0] = int(eventCountWeighted.GetBinContent(1))
+
     floatVarsDict['xs'][0] = iXS
     
     counter = 0
@@ -212,13 +220,17 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
             else:
                 weightedNEvents += 1
 
-        passCuts, comment = passCut(iChain, finalState, type, isData)
+        passSelection =  passCatSelection(iChain, options.category, finalState)
+        passCuts, comment = passCut(iChain, finalState, isData)
+
+        passCuts = passCuts*passSelection
+
         if comment not in cutCounter.keys():
             cutCounter[comment] = 1
         else:
             cutCounter[comment] += 1
 
-        if counter == int(options.nevents):
+        if iEntry == int(options.nevents):
             break
 
         if (not passCuts) and (iEntry != nEntries - 1):
@@ -231,19 +243,23 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
             if (iEntry == nEntries - 1): #save last event
                 iChain.LoadTree(bestPair)
                 iChain.GetEntry(bestPair)
-                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
-                oTree.Fill()
-                counter += 1
+                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+                if passAdditional:
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                    oTree.Fill()
+                    counter += 1
 
         elif bestPair != -1:
             #store best pair
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
-            oTree.Fill()
+            passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+            if passAdditional:
+                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                oTree.Fill()
+                counter += 1
 
             #reset best pair info
-            counter += 1
             bestPair = -1
             ptValue = -1.0
             isoValue = 999.0
@@ -256,10 +272,11 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
             bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
 
             if (iEntry == nEntries - 1) and passCuts:  #save last event, it's already loaded with the current value
-                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
-                oTree.Fill()
-                counter += 1
-
+                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+                if passAdditional:
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                    oTree.Fill()
+                    counter += 1
 
         preEvt = iChain.evt
         preLumi = iChain.lumi
@@ -273,20 +290,24 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     eventWeights.Fill(0.5, nEntries)
     eventWeights.Fill(1.5, weightedNEvents)
     eventWeights.Write()
+    eventCountWeighted.Write()
     eventCount.Write()
     oTree.Write()
     iFile.Close()
 
 
 def go():
-    setupLumiReWeight()
+#     setupLumiReWeight()
     finalStates = expandFinalStates(options.FS)
     if not finalStates:
         return 0
-    for iSample, iLocation, xs in enVars.sampleLocations:
-        for iFS in finalStates:
-            loop_one_sample(iSample, iLocation, float(xs), iFS)
-    freeLumiReWeight()
+    for iSample, iLocation, xs, fs in enVars.sampleLocations:
+        if fs != '':
+            loop_one_sample(iSample, iLocation, float(xs), fs)
+        else:
+            for iFS in finalStates:
+                loop_one_sample(iSample, iLocation, float(xs), iFS)
+#     freeLumiReWeight()
 
 
 if __name__ == "__main__":
