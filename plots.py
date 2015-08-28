@@ -92,15 +92,11 @@ def ratioHistogram( num, den, relErrMax=0.25) :
     return ratio
 
 def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, initEvents = 0):
-    iSample += "%s.root" %FS
+    iSample += "%s_inclusive.root" %FS
     file = r.TFile(iSample)    
     tree = file.Get('Ntuple')
     weight = 1.0
     nEntries = tree.GetEntries()
-    nPass_OS = 0.0
-    nPass_SS = 0.0
-    nEvents_p_n_SS = 0.0
-    nEvents_p_n_OS = 0.0
     tmpHist = r.TH1F("tmp_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
     tmpHist_qcd = r.TH1F("tmp_qcd_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
 
@@ -111,11 +107,11 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, initEven
 #         if not passCut(tree):
 #             continue
         if iCategory != 'Observed':
-            weight = lumi*tree.xs/(initEvents+0.0)
-            if tree.genEventWeight < 0:
-                weight = -weight
-#             if tree.singleEPass:
-#                 weight = 0.7*weight
+            if tree.genEventWeight != 1:
+                weight = lumi*tree.xs*tree.genEventWeight/(tree.sumWeights+0.0)
+            else:
+                weight = lumi*tree.xs/(initEvents+0.0)
+
         if 'WJets' in iSample:
             weight = 1.0*weight
 
@@ -125,21 +121,8 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, initEven
             else:
                 tmpHist_qcd.Fill(getattr(tree, varName), weight)
         else:
-            nPass += 1.0
-            if iCategory != 'Observed':
-                if tree.genEventWeight < 0:
-                    nEvents_p_n -= 1.0
-                else:
-                    nEvents_p_n += 1.0
             tmpHist.Fill(getattr(tree, varName), weight)
 
-    if iCategory != 'Observed':
-        if nEvents_p_n != 0:
-            tmpHist_qcd.Scale(nPass/nEvents_p_n)
-            tmpHist.Scale(nPass/nEvents_p_n)
-        else:
-            tmpHist_qcd.Scale(0)
-            tmpHist.Scale(0)
     histDict['QCD'].Add(tmpHist_qcd)
     histDict[iCategory].Add(tmpHist)
     if 'WJets' in iSample:
