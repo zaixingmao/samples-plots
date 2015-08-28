@@ -417,7 +417,103 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
 
     return False
 
-def passCut(iTree, FS, type = 'baseline', isData = False):
+def passCut(iTree, FS, isData = False):
+########tt
+    if FS == 'tt':
+        if not (abs(iTree.t1dZ) < 0.2 and abs(iTree.t2dZ) < 0.2):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.t1_t2_DR > 0.5):
+            return 0, 'dR'
+        if (abs(iTree.t1Charge) > 1 or abs(iTree.t2Charge) > 1):
+            return 0, 'tauChage'
+
+########et
+    elif FS == 'et':
+        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if iTree.ePassNumberOfHits == 0:
+            return 0, 'eNHits'
+        if hasattr(iTree, 'e_passConversionVeto'):
+            if not iTree.e_passConversionVeto:
+                return 0, 'e_passCov'
+        if hasattr(iTree, 'ePassConversionVeto'):
+            if not iTree.ePassConversionVeto:
+                return 0, 'e_passCov'
+        if (iTree.e_t_DR) <= 0.5:
+            return 0, 'dR'
+        if abs(iTree.tCharge) > 1:
+            return 0, 'tauCharge'
+
+########et
+    elif FS == 'em':
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
+            return 0, 'dZ'
+        if iTree.ePassNumberOfHits == 0:
+            return 0, 'eNHits'
+        if hasattr(iTree, 'e_passConversionVeto'):
+            if not iTree.e_passConversionVeto:
+                return 0, 'e_passCov'
+        if hasattr(iTree, 'ePassConversionVeto'):
+            if not iTree.ePassConversionVeto:
+                return 0, 'e_passCov'
+        if not (iTree.e_m_DR > 0.3):
+            return 0, 'dR'
+        if not (iTree.mPt > 10):
+            return 0, 'mPt'
+
+
+########mt
+    elif FS == 'mt':
+        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.mdZ) < 0.2 and abs(iTree.mdXY) < 0.045):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.m_t_DR > 0.5):
+            return 0, 'dR'
+        if abs(iTree.tCharge) > 1:
+            return 0, 'tauChage'
+
+#     for iCut in cuts.keys():
+#         if not cuts[iCut]:
+#             return False, iCut
+    return 1, 'passed'
+
+def getCategory(iTree, FS):
+    if FS == 'em':
+        return 'ZTT'
+
+    elif FS == 'tt':
+        if iTree.isZtautau:
+            #require Z -> tau tau at gen level
+            return 'ZTT'
+        elif (iTree.t1MatchToGenMu and iTree.t2MatchToGenMu) or (iTree.t1MatchToGenEle and iTree.t2MatchToGenEle):
+            #require both reco taus matching to gen Ele/Mu
+            return 'ZLL'
+        else:
+            #catch remaining events
+            return 'ZJ'
+
+    else: #mt/et case
+        if iTree.isZtautau and (iTree.tGenVisPt > 18) and (iTree.tMatchToGenMu == 0) and (iTree.tMatchToGenEle == 0):
+            #require Z -> tau tau at gen level, reco tau matching to gen visTau and not gen Ele/Mu
+            return 'ZTT'
+        elif iTree.isZtautau and (iTree.tMatchToGenMu > 0 or iTree.tMatchToGenEle > 0):
+            #require Z -> tau tau at gen level, reco tau matching to gen Ele/Mu
+            return 'ZTT'
+        elif (not iTree.isZtautau) and ((iTree.tMatchToGenMu > 0) or (iTree.tMatchToGenEle > 0)):
+            #require not Z -> tau tau at gen level and reco tau matching to gen Ele/Mu
+            return 'ZLL'
+        else:
+            #catch remaining events
+            return 'ZJ'
+
+def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
 ########tt
     if FS == 'tt':
         if type == 'inclusive':
@@ -434,16 +530,6 @@ def passCut(iTree, FS, type = 'baseline', isData = False):
                 return 0, 'againstTau2'
             if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 0):
                 return 0, '3rdLepton'
-
-        if not (abs(iTree.t1dZ) < 0.2 and abs(iTree.t2dZ) < 0.2):
-            return 0, 'dZ'
-        if not triggerMatch(iTree, FS, isData):
-            return 0, 'triggerMatch'
-        if not (iTree.t1_t2_DR > 0.5):
-            return 0, 'dR'
-        if (abs(iTree.t1Charge) > 1 or abs(iTree.t2Charge) > 1):
-            return 0, 'tauChage'
-
 ########et
     elif FS == 'et':
         if type == 'inclusive':
@@ -462,17 +548,6 @@ def passCut(iTree, FS, type = 'baseline', isData = False):
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
                 return 0, '3rdLepton'
 
-        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045):
-            return 0, 'dZ'
-        if not triggerMatch(iTree, FS, isData):
-            return 0, 'triggerMatch'
-        if not (iTree.e_passConversionVeto and iTree.ePassNumberOfHits):
-            return 0, 'eID'
-        if (iTree.e_t_DR) <= 0.5:
-            return 0, 'dR'
-        if abs(iTree.tCharge) > 1:
-            return 0, 'tauCharge'
-
 ########et
     elif FS == 'em':
         if type == 'inclusive':
@@ -484,18 +559,6 @@ def passCut(iTree, FS, type = 'baseline', isData = False):
         if type != 'baseline':
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
                 return 0, '3rdLepton'
-        
-        if not triggerMatch(iTree, FS, isData):
-            return 0, 'triggerMatch'
-        if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
-            return 0, 'dZ'
-        if not (iTree.e_passConversionVeto and iTree.ePassNumberOfHits):
-            return 0, 'eID'
-        if not (iTree.e_m_DR > 0.3):
-            return 0, 'dR'
-        if not (iTree.mPt > 10):
-            return 0, 'mPt'
-
 
 ########mt
     elif FS == 'mt':
@@ -509,26 +572,20 @@ def passCut(iTree, FS, type = 'baseline', isData = False):
             if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso >= 0.1):
                 return 0, 'antiTauIso'
         if type != 'baseline':
-            if (iTree.tAgainstElectronTightMVA5 < 0.5 or iTree.tAgainstMuonLoose3 < 0.5):
+            if (iTree.tAgainstElectronVLooseMVA5 == 0 or iTree.tAgainstMuonTight3 == 0):
                 return 0, 'tauAgainst'
-            if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 1 or iTree.diMuon_veto > 0):
+            if ((iTree.extraelec_veto > 0) or (iTree.extramuon_veto > 1) or (iTree.diMuon_veto > 0)):
                 return 0, '3rdLepton'
-
-        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.mdZ) < 0.2 and abs(iTree.mdXY) < 0.045):
-            return 0, 'dZ'
-        if not triggerMatch(iTree, FS, isData):
-            return 0, 'triggerMatch'
-        if not (iTree.m_t_DR > 0.5):
-            return 0, 'dR'
-        if abs(iTree.tCharge) > 1:
-            return 0, 'tauChage'
-
-#     for iCut in cuts.keys():
-#         if not cuts[iCut]:
-#             return False, iCut
-    return 1, 'passed'
+    return 1,'passed'
 
 
+def passCatSelection(iTree, category, FS):
+    if category == 'all':
+        return 1
+    if getCategory(iTree, FS) == category:
+        return 1
+    else:
+        return 0
 
 def setDPhiInRange(dPhi):
     if dPhi > 3.14:
