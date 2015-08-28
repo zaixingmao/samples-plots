@@ -197,4 +197,4 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['jphi_2'][0] = goodJets[1][1].phi()
         syncVarsDict['jmva_2'][0] = goodJets[1][2]
 
-        syncVarsDict['puweight'][0] = getPUWeight(iChain.nTruePU)
+#         syncVarsDict['puweight'][0] = getPUWeight(iChain.nTruePU)
