@@ -52,10 +52,10 @@ def opts():
 
 options = opts()
 
-dataLocations = {'em': '/hdfs/store/user/zmao/data_50ns_fix/data_MuonEG_Run2015B_PromptReco_50ns/',
-                'et':'/hdfs/store/user/zmao/data_50ns_fix/data_Electron_Run2015B_PromptReco_50ns/',
-                'mt':'/hdfs/store/user/zmao/data_50ns_fix/data_Muon_Run2015B_PromptReco_50ns/',
-                'tt':'/hdfs/store/user/zmao/data_50ns_fix/data_Tau_Run2015B_PromptReco_50ns/'
+dataLocations = {'em': '/hdfs/store/user/zmao/data_25ns_Spring15_eletronID/data_MuonEG_Run2015C_PromptReco_25ns/',
+                'et':'/hdfs/store/user/zmao/data_25ns_Spring15_eletronID/data_Electron_Run2015C_PromptReco_25ns/',
+                'mt':'/hdfs/store/user/zmao/nfs_scratch/zmao/data_25ns_Spring15_eletronID/data_Muon_Run2015C_PromptReco_25ns/',
+                'tt':'/hdfs/store/user/zmao/data_25ns_Spring15_eletronID/data_Tau_Run2015C_PromptReco_25ns/'
                 }
 
 
@@ -100,7 +100,7 @@ def loop_one_sample(iSample, iLocation):
 
 def go():
     loop_one_sample('data', '')
-#     loop_one_sample('MC', '/hdfs/store/user/zmao/MC_25ns/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/')
+#     loop_one_sample('MC', '/hdfs/store/user/zmao/Spring15_eletronID2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/')
 
 
 if __name__ == "__main__":
