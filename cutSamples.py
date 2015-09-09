@@ -135,10 +135,11 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     eventCountWeighted = r.TH1D('eventCountWeighted', '', 1, -0.5, 0.5)
 #     tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %finalState, hist = cutFlow, xAxisLabels=xLabels)
 #     cutFlow.SetName('preselection')
-    tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
-    print 'initEvents: %i' %eventCount.GetBinContent(1)
-    tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
-    print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
+    if not isData:
+        tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
+        print 'initEvents: %i' %eventCount.GetBinContent(1)
+        tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
+        print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
     folderName = options.folderName
     iChain = r.TChain("%s/final/Ntuple" %finalState)
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
@@ -222,7 +223,6 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
 
         passSelection =  passCatSelection(iChain, options.category, finalState)
         passCuts, comment = passCut(iChain, finalState, isData)
-
         passCuts = passCuts*passSelection
 
         if comment not in cutCounter.keys():
