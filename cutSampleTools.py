@@ -405,17 +405,17 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
                         if iTree.ePt > 24:
                             return True
                     else:
-                        return True 
-    
-    if passSingleTrigger: #if it only passed single lepton trigger
-        if channel == 'em':
-            return 1 if iTree.mPt > 24 else 0
-        if channel == 'mt':
-            return 1 if iTree.mPt > 25 else 0
-        if channel == 'et':
-            return 1 if iTree.ePt > 33 else 0
+                        return True
 
-    return False
+    if passSingleTrigger: #if it only passed single lepton trigger
+        if 'em' in channel:
+            return 1 if iTree.mPt > 24.0 else 0
+        if 'mt' in channel:
+            return 1 if iTree.mPt > 25.0 else 0
+        if 'et' in channel:
+            return 1 if iTree.ePt > 33.0 else 0
+
+    return 0
 
 def passCut(iTree, FS, isData = False):
 ########tt
@@ -489,26 +489,29 @@ def getCategory(iTree, FS):
         return 'ZTT'
 
     elif FS == 'tt':
-        if iTree.isZtautau:
+        if iTree.nPromptTaus == 2:
+#         if iTree.isZtautau:
             #require Z -> tau tau at gen level
             return 'ZTT'
-        elif (iTree.t1MatchToGenMu and iTree.t2MatchToGenMu) or (iTree.t1MatchToGenEle and iTree.t2MatchToGenEle):
+        elif (iTree.t1MatchToGenMuPt > 8 and iTree.t2MatchToGenMuPt  > 8) or (iTree.t1MatchToGenElePt > 8 and iTree.t2MatchToGenElePt  > 8):
             #require both reco taus matching to gen Ele/Mu
-            return 'ZLL'
+            return 'ZL'
         else:
             #catch remaining events
             return 'ZJ'
 
     else: #mt/et case
-        if iTree.isZtautau and (iTree.tGenVisPt > 18) and (iTree.tMatchToGenMu == 0) and (iTree.tMatchToGenEle == 0):
+        if iTree.nPromptTaus == 2 and (iTree.tGenVisPt > 18) and (iTree.tMatchToGenMuPt <= 8) and (iTree.tMatchToGenElePt <= 8):
+#         if iTree.isZtautau and (iTree.tGenVisPt > 18) and (iTree.tMatchToGenMu == 0) and (iTree.tMatchToGenEle == 0):
             #require Z -> tau tau at gen level, reco tau matching to gen visTau and not gen Ele/Mu
             return 'ZTT'
-        elif iTree.isZtautau and (iTree.tMatchToGenMu > 0 or iTree.tMatchToGenEle > 0):
+        elif iTree.nPromptTaus == 2 and (iTree.tMatchToGenMuPt > 8 or iTree.tMatchToGenElePt > 8):
+#         elif iTree.isZtautau and (iTree.tMatchToGenMu > 0 or iTree.tMatchToGenEle > 0):
             #require Z -> tau tau at gen level, reco tau matching to gen Ele/Mu
             return 'ZTT'
-        elif (not iTree.isZtautau) and ((iTree.tMatchToGenMu > 0) or (iTree.tMatchToGenEle > 0)):
+        elif (not iTree.nPromptTaus == 2) and ((iTree.tMatchToGenMuPt > 8) or (iTree.tMatchToGenElePt > 8)):
             #require not Z -> tau tau at gen level and reco tau matching to gen Ele/Mu
-            return 'ZLL'
+            return 'ZL'
         else:
             #catch remaining events
             return 'ZJ'
