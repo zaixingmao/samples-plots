@@ -6,11 +6,23 @@ import tool
 import optparse
 import array
 import math
+import cutSampleTools
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
 
-lumi = 0.04
+lumi = 20.38
+
+def opts():
+    parser = optparse.OptionParser()
+    parser.add_option("--FS", dest="FS", default='mt', help="final state product, et, tt")
+    parser.add_option("--option", dest="option", default='', help="width")
+    parser.add_option("--PUWeight", dest="PUWeight", default=False, action="store_true", help="")
+
+    options, args = parser.parse_args()
+    return options
+options = opts()
+
 
 position = (0.6, 0.9 - 0.06*6, 0.87, 0.9)
 if plots_cfg.addIntegrals:
@@ -91,11 +103,10 @@ def ratioHistogram( num, den, relErrMax=0.25) :
         ratio.SetBinError(i+1,groupErr(g))
     return ratio
 
-def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, initEvents = 0):
+def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS):
     iSample += "%s_inclusive.root" %FS
     file = r.TFile(iSample)    
     tree = file.Get('Ntuple')
-    weight = 1.0
     nEntries = tree.GetEntries()
     tmpHist = r.TH1F("tmp_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
     tmpHist_qcd = r.TH1F("tmp_qcd_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
@@ -103,14 +114,16 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, initEven
     for iEntry in range(nEntries):
         tree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Looping sample %s' %(iSample), iEntry-1)
-
+        weight = 1.0
 #         if not passCut(tree):
 #             continue
         if iCategory != 'Observed':
             if tree.genEventWeight != 1:
                 weight = lumi*tree.xs*tree.genEventWeight/(tree.sumWeights+0.0)
+                if options.PUWeight:
+                    weight = weight*cutSampleTools.getPUWeight(tree.nTruePU)
             else:
-                weight = lumi*tree.xs/(initEvents+0.0)
+                weight = lumi*tree.xs/(tree.initEvents+0.0)
 
         if 'WJets' in iSample:
             weight = 1.0*weight
@@ -152,7 +165,7 @@ def buildStackFromDict(histDict, FS, option = 'width'):
             stack.Add(histDict[ikey])
         else:
             print 'missing samples for %s' %ikey
-    stack.SetTitle('CMS Preliminary 40.0 pb^{-1} at 13 TeV; ; events / bin')
+    stack.SetTitle('CMS Preliminary %.2f pb^{-1} at 13 TeV; ; events / bin' %lumi)
     return stack
 
 def setQCD(hist, scale = 0.6): #force qcd to be non-negative
@@ -163,14 +176,14 @@ def setQCD(hist, scale = 0.6): #force qcd to be non-negative
         if content < 0:
             hist.Fill(x, -content)
 
-def buildDelta(deltaName, histDict, bins, varName, unit):
+def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax):
     bkg = r.TH1F('bkg_%s' %deltaName, '', len(bins)-1, bins)
     delta = r.TH1F(deltaName, deltaName, len(bins)-1, bins)
     for ikey, icolor in defaultOrder:
         if ikey in histDict.keys():
             bkg.Add(histDict[ikey].Clone())
 
-    delta = ratioHistogram(num = histDict["Observed"], den = bkg, relErrMax=0.25)
+    delta = ratioHistogram(num = histDict["Observed"], den = bkg, relErrMax=relErrMax)
 #     delta.Add(histDict["Observed"])
 #     delta.Sumw2()
 #     bkg.Sumw2()
@@ -188,7 +201,7 @@ def buildDelta(deltaName, histDict, bins, varName, unit):
 
     return delta
 
-def buildHists(varName, varBins, unit, FS, option = "width"):
+def buildHists(varName, varBins, unit, FS, option, relErrMax):
     histDict = {}
     histDict["QCD"] = r.TH1F("QCD_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
     histDict["QCD"].SetFillColor(getColor("QCD"))
@@ -196,7 +209,7 @@ def buildHists(varName, varBins, unit, FS, option = "width"):
     histDict["QCD"].SetMarkerStyle(21)
     histDict["QCD"].SetLineColor(r.kBlack)
     histDict["WJets"] = r.TH1F("WJets_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
-    for iSample, iCategory, iInitEvents in plots_cfg.sampleList:
+    for iSample, iCategory in plots_cfg.sampleList:
     
         if not (iCategory in histDict.keys()):
             histDict[iCategory] = r.TH1F("%s_%s_%s" %(iCategory, FS, varName), "", len(varBins)-1, varBins)
@@ -206,7 +219,7 @@ def buildHists(varName, varBins, unit, FS, option = "width"):
                 histDict[iCategory].SetMarkerStyle(21)
                 histDict[iCategory].SetLineColor(r.kBlack)
 
-        loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, iInitEvents)
+        loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS)
     if not ('Observed' in histDict.keys()):
         histDict['Observed'] = r.TH1F("Observed_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
 
@@ -220,7 +233,7 @@ def buildHists(varName, varBins, unit, FS, option = "width"):
         histDict[iCat].Scale(1, option)
 
     bkgStack = buildStackFromDict(histDict, FS, option)
-    delta = buildDelta('%s_delta' %varName, histDict, varBins, varName, unit)
+    delta = buildDelta('%s_delta' %varName, histDict, varBins, varName, unit, relErrMax)
     return histDict, bkgStack, delta
 
 
@@ -238,14 +251,17 @@ def setLegend(position, histDict, bins, option = 'width'):
     return tool.setMyLegend(position, histList)
 
 def multiPlots(FS, option):
-    psfile = '13TeV_%s.pdf' %(FS)
+    if options.PUWeight:
+        psfile = '13TeV_%s_puweight.pdf' %(FS)
+    else:
+        psfile = '13TeV_%s.pdf' %(FS)
     c = r.TCanvas("c","Test", 600, 800)
 
     p = []
     p_r = []
     legends = []
     counter = 0
-    for iVarName, iVarBins, iUnit, iMax in plots_cfg.vars:
+    for iVarName, iVarBins, iUnit, relErrMax in plots_cfg.vars:
         p.append(r.TPad("p_%s" %iVarName,"p_%s" %iVarName, 0., 1, 1., 0.3))
         p_r.append(r.TPad("p_%s_r" %iVarName,"p_%s_r" %iVarName, 0.,0.3,1.,0.06))
         p[len(p)-1].SetMargin(1, 1, 0, 0.1)
@@ -255,7 +271,7 @@ def multiPlots(FS, option):
         p[len(p)-1].cd()
         r.gPad.SetTicky()
 
-        histDict, bkgStack, delta = buildHists(iVarName, iVarBins, iUnit, FS, option)
+        histDict, bkgStack, delta = buildHists(iVarName, iVarBins, iUnit, FS, option, relErrMax)
         iMax = 1.2*bkgStack.GetMaximum()
         bkgStack.SetMaximum(iMax)
         iMin = 0
@@ -304,15 +320,10 @@ def multiPlots(FS, option):
     print "Plot saved at %s" %(psfile)
     c.Close()
 
-def opts():
-    parser = optparse.OptionParser()
-    parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
-    parser.add_option("--option", dest="option", default='', help="width")
-
-    options, args = parser.parse_args()
-    return options
-options = opts()
-
 finalStates = expandFinalStates(options.FS)
+if options.PUWeight:
+    cutSampleTools.setupLumiReWeight()
 for iFS in finalStates:
     multiPlots(iFS, options.option)
+if options.PUWeight:
+    cutSampleTools.freeLumiReWeight()
