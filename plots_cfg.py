@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 from array import array
 
-dir = "/nfs_scratch/zmao/13TeV_samples_25ns_fixSelectionOrder"
+dir = "/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2"
 
 sampleList = [
-                ('%s_2/WJets_all_SYNC_' %dir, 'Electroweak', 24089991),
-              ('%s/WW_all_SYNC_' %dir, 'Electroweak', 989608),
-              ('%s/WZ_all_SYNC_' %dir, 'Electroweak', 996920),
-              ('%s/ZZ_all_SYNC_' %dir, 'Electroweak', 998848),
-              ('%s_2/DY_all_SYNC_' %dir, 'Z#rightarrow#tau#tau', 19925500),
-              ('%s/antiT_all_SYNC_' %dir, 't#bar{t}', 500000),
-              ('%s/T_all_SYNC_' %dir, 't#bar{t}', 998400),
-              ('%s_2/TTJets_all_SYNC_' %dir, 't#bar{t}', 4994250),
-              ('/nfs_scratch/zmao/13TeV_samples/data_all_SYNC_', 'Observed', 1),
+                ('%s/WJets_all_SYNC_' %dir, 'Electroweak'),
+              ('%s/WW_all_SYNC_' %dir, 'Electroweak'),
+              ('%s/WZ_all_SYNC_' %dir, 'Electroweak'),
+              ('%s/ZZ_all_SYNC_' %dir, 'Electroweak'),
+              ('%s/DY_all_ZTT_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
+              ('%s/DY_all_ZL_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
+              ('%s/DY_all_ZJ_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
+              ('%s/antiT_all_SYNC_' %dir, 't#bar{t}'),
+              ('%s/T_all_SYNC_' %dir, 't#bar{t}'),
+              ('%s/TTJets_all_SYNC_' %dir, 't#bar{t}'),
+              ('%s/data_all_SYNC_' %dir, 'Observed'),
             ]
 
 
@@ -20,9 +22,9 @@ dataCardSamplesList = [('WJets', '%s/WJets_all_SYNC' %dir, 0),#24089991),
               ('WW','%s/WW_all_SYNC' %dir, 0),#989608),
               ('WZ', '%s/WZ_all_SYNC' %dir, 0),#996920),
               ('ZZ', '%s/ZZ_all_SYNC' %dir, 0),#998848),
-              ('ZLL', '/nfs_scratch/zmao/13TeV_samples_25ns_2/DY_ZLL_all_SYNC', 0),#19925500),
-              ('ZTT', '/nfs_scratch/zmao/13TeV_samples_25ns_2/DY_ZTT_all_SYNC', 0),#19925500),
-              ('ZJ', '/nfs_scratch/zmao/13TeV_samples_25ns_2/DY_ZJ_all_SYNC', 0),#19925500),
+              ('ZL', '%s/DY_all_ZL_SYNC' %dir, 0),#19925500),
+              ('ZTT', '%s/DY_all_ZTT_SYNC' %dir, 0),#19925500),
+              ('ZJ', '%s/DY_all_ZJ_SYNC' %dir, 0),#19925500),
 #               ('DY-50', '%s_2/DY_all_SYNC' %dir, 0),#19925500),
 #               ('DY-10to50', '%s_2/DY-10to50_all_SYNC' %dir, 0),#),
               ('ST_antiTop_tW', '%s/antiT_all_SYNC' %dir, 0),#500000),
@@ -31,7 +33,7 @@ dataCardSamplesList = [('WJets', '%s/WJets_all_SYNC' %dir, 0),#24089991),
 #               ('ST_top_t-channel', '%s/antiT_all_SYNC' %dir, 0),#),
               ('TTJets', '%s/TTJets_all_SYNC' %dir, 0),#4994250),
               ('ggH160', '%s/SUSY_all_SYNC' %dir, 0),
-              ('data', '/nfs_scratch/zmao/13TeV_samples_50ns/data_all_SYNC', 0),
+              ('data', '%s/data_all_SYNC' %dir, 0),
             ]
 
 # selection = '_antiIso'
@@ -53,18 +55,18 @@ bins = []
 for i in range(nBins+1):
     bins.append(-3.0 + (6*i+0.0)/nBins)
 
-vars = [( "pt_1", array('d', range(0,200,10)), 'GeV', 80),
-        ("pt_2", array('d', range(0, 200, 10)), 'GeV', 80),
+vars = [("pt_1", array('d', range(0,200,10)), 'GeV', 0.25),
+        ("pt_2", array('d', range(0, 200, 10)), 'GeV', 0.25),
 #         ("eta_1", array('d', bins), 'GeV', 80),
 #         ("eta_2", array('d', bins), 'GeV', 80),
 
         ("m_vis", array('d', range(0, 200, 20) + range(200, 400, 50)), 'GeV', 12),
 #         ("mt_1", array('d', range(0, 200, 10)), 'GeV', 12),
 #         ("mt_2", array('d', range(0, 200, 10)), 'GeV', 12),
-        ("npv", array('d', range(0, 60, 1)), '', 12),
+        ("npv", array('d', range(0, 35, 1)), '', 0.15),
 
 #         ("njets", array('d', range(0,6,1)), '', 100),
-#         ("met", array('d', range(0, 200, 10)), 'GeV', 80),
+        ("met", array('d', range(0, 200, 10)), 'GeV', 80),
         ]
 
 QCD_scale = {'tt': 1.073,
