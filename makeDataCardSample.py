@@ -48,7 +48,7 @@ def opts():
     parser = optparse.OptionParser()
     parser.add_option("-l", dest="location", default="/scratch/%s" % os.environ["USER"], help="location to be saved")
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
-    parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
+    parser.add_option("--FS", dest="FS", default='mt', help="final state product, et, tt")
     parser.add_option("--PUWeight", dest="PUWeight", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
