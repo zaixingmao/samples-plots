@@ -1,4 +1,5 @@
 import supy
+import os
 from cfg import enVars
 import ROOT as r
 
@@ -40,9 +41,6 @@ class call_out_once(supy.analysisStep):
         self.sampleName = sampleName
         self.xs = xs
 
-    def outputSuffix(self):
-        return "_skim_entry_per_event.root"
-
     def uponAcceptance(self, s):
         if not self.done:
             # self.test_call_out(s["chain"], self.fs, self.outputFileName, self.sampleName, self.xs, histos=s["summed_ini_histos"])
@@ -55,6 +53,25 @@ class call_out_once(supy.analysisStep):
 
     def test_call_out(self, chain, FS, outputFileName, sampleName, xs, histos):
         print chain.GetListOfFiles().GetEntries(), FS, outputFileName, sampleName, xs, histos
+
+    def outputSuffix(self):
+        return "_events.root"
+
+    # copied from supy.steps.other.skimmer
+    def modifiedFileName(self, s):
+        l = s.split("/")
+        return "/".join(l[:-2]+l[-1:])
+
+    # copied from supy.steps.other.skimmer
+    def mergeFunc(self, products):
+        for fileName in products["outputFileName"]:
+            os.system("mv %s %s" % (fileName, self.modifiedFileName(fileName)))
+        # if not self.quietMode:
+        if True:
+            print "The %d skim files have been written." % len(products["outputFileName"])
+            print "( e.g. %s )" % self.modifiedFileName(products["outputFileName"][0])
+            print supy.utils.hyphens
+
 
 
 class slice(supy.analysis):
