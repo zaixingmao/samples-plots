@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import ROOT as r
+r.PyConfig.IgnoreCommandLineOptions = True
+
 import tool
 import os
 import cProfile
@@ -16,6 +18,7 @@ import syncTools
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
 r.gStyle.SetOptStat("e")
+r.gStyle.SetOptStat(0)
 
 xLabels = ['Topology', 'Leg0Pt', 'Leg0Eta','Leg1Pt', 'Leg1Eta', 't_UniqueByPt', 'myCut']
 
@@ -106,10 +109,6 @@ def opts():
 
     return options
 
-options = opts()
-
-r.gStyle.SetOptStat(0)
-
 def loop_one_sample(iSample,                #sample name (DY)
                     iLocation,              #input file location
                     iXS,                    #sample xs
@@ -141,7 +140,10 @@ def loop_one_sample(iSample,                #sample name (DY)
     sync = True
 
     #histograms
-    if not chain:        
+    if chain:
+        iChain = chain
+        nEntries = iChain.GetEntries()
+    else:
         cutFlow = r.TH1D('cutFlow', '', len(xLabels), 0, len(xLabels))
         eventCount = r.TH1D('eventCount', '', 1, -0.5, 0.5)
         eventWeights = r.TH1D('eventWeights', '', 2, 0, 2)
@@ -152,9 +154,8 @@ def loop_one_sample(iSample,                #sample name (DY)
             tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
             print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
         iChain = r.TChain("%s/final/Ntuple" %finalState)
-    else:
-        iChain = chain
-    nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
+        nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
+
     iChain.SetBranchStatus("*",1)
 
     #set up vars dict
@@ -308,7 +309,7 @@ def loop_one_sample(iSample,                #sample name (DY)
     iFile.Close()
 
 
-def go():
+def go(options):
 #     setupLumiReWeight()
     finalStates = expandFinalStates(options.FS)
     if not finalStates:
@@ -328,7 +329,9 @@ def go():
 
 
 if __name__ == "__main__":
+    options = opts()
+
     if options.profile:
-        cProfile.run("go()", sort="time")
+        cProfile.run("go(options)", sort="time")
     else:
-        go()
+        go(options)
