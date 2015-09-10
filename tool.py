@@ -89,10 +89,12 @@ def printProcessStatus(iCurrent, total, processName = 'Foo process', iPrevious =
         sys.stdout.flush()
 
 def findFilesInDir(dirName):
+    fileList = []
     for iFile in os.listdir(dirName):
         fName = dirName + '/' + iFile
         if fName.endswith(".root"):
-            print fName
+            fileList.append(fName)
+    return fileList
 
 def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents = False, blackList = []):
     added = 0.

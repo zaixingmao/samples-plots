@@ -93,7 +93,6 @@ def opts():
     parser.add_option("-l", dest="location", default="/scratch/%s" % os.environ["USER"], help="location to be saved")
     parser.add_option("-n", dest="nevents", default="-1", help="amount of events to be saved")
     parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
-    parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
     parser.add_option("--pair", dest="pairChoice", default="iso", help="which pair")
     parser.add_option("--sync", dest="sync", default=False, action="store_true", help="which pair")
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
@@ -111,7 +110,19 @@ options = opts()
 
 r.gStyle.SetOptStat(0)
 
-def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFileName = None, histos = None):
+def loop_one_sample(iSample,                #sample name (DY)
+                    iLocation,              #input file location
+                    iXS,                    #sample xs
+                    finalState,             #final state (et, em, mt, tt)
+                    type = 'baseline',      #selection type (baseline, inclusive)
+                    category = 'all',       #ZLL splitting (all, ZTT, ZL, ZJ)
+                    location = '',          #output location, will be overwritten if outPutFileName != None
+                    pairChoice = 'iso',     #pair selection method (iso, pt)
+                    nevents = '-1',         #n entries to loop over
+                    chain = None,           #input TChain
+                    outPutFileName = None,  #output file name,
+                    histos = None,          #input histograms, preferred to be a list
+                    ):
     print 'Ntuplizing sample [%s] for channel [%s]' %(iSample, finalState)
 
     if 'data' in iSample:
@@ -127,7 +138,7 @@ def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFil
     else:
         isSignal = False
 
-    sync = options.sync
+    sync = True
 
     #histograms
     if not chain:        
@@ -140,7 +151,6 @@ def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFil
             print 'initEvents: %i' %eventCount.GetBinContent(1)
             tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
             print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
-        folderName = options.folderName
         iChain = r.TChain("%s/final/Ntuple" %finalState)
     else:
         iChain = chain
@@ -153,29 +163,21 @@ def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFil
     intVarsDict = setUpIntVarsDict()
     syncVarsDict = None
 
-    type = 'baseline'
-    if options.inclusive:
-        type = 'inclusive'
-    if options.antiIso:
-        type = 'antiIso'
-    if options.antiTauIso:
-        type = 'antiTauIso'
-
     cat = ''
-    if options.category != 'all':
-        cat = '_%s' %options.category
+    if category != 'all':
+        cat = '_%s' %category
     
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
-    iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
     
     if outPutFileName:
         outputFileName = outPutFileName
     else:
+        iSample = iSample + '_%s' %('all' if nevents == "-1" else nevents)
         if sync:
-            outputFileName = "%s/%s%s_SYNC_%s_%s.root" %(options.location, iSample, cat, finalState, type)
+            outputFileName = "%s/%s%s_SYNC_%s_%s.root" %(location, iSample, cat, finalState, type)
         else:
-            outputFileName = "%s/%s%s_%s_%s.root" %(options.location, iSample, cat, finalState, type)
+            outputFileName = "%s/%s%s_%s_%s.root" %(location, iSample, cat, finalState, type)
     iFile = r.TFile(outputFileName,"recreate")
 
     #setup branches
@@ -227,7 +229,7 @@ def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFil
             else:
                 weightedNEvents += 1
 
-        passSelection =  passCatSelection(iChain, options.category, finalState)
+        passSelection =  passCatSelection(iChain, category, finalState)
         passCuts, comment = passCut(iChain, finalState, isData)
         passCuts = passCuts*passSelection
 
@@ -236,15 +238,16 @@ def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFil
         else:
             cutCounter[comment] += 1
 
-        if iEntry == int(options.nevents):
-            break
+        if not chain:
+            if iEntry == int(nevents):
+                break
 
         if (not passCuts) and (iEntry != nEntries - 1):
             continue
 
         if (preEvt == 0 and preLumi == 0 and preRun == 0) or (preEvt == iChain.evt and preLumi == iChain.lumi and preRun == iChain.run):
             if passCuts:
-                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
+                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice, finalState)
 
             if (iEntry == nEntries - 1): #save last event
                 iChain.LoadTree(bestPair)
@@ -275,7 +278,7 @@ def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFil
             #reload to current entry
             iChain.LoadTree(iEntry)
             iChain.GetEntry(iEntry)
-            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, options.pairChoice, finalState)
+            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice, finalState)
 
             if (iEntry == nEntries - 1) and passCuts:  #save last event, it's already loaded with the current value
                 passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
@@ -310,13 +313,17 @@ def go():
     finalStates = expandFinalStates(options.FS)
     if not finalStates:
         return 0
+    type = 'baseline'
+    if options.inclusive:
+        type = 'inclusive'
 
     for iSample, iLocation, xs, fs in enVars.sampleLocations:
+
         if fs != '':
-            loop_one_sample(iSample, iLocation, float(xs), fs)
+            loop_one_sample(iSample, iLocation, float(xs), fs, type, options.category, options.location, options.pairChoice, options.nevents)
         else:
             for iFS in finalStates:
-                loop_one_sample(iSample, iLocation, float(xs), iFS)
+                loop_one_sample(iSample, iLocation, float(xs), iFS, type, options.category, options.location, options.pairChoice, options.nevents)
 #     freeLumiReWeight()
 
 

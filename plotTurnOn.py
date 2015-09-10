@@ -100,11 +100,11 @@ def loop_one_sample(iSample, varName, hist1, hist2, category = 'mt', isData = Fa
                     hist2.Fill(getattr(tree, varName))
     print ''
 
-def run(varName, bins, unit, cat = 'mt'):
-    files_mc = ['/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/DY_all_SYNC_%s_inclusive.root' %cat]
+def run(varName, bins, unit, cat = 'et'):
+    files_mc = ['/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/DY_all_SYNC_%s_baseline.root' %cat]
     hist_mc_all = r.TH1F("hist_mc_all", "", len(bins)-1, bins)
     hist_mc_pass = r.TH1F('hist_mc_pass', '', len(bins)-1, bins)
-    file_data = '/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/data_all_SYNC_%s_inclusive.root' %cat
+    file_data = '/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/data_all_SYNC_%s_baseline.root' %cat
     hist_data_all = r.TH1F('hist_data_all', '', len(bins)-1, bins)
     hist_data_pass = r.TH1F('hist_data_pass', '', len(bins)-1, bins)
 
