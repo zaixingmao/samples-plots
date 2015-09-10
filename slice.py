@@ -1,4 +1,5 @@
 import supy
+import configuration
 import os
 from cfg import enVars
 import ROOT as r
@@ -57,21 +58,25 @@ class call_out_once(supy.analysisStep):
     def outputSuffix(self):
         return "_events.root"
 
-    # copied from supy.steps.other.skimmer
-    def modifiedFileName(self, s):
-        l = s.split("/")
-        return "/".join(l[:-2]+l[-1:])
+    # copied from supy.steps.master
+    def mergeFunc(self, products) :
+        def printComment(lines) :
+            if self.quietMode : return
+            skip = ['Source file','Target path','Found subdirectory']
+            line = next(L for L in lines.split('\n') if not any(item in L for item in skip))
+            print line.replace("Target","The output") + " has been written."
 
-    # copied from supy.steps.other.skimmer
-    def mergeFunc(self, products):
-        for fileName in products["outputFileName"]:
-            os.system("mv %s %s" % (fileName, self.modifiedFileName(fileName)))
-        # if not self.quietMode:
-        if True:
-            print "The %d skim files have been written." % len(products["outputFileName"])
-            print "( e.g. %s )" % self.modifiedFileName(products["outputFileName"][0])
-            print supy.utils.hyphens
+        def cleanUp(stderr, files) :
+            okList = configuration.haddErrorsToIgnore()
+            assert (stderr in okList), "hadd had this stderr: '%s'"%stderr
+            if stderr : print stderr
+            for fileName in files : os.remove(fileName)
 
+        # if not all(os.path.exists(fileName) for fileName in products["outputFileName"]) : return
+        hAdd = supy.utils.getCommandOutput("%s -f %s %s"%(configuration.hadd(),self.outputFileName, " ".join(products["outputFileName"])))
+
+        printComment(hAdd["stdout"])
+        cleanUp(hAdd["stderr"], products["outputFileName"])
 
 
 class slice(supy.analysis):
