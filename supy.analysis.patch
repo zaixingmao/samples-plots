@@ -1,0 +1,13 @@
+diff --git a/__analysis__.py b/__analysis__.py
+index 490a0b5..b2eff4c 100644
+--- a/__analysis__.py
++++ b/__analysis__.py
+@@ -236,7 +236,7 @@ class analysis(object) :
+             assert not nonSteps, "\n\nWarning, the following items from listOfSteps() are not analysisSteps:\n"+('\n'.join(' '+str(s) for s in nonSteps))
+             for step in filter(lambda s: s.only not in ['','data' if tup.lumi else 'sim'], adjustedSteps) : step.disabled = True
+ 
+-            return analysisLooper(mainTree=self.mainTree(),
++            return analysisLooper(mainTree=self.mainTree(conf["tag"]),
+                                   otherTreesToKeepWhenSkimming=self.otherTreesToKeepWhenSkimming(),
+                                   nEventsMax=nEventsMax,
+                                   leavesToBlackList=self.leavesToBlackList(),
