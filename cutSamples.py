@@ -111,7 +111,7 @@ options = opts()
 
 r.gStyle.SetOptStat(0)
 
-def loop_one_sample(iSample, iLocation, iXS, finalState):
+def loop_one_sample(iSample, iLocation, iXS, finalState, chain = None, outPutFileName = None, histos = None):
     print 'Ntuplizing sample [%s] for channel [%s]' %(iSample, finalState)
 
     if 'data' in iSample:
@@ -128,20 +128,22 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
         isSignal = False
 
     sync = options.sync
-        
-    cutFlow = r.TH1D('cutFlow', '', len(xLabels), 0, len(xLabels))
-    eventCount = r.TH1D('eventCount', '', 1, -0.5, 0.5)
-    eventWeights = r.TH1D('eventWeights', '', 2, 0, 2)
-    eventCountWeighted = r.TH1D('eventCountWeighted', '', 1, -0.5, 0.5)
-#     tool.addHistFromFiles(dirName=iLocation, histName = "%s/cutFlow" %finalState, hist = cutFlow, xAxisLabels=xLabels)
-#     cutFlow.SetName('preselection')
-    if not isData:
-        tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
-        print 'initEvents: %i' %eventCount.GetBinContent(1)
-        tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
-        print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
-    folderName = options.folderName
-    iChain = r.TChain("%s/final/Ntuple" %finalState)
+
+    #histograms
+    if not chain:        
+        cutFlow = r.TH1D('cutFlow', '', len(xLabels), 0, len(xLabels))
+        eventCount = r.TH1D('eventCount', '', 1, -0.5, 0.5)
+        eventWeights = r.TH1D('eventWeights', '', 2, 0, 2)
+        eventCountWeighted = r.TH1D('eventCountWeighted', '', 1, -0.5, 0.5)
+        if not isData:
+            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
+            print 'initEvents: %i' %eventCount.GetBinContent(1)
+            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
+            print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
+        folderName = options.folderName
+        iChain = r.TChain("%s/final/Ntuple" %finalState)
+    else:
+        iChain = chain
     nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
     iChain.SetBranchStatus("*",1)
 
@@ -166,10 +168,14 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
     iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
-    if sync:
-        outputFileName = "%s/%s%s_SYNC_%s_%s.root" %(options.location, iSample, cat, finalState, type)
+    
+    if outPutFileName:
+        outputFileName = outPutFileName
     else:
-        outputFileName = "%s/%s%s_%s_%s.root" %(options.location, iSample, cat, finalState, type)
+        if sync:
+            outputFileName = "%s/%s%s_SYNC_%s_%s.root" %(options.location, iSample, cat, finalState, type)
+        else:
+            outputFileName = "%s/%s%s_%s_%s.root" %(options.location, iSample, cat, finalState, type)
     iFile = r.TFile(outputFileName,"recreate")
 
     #setup branches
@@ -286,12 +292,15 @@ def loop_one_sample(iSample, iLocation, iXS, finalState):
     print cutCounter
     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
-#     cutFlow.Write()
-    eventWeights.Fill(0.5, nEntries)
-    eventWeights.Fill(1.5, weightedNEvents)
-    eventWeights.Write()
-    eventCountWeighted.Write()
-    eventCount.Write()
+    if not histos:
+        eventWeights.Fill(0.5, nEntries)
+        eventWeights.Fill(1.5, weightedNEvents)
+        eventWeights.Write()
+        eventCountWeighted.Write()
+        eventCount.Write()
+    else:
+        for iHist in histos:
+            iHist.Write()
     oTree.Write()
     iFile.Close()
 
@@ -301,6 +310,7 @@ def go():
     finalStates = expandFinalStates(options.FS)
     if not finalStates:
         return 0
+
     for iSample, iLocation, xs, fs in enVars.sampleLocations:
         if fs != '':
             loop_one_sample(iSample, iLocation, float(xs), fs)
