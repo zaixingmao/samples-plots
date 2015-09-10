@@ -18,6 +18,14 @@ cd ..
 * `./cutSamples.py -l LOCATIONOFOUTPUTFILE --sync --FS=tt,et`
 * cutSamples currently supports [tt, et, mt, em]
 
+git clone https://github.com/elaird/supy.git
+cd supy
+git checkout site-uw
+git apply ../supy.analysis.patch
+cd -
+source env.sh
+supy slice.py --loop 4 --slices 10
+
 ######to combined data, since we have A, B, C, D
 1. generate A, B, C, D separately in the same location
  (with no other sample in that directory)
