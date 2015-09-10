@@ -195,8 +195,8 @@ def loop_one_sample(iSample,                #sample name (DY)
             oTree.Branch("%s" %iVar, syncVarsDict[iVar], "%s/F" %iVar)
 
     charVarsDict['sampleName'][:31] = iSample
-    intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
-    intVarsDict['sumWeights'][0] = int(eventCountWeighted.GetBinContent(1))
+#     intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
+#     intVarsDict['sumWeights'][0] = int(eventCountWeighted.GetBinContent(1))
 
     floatVarsDict['xs'][0] = iXS
     
@@ -222,7 +222,8 @@ def loop_one_sample(iSample,                #sample name (DY)
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
-        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s' %(outputFileName), iEntry-1)
+        if not chain:
+            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s' %(outputFileName), iEntry-1)
 
         if not isData:
             if iChain.genEventWeight < 0:
@@ -294,7 +295,7 @@ def loop_one_sample(iSample,                #sample name (DY)
 
     print '  -- saved %d events' %(counter)
     print cutCounter
-    tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
+#     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
     if not histos:
         eventWeights.Fill(0.5, nEntries)
