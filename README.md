@@ -21,7 +21,7 @@ cd ..
 git clone https://github.com/elaird/supy.git
 cd supy
 git checkout site-uw
-git apply ../supy.analysis.patch
+git apply ../supy.patch
 cd -
 source env.sh
 supy slice.py --loop 4 --slices 10
