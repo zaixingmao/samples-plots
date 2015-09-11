@@ -72,7 +72,7 @@ class call_out_once(supy.analysisStep):
             if stderr : print stderr
             for fileName in files : os.remove(fileName)
 
-        # if not all(os.path.exists(fileName) for fileName in products["outputFileName"]) : return
+        if not all(os.path.exists(fileName) for fileName in products["outputFileName"]) : return
         hAdd = supy.utils.getCommandOutput("%s -f %s %s"%(configuration.hadd(),self.outputFileName, " ".join(products["outputFileName"])))
 
         printComment(hAdd["stdout"])
