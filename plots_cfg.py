@@ -55,18 +55,18 @@ bins = []
 for i in range(nBins+1):
     bins.append(-3.0 + (6*i+0.0)/nBins)
 
-vars = [("pt_1", array('d', range(0,200,10)), 'GeV', 0.25),
-        ("pt_2", array('d', range(0, 200, 10)), 'GeV', 0.25),
+vars = [# ("pt_1", array('d', range(0,200,10)), 'GeV', 0.25),
+#         ("pt_2", array('d', range(0, 200, 10)), 'GeV', 0.25),
 #         ("eta_1", array('d', bins), 'GeV', 80),
 #         ("eta_2", array('d', bins), 'GeV', 80),
 
-        ("m_vis", array('d', range(0, 200, 20) + range(200, 400, 50)), 'GeV', 12),
+        ("m_vis", array('d', range(0, 200, 20) + range(200, 400, 50)), 'GeV', 0.01),
 #         ("mt_1", array('d', range(0, 200, 10)), 'GeV', 12),
 #         ("mt_2", array('d', range(0, 200, 10)), 'GeV', 12),
-        ("npv", array('d', range(0, 35, 1)), '', 0.15),
+#         ("npv", array('d', range(0, 35, 35)), '', 0.15),
 
 #         ("njets", array('d', range(0,6,1)), '', 100),
-        ("met", array('d', range(0, 200, 10)), 'GeV', 80),
+#         ("met", array('d', range(0, 200, 10)), 'GeV', 80),
         ]
 
 QCD_scale = {'tt': 1.073,
