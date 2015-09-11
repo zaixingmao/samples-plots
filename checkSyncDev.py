@@ -111,7 +111,7 @@ def getVetoValue(veto):
         return int(out)
 
 
-def addVars(iTree):
+def addVars(iTree, a):
     tau1 = lvClass()
     tau2 = lvClass()
     jet2 = lvClass()
@@ -119,7 +119,8 @@ def addVars(iTree):
     tau2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 #     jet2.SetCoordinates(iTree.bpt_2, iTree.beta_2, iTree.bphi_2, 0)
  
-    a = ['evtNumber', int(iTree.evt), 
+
+    a[(int(iTree.evt), int(iTree.lumi), iTree.run)] = ['evtNumber', int(iTree.evt), 
 #             'mvaPhi', iTree.mvametphi, 
 #             'muVeto', getVetoValue(iTree.extramuon_veto),
             'pt1', iTree.pt_1, 
@@ -149,7 +150,7 @@ def addVars(iTree):
 #             'dR', r.Math.VectorUtil.DeltaR(tau1, tau2),
 #             'met', iTree.met, 
 #             'metphi', iTree.metphi, 
-            'mvamet', iTree.mvamet, 
+#             'mvamet', iTree.mvamet,
 #             'mvametphi', iTree.mvametphi, 
 
 #            'eleVeto', getVetoValue(iTree.extraelec_veto),
@@ -195,7 +196,7 @@ def addVars(iTree):
 #             'cov10', iTree.mvacov10,
 #             'mJJ', iTree.m_bb,
 #             'svMass', iTree.m_sv
-            ]
+    ]
     return a
 
 def addVars2(iTree):
@@ -265,76 +266,56 @@ def checkSyncDev(options):
     mvaMet2 = r.TH1F('mvaMet2', '',60, 0, 6)
 
 
-    varsList1 = []
-    varsList2 = []
+    varsDict1 = {}
+    varsDict2 = {}
 
     for i in range(total1):
         tool.printProcessStatus(i, total1, 'reading file1', i-1)
         iTree1.GetEntry(i)
         if int(options.nTauPairs):
-            varsList1.append(addVars2(iTree1))
+            varsDict1 = addVars2(iTree1, varsDict1)
         else:
-            varsList1.append(addVars(iTree1))
+            varsDict1 = addVars(iTree1, varsDict1)
     print ''
     for i in range(total2):
         tool.printProcessStatus(i, total2, 'reading file2', i-1)
         iTree2.GetEntry(i)
         if int(options.nTauPairs):
-            varsList2.append(addVars3(iTree2))
+            varsDict2 = addVars2(iTree2, varsDict2)
         else:
-            varsList2.append(addVars(iTree2))
+            varsDict2 = addVars(iTree2, varsDict2)
     print ''
-    varsList1 = sorted(varsList1, key=itemgetter(1), reverse=False)
-    varsList2 = sorted(varsList2, key=itemgetter(1), reverse=False)
-
-    evt2Last = varsList2[total2-1][1]
-
     indexNotFound1 = []
-    indexFound2 = []
+    indexFound2 = 0
     matchedEvents = 0
     sameEvents = 0
     differentEvents = 0
+    counter = 0
+    for iKey in varsDict1.keys():
+        tool.printProcessStatus(counter, total1, 'looping through', counter-1)
 
-    runRanges = {'A': (0,193621),
-                'B': (193621,196531),
-                'C': (196531,203742),
-                'D': (203742,208686)}
+        if iKey in varsDict2.keys() and iKey[0] == eventNumber:
+            diff = (varsDict1[iKey][3]+1.0) - (varsDict2[iKey][3]+1.0)
+            printInfo(name1, varsDict1[iKey], name2, varsDict2[iKey])
+        elif iKey in varsDict2.keys() and eventNumber == -1:
+            matchedEvents += 1
+            diff = (varsDict1[iKey][3]+1.0) - (varsDict2[iKey][3]+1.0)
+            indexFound2 += 1
+            if diff != 0.0 and (options.style == 'diff' or options.style == 'all'):
+                printInfo(name1, varsDict1[iKey], name2, varsDict2[iKey])
+                differentEvents += 1
+            elif diff == 0 and (options.style == 'same' or options.style == 'all'):
+                printInfo(name1, varsDict1[iKey], name2, varsDict2[iKey])
+                sameEvents += 1
 
-    runRange = runRanges['A']
-
-    for i in range(total1):
-#         if not (runRange[0] < varsList1[i][5] <= runRange[1]):
-#             continue 
-        for j in range(total2):
-#             if not (runRange[0] < varsList2[j][5] <= runRange[1]):
-#                 continue 
-            if varsList1[i][1] == varsList2[j][1] and varsList1[i][1] == eventNumber:
-                diff = (varsList1[i][3]+1.0) - (varsList2[j][3]+1.0)
-                printInfo(name1, varsList1[i], name2, varsList2[j])
-                return 1
-            elif varsList1[i][1] == varsList2[j][1] and eventNumber == -1:
-    #             mvaMet1.Fill(varsList1[i][1]/varsList2[j][1])
-                matchedEvents += 1
-                diff = 0 if varsList1[i][3] == varsList2[j][3] else 1
-                mvaMet2.Fill(diff)
-                indexFound2.append(j)
-                if diff != 0.0 and (options.style == 'diff' or options.style == 'all'):
-                    printInfo(name1, varsList1[i], name2, varsList2[j])
-                    differentEvents += 1
-                elif diff == 0 and (options.style == 'same' or options.style == 'all'):
-                    printInfo(name1, varsList1[i], name2, varsList2[j])
-                    sameEvents += 1
-                break
-            elif varsList1[i][1] < varsList2[j][1]:
-                indexNotFound1.append(i)
-                break
-        if varsList1[i][1] > evt2Last:
-            break
-
+            else:
+                indexNotFound1.append(iKey)
+        counter += 1
+    print ''
     if options.style == 'all' or options.style == 'miss':
         print 'Extra events in %s **********' %name1
-        for i_1 in indexNotFound1:
-            printSingleInfo(name1, varsList1[i_1])
+        for iKey in indexNotFound1:
+            printSingleInfo(name1, varsDict1[iKey])
         print ' '
 #         print 'Extra events in %s **********' %options.name2
 #         for i_2 in range(total2):
@@ -351,7 +332,7 @@ def checkSyncDev(options):
         print "Out of %i matching events, %s%i\033[0m events with same MVAMet, %s%i\033[0m events with different MVAMet" %(matchedEvents, bcolors.OKGREEN, sameEvents, bcolors.FAIL, differentEvents)
     if options.style == 'miss':
         print "%s has an extra of %i events" %(name1, len(indexNotFound1))
-        print "%s has an extra of %i events" %(name2, total2 - len(indexFound2))
+        print "%s has an extra of %i events" %(name2, total2 - indexFound2)
     
     if eventNumber == -1:   
         return 1
@@ -359,12 +340,6 @@ def checkSyncDev(options):
         print "Event %i not found!" %eventNumber
         return 0
 
-
-    psfile = 'syncTest.pdf'
-    c = r.TCanvas("c","Test", 800, 600)
-    mvaMet2.SetLineColor(r.kRed)
-    mvaMet2.Draw()
-    # mvaMet1.Draw('same')
 
     c.Print('%s' %psfile)
     c.Close()
