@@ -126,7 +126,7 @@ def addVars(iTree, a):
             'pt1', iTree.pt_1, 
 
             'lumi', int(iTree.lumi), 
-#           'run', iTree.run, 
+          'run', iTree.run, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
             'q1', iTree.q_1, 
@@ -294,10 +294,10 @@ def checkSyncDev(options):
     for iKey in varsDict1.keys():
         tool.printProcessStatus(counter, total1, 'looping through', counter-1)
 
-        if iKey in varsDict2.keys() and iKey[0] == eventNumber:
+        if iKey in varsDict2 and iKey[0] == eventNumber:
             diff = (varsDict1[iKey][3]+1.0) - (varsDict2[iKey][3]+1.0)
             printInfo(name1, varsDict1[iKey], name2, varsDict2[iKey])
-        elif iKey in varsDict2.keys() and eventNumber == -1:
+        elif iKey in varsDict2 and eventNumber == -1:
             matchedEvents += 1
             diff = (varsDict1[iKey][3]+1.0) - (varsDict2[iKey][3]+1.0)
             indexFound2 += 1
