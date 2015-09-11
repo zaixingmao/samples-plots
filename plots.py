@@ -11,7 +11,7 @@ r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
 
-lumi = 20.38
+lumi = 16.09
 
 def opts():
     parser = optparse.OptionParser()
@@ -35,10 +35,13 @@ defaultOrder = [("Electroweak", r.TColor.GetColor(222, 90,106)),
                 ]
 
 def passCut(tree):
-    if tree.eTau_WPLoosePass or tree.eTauPass:
-#     if 1.5 < tree.tByCombinedIsolationDeltaBetaCorrRaw3Hits < 10.0:
-        return True
-    return False
+#     onlyMuLead = True if (not (tree.Mu8e23Pass and tree.mMu8El23 and tree.mMu8El23)) else False
+#     onlyEleLead = True if (not (tree.Mu23e12Pass and tree.mMu23El12 and tree.eMu23El12)) else False
+#     both = True if (tree.Mu23e12Pass and tree.mMu23El12 and tree.eMu23El12) and (tree.Mu8e23Pass and tree.mMu8El23 and tree.mMu8El23) else False
+    return True
+ #    if onlyEleLead:
+#         return True
+#     return False
 
 def getLatex(name):
     if name == 't':
@@ -115,8 +118,8 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS):
         tree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Looping sample %s' %(iSample), iEntry-1)
         weight = 1.0
-#         if not passCut(tree):
-#             continue
+        if not passCut(tree):
+            continue
         if iCategory != 'Observed':
             if tree.genEventWeight != 1:
                 weight = lumi*tree.xs*tree.genEventWeight/(tree.sumWeights+0.0)
