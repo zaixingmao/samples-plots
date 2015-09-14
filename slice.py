@@ -102,10 +102,9 @@ class slice(supy.analysis):
                 break
         assert found
 
-        out = [supy.steps.printer.progressPrinter()]
-        if (not fs) or fs == p["tag"]:
-            out.append(call_out_once(p["tag"], p["sample"], xs))
-        return out
+        return [supy.steps.printer.progressPrinter(),
+                call_out_once(p["tag"], p["sample"], xs),
+                ]
 
     def listOfCalculables(self, pars):
         out = supy.calculables.zeroArgs(supy.calculables)
@@ -121,10 +120,8 @@ class slice(supy.analysis):
         return [h]
 
     def listOfSamples(self, pars):
-        names = [l[0] for l in enVars.sampleLocations]
-        assert len(names) == len(set(names)), names
-
         out = []
-        for name in names:
-            out += supy.samples.specify(names=name)
+        for name, path, xs, fs in enVars.sampleLocations:
+            if (not fs) or fs == pars["tag"]:
+                out += supy.samples.specify(names=name)
         return tuple(out)
