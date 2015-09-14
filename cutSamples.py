@@ -173,13 +173,14 @@ def loop_one_sample(iSample,                #sample name (DY)
     
     if outPutFileName:
         outputFileName = outPutFileName
+        iFile = r.TFile(outputFileName, "update")
     else:
         iSample = iSample + '_%s' %('all' if nevents == "-1" else nevents)
         if sync:
             outputFileName = "%s/%s%s_SYNC_%s_%s.root" %(location, iSample, cat, finalState, type)
         else:
             outputFileName = "%s/%s%s_%s_%s.root" %(location, iSample, cat, finalState, type)
-    iFile = r.TFile(outputFileName,"recreate")
+        iFile = r.TFile(outputFileName, "recreate")
 
     #setup branches
     for iVar in charVarsDict.keys():
