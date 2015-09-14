@@ -58,6 +58,10 @@ class call_out_once(supy.analysisStep):
     def outputSuffix(self):
         return "_events.root"
 
+    def setup(self, chain, fileDir):
+        self.outputFile = r.TFile(self.outputFileName, "RECREATE")
+        self.outputFile.Close()
+
     # copied from supy.steps.master
     def mergeFunc(self, products) :
         def printComment(lines) :
@@ -72,9 +76,7 @@ class call_out_once(supy.analysisStep):
             if stderr : print stderr
             for fileName in files : os.remove(fileName)
 
-        if not all(os.path.exists(fileName) for fileName in products["outputFileName"]) : return
         hAdd = supy.utils.getCommandOutput("%s -f %s %s"%(configuration.hadd(),self.outputFileName, " ".join(products["outputFileName"])))
-
         printComment(hAdd["stdout"])
         cleanUp(hAdd["stderr"], products["outputFileName"])
 
@@ -100,10 +102,9 @@ class slice(supy.analysis):
                 break
         assert found
 
-        out = [supy.steps.printer.progressPrinter()]
-        if (not fs) or fs == p["tag"]:
-            out.append(call_out_once(p["tag"], p["sample"], xs))
-        return out
+        return [supy.steps.printer.progressPrinter(),
+                call_out_once(p["tag"], p["sample"], xs),
+                ]
 
     def listOfCalculables(self, pars):
         out = supy.calculables.zeroArgs(supy.calculables)
@@ -119,10 +120,8 @@ class slice(supy.analysis):
         return [h]
 
     def listOfSamples(self, pars):
-        names = [l[0] for l in enVars.sampleLocations]
-        assert len(names) == len(set(names)), names
-
         out = []
-        for name in names:
-            out += supy.samples.specify(names=name)
+        for name, path, xs, fs in enVars.sampleLocations:
+            if (not fs) or fs == pars["tag"]:
+                out += supy.samples.specify(names=name)
         return tuple(out)

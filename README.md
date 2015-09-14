@@ -20,11 +20,13 @@ cd ..
 
 git clone https://github.com/elaird/supy.git
 cd supy
-git checkout site-uw
+git checkout empty-samples
 git apply ../supy.patch
 cd -
 source env.sh
-supy slice.py --loop 4 --slices 10
+supy slice.py --loop 4 --slices 10 --batch
+# after jobs are complete:
+supy slice.py
 
 ######to combined data, since we have A, B, C, D
 1. generate A, B, C, D separately in the same location
