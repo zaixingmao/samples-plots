@@ -58,6 +58,10 @@ class call_out_once(supy.analysisStep):
     def outputSuffix(self):
         return "_events.root"
 
+    def setup(self, chain, fileDir):
+        self.outputFile = r.TFile(self.outputFileName, "RECREATE")
+        self.outputFile.Close()
+
     # copied from supy.steps.master
     def mergeFunc(self, products) :
         def printComment(lines) :
@@ -72,9 +76,7 @@ class call_out_once(supy.analysisStep):
             if stderr : print stderr
             for fileName in files : os.remove(fileName)
 
-        if not all(os.path.exists(fileName) for fileName in products["outputFileName"]) : return
         hAdd = supy.utils.getCommandOutput("%s -f %s %s"%(configuration.hadd(),self.outputFileName, " ".join(products["outputFileName"])))
-
         printComment(hAdd["stdout"])
         cleanUp(hAdd["stderr"], products["outputFileName"])
 
