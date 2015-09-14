@@ -10,3 +10,6 @@ def leavesToBlackList():
 
 def experiment():
     return "cms"
+
+def hadd():
+    return ["hadd", "phaddy"][0]
