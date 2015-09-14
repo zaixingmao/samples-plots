@@ -11,16 +11,3 @@ index 490a0b5..b2eff4c 100644
                                    otherTreesToKeepWhenSkimming=self.otherTreesToKeepWhenSkimming(),
                                    nEventsMax=nEventsMax,
                                    leavesToBlackList=self.leavesToBlackList(),
-diff --git a/__wrappedChain__.py b/__wrappedChain__.py
-index 9ee5094..f3f7a8c 100644
---- a/__wrappedChain__.py
-+++ b/__wrappedChain__.py
-@@ -63,7 +63,7 @@ class wrappedChain(dict) :
-                 continue
- 
-             for iTreeEntry in range( nTreeEntries )  :
--                if (not nTree) and iTreeEntry==100 : tree.StopCacheLearningPhase()
-+                if (not nTree) and tree and iTreeEntry==100 : tree.StopCacheLearningPhase()
-                 self.entry = iTreeFirstEntry + iTreeEntry
-                 if nEntries!=None and nEntries <= self.entry : self.entry-=1; return
-                 self.__localEntry = iTreeEntry
