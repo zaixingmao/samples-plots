@@ -16,7 +16,7 @@ sampleList = [
     ('TTJets', '%s/TTJets_all_SYNC_' %dir, 't#bar{t}'),
     ('data', '%s/data_all_SYNC_' %dir, 'Observed'),
     ('ggH160', '%s/SUSY_all_SYNC' %dir, 'ggH160'),
-    ] + [('Zprime%d' % m, '%s/ZPrime_%d_all_SYNC_' % (dir, m), 'ZPrime_%d' % m) for m in (set(range(500, 5500, 500)) - set([2500, 4500]))]
+    ] + [('Zprime%d' % m, '%s/ZPrime_%d_all_SYNC' % (dir, m), 'ZPrime_%d' % m) for m in (set(range(500, 5500, 500)) - set([2500, 4500]))]
 
 
 # selection = '_antiIso'
