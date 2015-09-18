@@ -101,47 +101,58 @@ def loop_one_sample(iSample, varName, hist1, hist2, category = 'mt', isData = Fa
     print ''
 
 def run(varName, bins, unit, cat = 'et'):
-    files_mc = ['/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/DY_all_SYNC_%s_baseline.root' %cat]
-    hist_mc_all = r.TH1F("hist_mc_all", "", len(bins)-1, bins)
-    hist_mc_pass = r.TH1F('hist_mc_pass', '', len(bins)-1, bins)
-    file_data = '/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/data_all_SYNC_%s_baseline.root' %cat
+
+    append_name = 'inclusive'
+    files_mc = [('WJets', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/WJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kRed),
+                ('DY', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/DY_all_SYNC_%s_%s.root' %(cat, append_name), r.kBlue),
+#                 ('ttbar', '/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/TTJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kGreen)
+                ]
+
+    hist_mc_all = []
+    hist_mc_pass = []
+    file_data = '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/data_all_SYNC_%s_%s.root' %(cat, append_name)
     hist_data_all = r.TH1F('hist_data_all', '', len(bins)-1, bins)
     hist_data_pass = r.TH1F('hist_data_pass', '', len(bins)-1, bins)
 
-    for iSample in files_mc:
-        loop_one_sample(iSample, varName, hist_mc_all, hist_mc_pass, cat, False)
+    for iName, iSample, iColor in files_mc:
+        hist_mc_all.append(r.TH1F("hist_%s_all" %iName, "", len(bins)-1, bins))
+        hist_mc_pass.append(r.TH1F("hist_%s_pass" %iName, "", len(bins)-1, bins))
+        loop_one_sample(iSample, varName, hist_mc_all[len(hist_mc_all)-1], hist_mc_pass[len(hist_mc_pass)-1], cat, False)
 
     loop_one_sample(file_data, varName, hist_data_all, hist_data_pass, cat, True)
 
 
+    g_mc = []
+    histList = []
 
-    g_mc = r.TGraphAsymmErrors()
-    g_mc.BayesDivide(hist_mc_pass, hist_mc_all)
+    for i in range(len(hist_mc_all)):
+        g_mc.append(r.TGraphAsymmErrors())
+        g_mc[i].BayesDivide(hist_mc_pass[i], hist_mc_all[i])
+        g_mc[i].SetMarkerStyle(8)
+        g_mc[i].SetMarkerSize(0.9)
+        g_mc[i].SetMarkerColor(files_mc[i][2])
+        g_mc[i].SetLineColor(files_mc[i][2])
+        histList.append((g_mc[i], files_mc[i][0], 'ep'))
     g_data = r.TGraphAsymmErrors()
     g_data.BayesDivide(hist_data_pass, hist_data_all)
+    histList.append((g_data, 'Observed', 'ep'))
 
-    histList = [(g_mc, 'DY_MC', 'ep'), (g_data, 'Observed', 'ep')]
     g_data.SetMarkerStyle(8)
     g_data.SetMarkerSize(0.9)
     g_data.SetMarkerColor(r.kBlack)
     psfile = 'tauTrigTurnOnCurve_%s_%s.pdf' %(varName, cat)
     c = r.TCanvas("c","Test", 600, 800)
-    g_mc.SetMaximum(1.5)
 
-    g_mc.SetTitle("tau trigger turn-on curve; #tau pt; Effeciency")
-    g_mc.SetMarkerStyle(8)
-    g_mc.SetMarkerSize(0.9)
-    g_mc.SetMarkerColor(r.kBlue)
-    g_mc.SetLineColor(r.kBlue)
 
     null = r.TH2F("null","", len(bins)-1, bins, 1, 0, 1.1)
+    null.SetMaximum(1.2)
     null.SetTitle("tau trigger turn-on curve; %s; Effeciency" %unit)
     null.SetStats(False)
 
 
-    leg = tool.setMyLegend((0.6, 0.5 - 0.06*2, 0.87, 0.5), histList)
+    leg = tool.setMyLegend((0.65, 0.4 - 0.06*4, 0.92, 0.4), histList)
 
-    delta = buildDelta(hist_data_pass, hist_data_all, hist_mc_pass, hist_mc_all, bins, varName, unit, 0.25)
+    delta = buildDelta(hist_data_pass, hist_data_all, hist_mc_pass[0], hist_mc_all[0], bins, varName, unit, 0.25)
 
     p = r.TPad("p", "p", 0., 1, 1., 0.3)
     p_ratio = r.TPad("p_r", "p_r", 0.,0.3,1.,0.06)
@@ -154,7 +165,8 @@ def run(varName, bins, unit, cat = 'et'):
     r.gPad.SetTickx()
     r.gPad.SetTicky()
     null.Draw()
-    g_mc.Draw('same PE')
+    for i in range(len(g_mc)):
+        g_mc[i].Draw('same PE')
     g_data.Draw('same PE')
     leg.Draw('same')
 
@@ -173,4 +185,4 @@ bins2 = []
 for i in range(21):
     bins2.append(-4 + i*0.4)
 run('tPt', bins, "#tau pt")
-run('tEta',  array.array('d', bins2), "#tau eta")
+# run('tEta',  array.array('d', bins2), "#tau eta")
