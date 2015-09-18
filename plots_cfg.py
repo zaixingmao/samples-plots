@@ -15,6 +15,8 @@ sampleList = [
               ('%s/T_all_SYNC_' %dir, 't#bar{t}'),
               ('%s/TTJets_all_SYNC_' %dir, 't#bar{t}'),
               ('%s/data_all_SYNC_' %dir, 'Observed'),
+              ('%s/ZPrime_2000_all_SYNC_' %dir, 'ZPrime_2000'),
+
             ]
 
 
@@ -60,10 +62,13 @@ vars = [# ("pt_1", array('d', range(0,200,10)), 'GeV', 0.25),
 #         ("eta_1", array('d', bins), 'GeV', 80),
 #         ("eta_2", array('d', bins), 'GeV', 80),
 
-        ("m_vis", array('d', range(0, 200, 20) + range(200, 400, 50)), 'GeV', 0.01),
+        ("m_vis", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
+       ("m_withMET", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
+        ("m_gen", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
+
 #         ("mt_1", array('d', range(0, 200, 10)), 'GeV', 12),
 #         ("mt_2", array('d', range(0, 200, 10)), 'GeV', 12),
-#         ("npv", array('d', range(0, 35, 35)), '', 0.15),
+#         ("npv", array('d', range(0, 35, 1)), '', 0.15),
 
 #         ("njets", array('d', range(0,6,1)), '', 100),
 #         ("met", array('d', range(0, 200, 10)), 'GeV', 80),
