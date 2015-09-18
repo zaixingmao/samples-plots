@@ -10,6 +10,12 @@ import cutSampleTools
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
+lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
+
+l1 = lvClass()
+l2 = lvClass()
+met = lvClass()
+
 
 lumi = 16.09
 
@@ -18,6 +24,7 @@ def opts():
     parser.add_option("--FS", dest="FS", default='mt', help="final state product, et, tt")
     parser.add_option("--option", dest="option", default='', help="width")
     parser.add_option("--PUWeight", dest="PUWeight", default=False, action="store_true", help="")
+    parser.add_option("--unblind", dest="unblind", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
     return options
@@ -38,6 +45,8 @@ def passCut(tree):
 #     onlyMuLead = True if (not (tree.Mu8e23Pass and tree.mMu8El23 and tree.mMu8El23)) else False
 #     onlyEleLead = True if (not (tree.Mu23e12Pass and tree.mMu23El12 and tree.eMu23El12)) else False
 #     both = True if (tree.Mu23e12Pass and tree.mMu23El12 and tree.eMu23El12) and (tree.Mu8e23Pass and tree.mMu8El23 and tree.mMu8El23) else False
+    if tree.pfMetEt <= 30:
+        return False
     return True
  #    if onlyEleLead:
 #         return True
@@ -110,6 +119,9 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS):
     iSample += "%s_inclusive.root" %FS
     file = r.TFile(iSample)    
     tree = file.Get('Ntuple')
+    eventCount = file.Get('eventCount')
+    eventCountWeighted = file.Get('eventCountWeighted')
+
     nEntries = tree.GetEntries()
     tmpHist = r.TH1F("tmp_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
     tmpHist_qcd = r.TH1F("tmp_qcd_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
@@ -118,26 +130,51 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS):
         tree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Looping sample %s' %(iSample), iEntry-1)
         weight = 1.0
+
+        if eventCount:
+            initEvents = eventCount.GetBinContent(1)
+        else:    
+            initEvents = tree.initEvents
+        if eventCountWeighted:
+            sumWeights = eventCountWeighted.GetBinContent(1)
+        else:    
+            sumWeights = tree.sumWeights
         if not passCut(tree):
             continue
         if iCategory != 'Observed':
             if tree.genEventWeight != 1:
-                weight = lumi*tree.xs*tree.genEventWeight/(tree.sumWeights+0.0)
+                weight = lumi*tree.xs*tree.genEventWeight/(sumWeights+0.0)
                 if options.PUWeight:
                     weight = weight*cutSampleTools.getPUWeight(tree.nTruePU)
             else:
-                weight = lumi*tree.xs/(tree.initEvents+0.0)
+                weight = lumi*tree.xs/(initEvents+0.0)
 
         if 'WJets' in iSample:
             weight = 1.0*weight
+        if 'ZPrime' in iSample:
+            weight = 10.0*weight
+        if varName == 'm_withMET':
+            l1.SetCoordinates(tree.pt_1, tree.eta_1, tree.phi_1, tree.m_1)
+            l2.SetCoordinates(tree.pt_2, tree.eta_2, tree.phi_2, tree.m_2)
+            met.SetCoordinates(tree.pfMetEt, 0.0, tree.pfMetPhi, 0)
+            value = (l1 + l2 + met).mass()
+        elif varName == 'm_gen':
+            if tree.eGenTauMass < 0  or tree.tGenMass < 0:
+                continue
+
+            l1.SetCoordinates(tree.eGenTauPt, tree.eGenTauEta, tree.eGenTauPhi, tree.eGenTauMass)
+            l2.SetCoordinates(tree.tGenPt, tree.tGenEta, tree.tGenPhi, tree.tGenMass)
+            value = (l1 + l2).mass()
+        else:
+            value = getattr(tree, varName)
 
         if tree.q_1 ==  tree.q_2:
             if iCategory != 'Observed':
-                tmpHist_qcd.Fill(getattr(tree, varName), -weight)
+                tmpHist_qcd.Fill(value, -weight)
             else:
-                tmpHist_qcd.Fill(getattr(tree, varName), weight)
+                tmpHist_qcd.Fill(value, weight)
         else:
-            tmpHist.Fill(getattr(tree, varName), weight)
+            tmpHist.Fill(value, weight)
 
     histDict['QCD'].Add(tmpHist_qcd)
     histDict[iCategory].Add(tmpHist)
@@ -185,8 +222,8 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax):
     for ikey, icolor in defaultOrder:
         if ikey in histDict.keys():
             bkg.Add(histDict[ikey].Clone())
-
-    delta = ratioHistogram(num = histDict["Observed"], den = bkg, relErrMax=relErrMax)
+    if options.unblind:
+        delta = ratioHistogram(num = histDict["Observed"], den = bkg, relErrMax=relErrMax)
 #     delta.Add(histDict["Observed"])
 #     delta.Sumw2()
 #     bkg.Sumw2()
@@ -216,11 +253,14 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     
         if not (iCategory in histDict.keys()):
             histDict[iCategory] = r.TH1F("%s_%s_%s" %(iCategory, FS, varName), "", len(varBins)-1, varBins)
-            if iCategory != "Observed":
+            if iCategory != "Observed" and "ZPrime" not in iCategory:
                 histDict[iCategory].SetFillColor(getColor(iCategory))
                 histDict[iCategory].SetMarkerColor(getColor(iCategory))
                 histDict[iCategory].SetMarkerStyle(21)
                 histDict[iCategory].SetLineColor(r.kBlack)
+            if "ZPrime" in iCategory:
+                histDict[iCategory].SetLineStyle(2)
+                histDict[iCategory].SetLineColor(r.kBlue)
 
         loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS)
     if not ('Observed' in histDict.keys()):
@@ -251,6 +291,9 @@ def setLegend(position, histDict, bins, option = 'width'):
                 histList.append((histDict[ikey], '%s (%.2f)' %(ikey, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
             else:
                 histList.append((histDict[ikey], '%s' %ikey, 'f'))
+
+    histList.append((histDict['ZPrime_2000'], 'ZPrime_2000 (%.2f)' %(histDict['ZPrime_2000'].Integral(0, nbins+1, option)), 'l'))
+
     return tool.setMyLegend(position, histList)
 
 def multiPlots(FS, option):
@@ -273,13 +316,17 @@ def multiPlots(FS, option):
         p_r[len(p_r)-1].Draw()
         p[len(p)-1].cd()
         r.gPad.SetTicky()
+        r.gPad.SetTickx()
+
+        r.gPad.SetLogy()
 
         histDict, bkgStack, delta = buildHists(iVarName, iVarBins, iUnit, FS, option, relErrMax)
         iMax = 1.2*bkgStack.GetMaximum()
         bkgStack.SetMaximum(iMax)
-        iMin = 0
-        bkgStack.SetMinimum(iMin)        
-        bkgStack.Draw('hist AH')
+        iMin = 0.1
+        bkgStack.SetMinimum(iMin)   
+     
+        bkgStack.Draw('hist H')
         bkgStack.GetYaxis().SetNdivisions(510)
         bkgStack.GetYaxis().SetTitleOffset(1.2)
         bkgStack.GetYaxis().SetLabelSize(0.035)
@@ -290,7 +337,10 @@ def multiPlots(FS, option):
         histDict["Observed"].Sumw2()
         histDict["Observed"].SetMarkerStyle(8)
         histDict["Observed"].SetMarkerSize(0.9)
-        histDict["Observed"].Draw('PE same')
+        if options.unblind:
+            histDict["Observed"].Draw('PE same')
+        histDict["ZPrime_2000"].Draw('H same')
+
         legends.append(setLegend(position, histDict, iVarBins, option))
         legends[len(legends)-1].Draw('same')
         
@@ -302,13 +352,13 @@ def multiPlots(FS, option):
         r.gPad.Update()
         r.gPad.RedrawAxis()
         c.cd()
-        yaxis =  r.TGaxis(0.1, 0.3, 0.1, 0.9, iMin, iMax, 505,"")
+        yaxis =  r.TGaxis(0.1, 0.3, 0.1, 0.9, iMin, iMax, 505,"G")
         yaxis.SetLabelSize(0.03)
         yaxis.SetTitle("events / bin")
         yaxis.SetTitleOffset(1.2)
         yaxis.SetTitleSize(0.035)
 
-        yaxis.Draw("A")
+#         yaxis.Draw("A")
         c.Update()
         if (counter == len(plots_cfg.vars)-1) and (counter == 0):
             c.Print('%s' %psfile)
