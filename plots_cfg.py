@@ -4,39 +4,20 @@ from array import array
 dir = "/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2"
 
 sampleList = [
-                ('%s/WJets_all_SYNC_' %dir, 'Electroweak'),
-              ('%s/WW_all_SYNC_' %dir, 'Electroweak'),
-              ('%s/WZ_all_SYNC_' %dir, 'Electroweak'),
-              ('%s/ZZ_all_SYNC_' %dir, 'Electroweak'),
-              ('%s/DY_all_ZTT_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
-              ('%s/DY_all_ZL_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
-              ('%s/DY_all_ZJ_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
-              ('%s/antiT_all_SYNC_' %dir, 't#bar{t}'),
-              ('%s/T_all_SYNC_' %dir, 't#bar{t}'),
-              ('%s/TTJets_all_SYNC_' %dir, 't#bar{t}'),
-              ('%s/data_all_SYNC_' %dir, 'Observed'),
-              ('%s/ZPrime_2000_all_SYNC_' %dir, 'ZPrime_2000'),
+    ('Wjets', '%s/WJets_all_SYNC_' %dir, 'Electroweak'),
+    ('WW', '%s/WW_all_SYNC_' %dir, 'Electroweak'),
+    ('WZ', '%s/WZ_all_SYNC_' %dir, 'Electroweak'),
+    ('ZZ', '%s/ZZ_all_SYNC_' %dir, 'Electroweak'),
+    ('ZTT', '%s/DY_all_ZTT_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
+    ('ZL', '%s/DY_all_ZL_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
+    ('ZJ', '%s/DY_all_ZJ_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
+    ('ST_antiTop_tW', '%s/antiT_all_SYNC_' %dir, 't#bar{t}'),
+    ('ST_top_tW', '%s/T_all_SYNC_' %dir, 't#bar{t}'),
+    ('TTJets', '%s/TTJets_all_SYNC_' %dir, 't#bar{t}'),
+    ('data', '%s/data_all_SYNC_' %dir, 'Observed'),
+    ('ggH160', '%s/SUSY_all_SYNC' %dir, 'ggH160'),
+    ] + [('Zprime%d' % m, '%s/ZPrime_%d_all_SYNC_' % (dir, m), 'ZPrime_%d' % m) for m in (set(range(500, 5500, 500)) - set([2500, 4500]))]
 
-            ]
-
-
-dataCardSamplesList = [('WJets', '%s/WJets_all_SYNC' %dir, 0),#24089991),
-              ('WW','%s/WW_all_SYNC' %dir, 0),#989608),
-              ('WZ', '%s/WZ_all_SYNC' %dir, 0),#996920),
-              ('ZZ', '%s/ZZ_all_SYNC' %dir, 0),#998848),
-              ('ZL', '%s/DY_all_ZL_SYNC' %dir, 0),#19925500),
-              ('ZTT', '%s/DY_all_ZTT_SYNC' %dir, 0),#19925500),
-              ('ZJ', '%s/DY_all_ZJ_SYNC' %dir, 0),#19925500),
-#               ('DY-50', '%s_2/DY_all_SYNC' %dir, 0),#19925500),
-#               ('DY-10to50', '%s_2/DY-10to50_all_SYNC' %dir, 0),#),
-              ('ST_antiTop_tW', '%s/antiT_all_SYNC' %dir, 0),#500000),
-              ('ST_top_tW', '%s/T_all_SYNC' %dir, 0),#998400),
-#               ('ST_antiTop_t-channel', '%s/antiT-tchannel_all_SYNC' %dir, 0),#),
-#               ('ST_top_t-channel', '%s/antiT_all_SYNC' %dir, 0),#),
-              ('TTJets', '%s/TTJets_all_SYNC' %dir, 0),#4994250),
-              ('ggH160', '%s/SUSY_all_SYNC' %dir, 0),
-              ('data', '%s/data_all_SYNC' %dir, 0),
-            ]
 
 # selection = '_antiIso'
 # 
