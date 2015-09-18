@@ -4,7 +4,7 @@ from array import array
 dir = "/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2"
 
 sampleList = [
-    ('Wjets', '%s/WJets_all_SYNC_' %dir, 'Electroweak'),
+    ('WJets', '%s/WJets_all_SYNC_' %dir, 'Electroweak'),
     ('WW', '%s/WW_all_SYNC_' %dir, 'Electroweak'),
     ('WZ', '%s/WZ_all_SYNC_' %dir, 'Electroweak'),
     ('ZZ', '%s/ZZ_all_SYNC_' %dir, 'Electroweak'),
