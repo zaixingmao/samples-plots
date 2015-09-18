@@ -76,9 +76,15 @@ class call_out_once(supy.analysisStep):
             if stderr : print stderr
             for fileName in files : os.remove(fileName)
 
-        hAdd = supy.utils.getCommandOutput("%s -f %s %s"%(configuration.hadd(),self.outputFileName, " ".join(products["outputFileName"])))
+        tmp = self.outputFileName.replace(".root", "_tmp.root")
+        hAdd = supy.utils.getCommandOutput("%s -f %s %s"%(configuration.hadd(), tmp, " ".join(products["outputFileName"])))
         printComment(hAdd["stdout"])
         cleanUp(hAdd["stderr"], products["outputFileName"])
+
+        # re-hadding was observed to reduce drastically the memory usage of chain.GetEntry(0)
+        hAdd = supy.utils.getCommandOutput("%s -f %s %s"%(configuration.hadd(), self.outputFileName, tmp))
+        printComment(hAdd["stdout"])
+        cleanUp(hAdd["stderr"], [tmp])
 
 
 class slice(supy.analysis):
