@@ -97,7 +97,7 @@ def opts():
     parser.add_option("-n", dest="nevents", default="-1", help="amount of events to be saved")
     parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
     parser.add_option("--pair", dest="pairChoice", default="iso", help="which pair")
-    parser.add_option("--sync", dest="sync", default=False, action="store_true", help="which pair")
+    parser.add_option("--sync", dest="sync", default=True, action="store_true", help="which pair")
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
     parser.add_option("--inclusive", dest="inclusive", default=False, action="store_true", help="apply inclusive cut")
@@ -109,18 +109,18 @@ def opts():
 
     return options
 
-def loop_one_sample(iSample,                #sample name (DY)
-                    iLocation,              #input file location
-                    iXS,                    #sample xs
-                    finalState,             #final state (et, em, mt, tt)
-                    type = 'baseline',      #selection type (baseline, inclusive)
-                    category = 'all',       #ZLL splitting (all, ZTT, ZL, ZJ)
-                    location = '',          #output location, will be overwritten if outPutFileName != None
-                    pairChoice = 'iso',     #pair selection method (iso, pt)
-                    nevents = '-1',         #n entries to loop over
-                    chain = None,           #input TChain
-                    outPutFileName = None,  #output file name,
-                    histos = None,          #input histograms, preferred to be a list
+def loop_one_sample(iSample,                    #sample name (DY)
+                    iLocation,                  #input file location
+                    iXS,                        #sample xs
+                    finalState,                 #final state (et, em, mt, tt)
+                    type = enVars.type,         #selection type (baseline, inclusive)
+                    category = enVars.category, #ZLL splitting (all, ZTT, ZL, ZJ)
+                    location = '',              #output location, will be overwritten if outPutFileName != None
+                    pairChoice = enVars.pairChoice,         #pair selection method (iso, pt)
+                    nevents = '-1',             #n entries to loop over
+                    chain = None,               #input TChain
+                    outPutFileName = None,      #output file name,
+                    histos = None,              #input histograms, preferred to be a list
                     ):
     print 'Ntuplizing sample [%s] for channel [%s]' %(iSample, finalState)
 
