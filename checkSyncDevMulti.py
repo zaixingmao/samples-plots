@@ -43,10 +43,6 @@ def common_files(dir1, dir2, verbose):
     return common
 
 
-def system(x):
-    os.system(x)
-
-
 def main(nCores=None, out_dir=""):
     options, (dir1, dir2) = opts()
     args = []
@@ -61,7 +57,7 @@ def main(nCores=None, out_dir=""):
             print arg[0]
     else:
         utils.mkdir(out_dir)
-        utils.operateOnListUsingQueue(nCores, utils.qWorker(system), args)
+        utils.operateOnListUsingQueue(nCores, utils.qWorker(os.system), args)
 
 
 if __name__ == "__main__":
