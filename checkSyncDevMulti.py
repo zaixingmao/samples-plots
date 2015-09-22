@@ -37,7 +37,7 @@ def common_files(dir1, dir2, verbose):
 
     if verbose:
         notify(s1 - s2, "Only in %s:" % dir1)
-        notify(s2 - s1, "Only in %s:" % dir1)
+        notify(s2 - s1, "Only in %s:" % dir2)
         notify(common, "Common:")
 
     return common
