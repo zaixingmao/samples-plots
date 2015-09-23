@@ -69,7 +69,10 @@ def setUpSyncVarsDict():
             'met', 'metphi', 'mvamet', 'mvametphi', 'pzetavis', 'pzetamiss',
             'jpt_1', 'jeta_1', 'jphi_1', 'jrawf_1', 'jmva_1', 'jpfid_1', 'jpuid_1', 'jcsv_1',
             'jpt_2', 'jeta_2', 'jphi_2', 'jrawf_2', 'jmva_2', 'jpfid_2', 'jpuid_2', 'jcsv_2',
-            'dXY_1','dXY_2'
+            'dXY_1','dXY_2',
+            'gen_match_1', 'gen_match_2',
+            'isPromptElectron_1', 'isPromptMuon_1', 'isTau2Electron_1', 'isTau2Muon_1', 'isTauh_1',
+            'isPromptElectron_2', 'isPromptMuon_2', 'isTau2Electron_2', 'isTau2Muon_2', 'isTauh_2',
             ]
 
     for iName in names:
