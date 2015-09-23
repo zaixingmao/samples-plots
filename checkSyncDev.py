@@ -4,6 +4,7 @@ import ROOT as r
 from operator import itemgetter
 import optparse
 import tool
+import sys
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
@@ -257,13 +258,20 @@ def checkSyncDev(options):
         name1 = options.name2
 
     eventNumber = int(options.eventNumber)
-    iFile1 = r.TFile(location1)
 
+    iFile1 = r.TFile(location1)
     iTree1 = iFile1.Get(tree1)
+    if not iTree1:
+        sys.exit("FATAL: could not find %s:%s" % (location1, tree1))
     total1 = iTree1.GetEntries()
 
     iFile2 = r.TFile(location2)
     iTree2 = iFile2.Get(tree2)
+    if not iTree2:
+        msg = "\n".join(["FATAL: could not find %s:%s" % (location2, tree2),
+                         "(%s:%s has %d entries)" % (location1, tree1, total1),
+                         ])
+        sys.exit(msg)
     total2 = iTree2.GetEntries()
 
     mvaMet1 = r.TH1F('mvaMet1', '',60, 0, 6)
