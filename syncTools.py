@@ -30,6 +30,7 @@ def getNJetinGap(jets):
             njetingap += 1
     return njetingap
 
+
 def getCrossCleanJets(jetsList, lepList, type = 'jet', iChain = None):
     goodJets = []
     pt20GoodJets = []
@@ -73,6 +74,7 @@ commonVarsDict = {"pt_": "Pt",
                  'mt_': 'MtToPFMET',
                  'dZ_': 'dZ',
                  'dXY_': 'dXY',
+                 'gen_match_': 'GenMatchCategory',
                 }
 tauVarsDict = {'iso_': 'ByCombinedIsolationDeltaBetaCorrRaw3Hits',
               'againstElectronLooseMVA5_': 'AgainstElectronLooseMVA5',
@@ -196,5 +198,6 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['jeta_2'][0] = goodJets[1][1].eta()
         syncVarsDict['jphi_2'][0] = goodJets[1][1].phi()
         syncVarsDict['jmva_2'][0] = goodJets[1][2]
+
 
 #         syncVarsDict['puweight'][0] = getPUWeight(iChain.nTruePU)

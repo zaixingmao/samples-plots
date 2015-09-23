@@ -105,7 +105,7 @@ def run(varName, bins, unit, cat = 'et'):
     append_name = 'inclusive'
     files_mc = [('WJets', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/WJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kRed),
                 ('DY', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/DY_all_SYNC_%s_%s.root' %(cat, append_name), r.kBlue),
-#                 ('ttbar', '/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2/TTJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kGreen)
+                ('ttbar', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/TTJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kGreen)
                 ]
 
     hist_mc_all = []

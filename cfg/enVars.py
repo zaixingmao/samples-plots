@@ -5,22 +5,23 @@ preFix2 = '/hdfs/store/user/zmao/Spring15_eletronID2/'
 preFix3 = '/hdfs/store/user/zmao/sync_combined_take3/'
 preFix = '/hdfs/store/user/zmao/MC_25ns/'
 preFix3 = '/hdfs/store/user/zmao/Spring15_eletronID/'
-preFix3 = '/hdfs/store/user/zmao/noElectronIDCut/'
+# preFix3 = '/hdfs/store/user/zmao/noElectronIDCut/'
+preFix4 = '/hdfs/store/user/zmao/newSplitting_noChargeMatch/'
 
 
 
-type = 'inclusive'     #selection type (baseline, inclusive)
+type = 'baseline'     #selection type (baseline, inclusive)
 category = 'all'       #ZLL splitting (all, ZTT, ZL, ZJ)
 pairChoice = 'iso'     #pair selection method (iso, pt)
 
 sampleLocations = [
 #                     ("VBF_H",     "%sVBF_HToTauTau_M-125_13TeV-powheg-pythia6" %(preFix), 1000),
-#                    ("DY",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 6025, 'et'),
+#                    ("DY",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix3), 6025, 'et'),
 #                     ("DY-10to50",     "%s/DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 18610),
 #                     ("data_Tau",     "/hdfs/store/user/zmao/data_25ns_Spring15_eletronID2/data_Tau_Run2015C_PromptReco_25ns", 1, 'tt'),
 #                     ("data_MuonEG",     "/hdfs/store/user/zmao/data_25ns_Spring15_eletronID2/data_MuonEG_Run2015C_PromptReco_25ns", 1, 'em'),
 #                    ("data_Muon",     "/hdfs/store/user/zmao/data_25ns_Spring15_eletronID2/data_Muon_Run2015C_PromptReco_25ns", 1, 'mt'),
-                    ("data_Electron",     "/hdfs/store/user/zmao/noElectronIDCut/data_Electron_Run2015C_PromptReco_25ns", 1, 'et'),
+#                     ("data_Electron",     "/hdfs/store/user/zmao/noElectronIDCut/data_Electron_Run2015C_PromptReco_25ns", 1, 'et'),
 #                     ("TTJets",     "%s/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix3), 831.76, ''),
 #                     ("WJets",     "%s/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix3), 61526.7, 'et'),
 #                     ("WW",     "%s/WW_TuneCUETP8M1_13TeV-pythia8" %(preFix3), 63.21, ''),
@@ -44,7 +45,7 @@ sampleLocations = [
 #                     ("ZPrime_5000",     "%s/ZprimeToTauTau_M_5000_TuneCUETP8M1_tauola_13TeV_pythia8" %(preFix2), 1, ''),
 
 
-#                      ("SUSY", "%sSUSYGluGluToHToTauTau_M-160_TuneCUETP8M1_13TeV-pythia8"  %(preFix3), 1, ''),
+                     ("SUSY", "%sSUSYGluGluToHToTauTau_M-160_TuneCUETP8M1_13TeV-pythia8"  %(preFix4), 1, ''),
 #                      ("VBF_H",     "/nfs_scratch/zmao/tmp/72x", 1000),
 #                      ("VBF_H_74x",     "/nfs_scratch/zmao/tmp/74x", 1000),
 #     ("TTJets",     "%sTTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola" %(preFix), 424500),

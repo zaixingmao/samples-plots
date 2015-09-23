@@ -123,30 +123,34 @@ def addVars(iTree, a):
     a[(int(iTree.evt), int(iTree.lumi), iTree.run)] = ['evtNumber', int(iTree.evt), 
 #             'mvaPhi', iTree.mvametphi, 
 #             'muVeto', getVetoValue(iTree.extramuon_veto),
-            'pt1', iTree.pt_1, 
+#             'iso2', iTree.iso_2, 
+            'gen_match_2', iTree.gen_match_2, 
 
             'lumi', int(iTree.lumi), 
           'run', iTree.run, 
-            'pt1', iTree.pt_1, 
-            'eta1', iTree.eta_1, 
-            'q1', iTree.q_1, 
+
+#             'q1', iTree.q_1, 
 
             'iso1', iTree.iso_1, 
+            'gen_match_1', iTree.gen_match_1, 
+            'gen_match_2', iTree.gen_match_2, 
+
 #             'dZ_1', iTree.dZ_1, 
 
 #             'iso1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
-
-#             'phi1', iTree.phi_1, 
+            'pt1', iTree.pt_1, 
+            'eta1', iTree.eta_1, 
+            'phi1', iTree.phi_1, 
 #             'mass1', iTree1.m_1,
             'pt2', iTree.pt_2, 
             'eta2', iTree.eta_2, 
 #             'iso2', iTree.iso_2,
-            'q2', iTree.q_2,  
-            'iso2', iTree.iso_2, 
+#             'q2', iTree.q_2,  
+#             'iso2', iTree.iso_2, 
 #             'tw_2', iTree.trigweight_2, 
 
-#             'phi2', iTree.phi_2, 
+            'phi2', iTree.phi_2, 
 #             'dR', r.Math.VectorUtil.DeltaR(tau1, tau2),
 #             'met', iTree.met, 
 #             'metphi', iTree.metphi, 
