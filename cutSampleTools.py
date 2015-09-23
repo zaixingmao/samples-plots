@@ -433,6 +433,10 @@ def passCut(iTree, FS, isData = False):
     elif FS == 'et':
         if not (abs(iTree.tdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045):
             return 0, 'dZ'
+        if not iTree.eMVANonTrigWP80:
+            return 0, 'ID'
+#         if not iTree.eHEEPIDD:
+#             return 0, 'HEEPID'
         if not triggerMatch(iTree, FS, isData):
             return 0, 'triggerMatch'
         if iTree.ePassNumberOfHits == 0:
@@ -452,6 +456,8 @@ def passCut(iTree, FS, isData = False):
     elif FS == 'em':
         if not triggerMatch(iTree, FS, isData):
             return 0, 'triggerMatch'
+        if not iTree.eMVANonTrigWP80:
+            return 0, 'ID'
         if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
             return 0, 'dZ'
         if iTree.ePassNumberOfHits == 0:
