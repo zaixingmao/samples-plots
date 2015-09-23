@@ -249,7 +249,7 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     histDict["QCD"].SetMarkerStyle(21)
     histDict["QCD"].SetLineColor(r.kBlack)
     histDict["WJets"] = r.TH1F("WJets_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
-    for iSample, iCategory in plots_cfg.sampleList:
+    for iName, iSample, iCategory in plots_cfg.sampleList:
     
         if not (iCategory in histDict.keys()):
             histDict[iCategory] = r.TH1F("%s_%s_%s" %(iCategory, FS, varName), "", len(varBins)-1, varBins)
