@@ -47,7 +47,7 @@ def buildDelta(data_pass, data_all, bkg_pass, bkg_all, bins, varName, unit, relE
     bkgHist.Divide(bkg_all)
 
     delta = ratioHistogram(num = dataHist, den = bkgHist, relErrMax=relErrMax)
-    delta.SetTitle('; %s %s; data/MC' %(varName, unit))
+    delta.SetTitle('; %s; data/MC' %(varName))
     delta.SetMaximum(1.5)
     delta.SetMinimum(0.5)
     delta.GetXaxis().SetLabelSize(0.1)
@@ -65,6 +65,8 @@ def loop_one_sample(iSample, varName, hist1, hist2, category = 'mt', isData = Fa
     nEntries = tree.GetEntries()
     hist1.Sumw2()
     hist2.Sumw2()
+    if nEntries > 100000:
+        nEntries = 100000
     for iEntry in range(nEntries):
         tree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Looping sample %s' %(iSample), iEntry-1)
@@ -83,7 +85,42 @@ def loop_one_sample(iSample, varName, hist1, hist2, category = 'mt', isData = Fa
             else:
                 if not (tree.singleEPass and tree.eSingleEle):
                     continue
-
+        elif category == 'ee':
+            if isData:
+                if 'e2' in varName:
+                    if tree.singleETightPass and tree.e1SingleEleTight:
+                        if tree.e1Pt <= 34:
+                            continue
+                    else:
+                        continue
+                if 'e1' in varName:
+                    if tree.singleETightPass and tree.e2SingleEleTight:
+                        if tree.e2Pt <= 34:
+                            continue
+                    else:
+                        continue
+            else:
+                if 'e2' in varName:    
+                    if tree.singleEPass and tree.e1SingleEle:
+                        if tree.e1Pt <= 34:
+                            continue
+                    else:
+                        continue
+                if 'e1' in varName:    
+                    if tree.singleEPass and tree.e2SingleEle:             
+                        if tree.e2Pt <= 34:
+                            continue
+                    else:
+                        continue
+        elif category == 'em':
+            if abs(tree.eEta) >= 2.1:
+                continue
+            if abs(tree.mEta) >= 2.1:
+                continue
+            if abs(tree.eEta) >= 1.5:
+                continue
+            if tree.mPt <= 25:
+                continue
 
         if tree.q_1 == tree.q_2:
             continue
@@ -98,19 +135,42 @@ def loop_one_sample(iSample, varName, hist1, hist2, category = 'mt', isData = Fa
             else:
                 if tree.eTauPass and tree.eEle22 and tree.eOverlapEle22 and tree.tTau20 and tree.tTauOverlapEle:
                     hist2.Fill(getattr(tree, varName))
+        elif category == 'ee':
+            if isData:
+                if tree.doubleE_WPLoosePass:
+                    if (tree.e1DoubleE_WPLooseLeg1 and tree.e2DoubleE_WPLooseLeg2) or (tree.e1DoubleE_WPLooseLeg2 and tree.e2DoubleE_WPLooseLeg1):                
+                        if tree.e2Pt > 25 and tree.e1Pt > 25:
+                            hist2.Fill(getattr(tree, varName))
+            else:
+                if tree.doubleE_WP75Pass:
+                    if (tree.e1DoubleE_WP75Leg1 and tree.e2DoubleE_WP75Leg2) or (tree.e1DoubleE_WP75Leg2 and tree.e2DoubleE_WP75Leg1):                
+                        if tree.e2Pt > 25 and tree.e1Pt > 25:
+                            hist2.Fill(getattr(tree, varName))
+        elif category == 'em':
+            if isData:
+                if tree.singleETightPass and tree.eSingleEleTight:
+                    hist2.Fill(getattr(tree, varName))
+            else:
+                if tree.singleEPass and tree.eSingleEle:
+                    hist2.Fill(getattr(tree, varName))
+
+
     print ''
 
-def run(varName, bins, unit, cat = 'et'):
+def run(varName, bins, unit, cat = 'em', eID = '_HEEP'):
 
-    append_name = 'inclusive'
-    files_mc = [('WJets', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/WJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kRed),
-                ('DY', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/DY_all_SYNC_%s_%s.root' %(cat, append_name), r.kBlue),
-                ('ttbar', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/TTJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kGreen)
+    append_name = ''
+    files_mc = [# ("SUSY", '/nfs_scratch/zmao/13TeV_samples_25ns_newSplitting_noChargeMatch/SYNC_SUSY_HToTauTau_M-160_%s_%s.root' %(cat, append_name), r.kRed)
+#                 ('WJets', '/nfs_scratch/zmao/electronTrigger/WJets_all_SYNC_em_inclusive.root', r.kRed),
+                ('DY', '/nfs_scratch/zmao/electronTrigger/DY_all_SYNC_em_inclusive%s.root' %eID, r.kBlue),
+
+#                 ('DY', '/nfs_scratch/zmao/supy-output//slice/ee//DY_events.root' , r.kBlue),
+                ('ttbar', '/nfs_scratch/zmao/electronTrigger/TTJets_all_SYNC_em_inclusive%s.root' %eID, r.kGreen)
                 ]
 
     hist_mc_all = []
     hist_mc_pass = []
-    file_data = '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/data_all_SYNC_%s_%s.root' %(cat, append_name)
+    file_data = '/nfs_scratch/zmao/electronTrigger/data_Muon_all_SYNC_em_inclusive%s.root'  %eID#'/nfs_scratch/zmao/supy-output//slice/ee//data_Electron_events.root'# %(cat, append_name)
     hist_data_all = r.TH1F('hist_data_all', '', len(bins)-1, bins)
     hist_data_pass = r.TH1F('hist_data_pass', '', len(bins)-1, bins)
 
@@ -119,7 +179,8 @@ def run(varName, bins, unit, cat = 'et'):
         hist_mc_pass.append(r.TH1F("hist_%s_pass" %iName, "", len(bins)-1, bins))
         loop_one_sample(iSample, varName, hist_mc_all[len(hist_mc_all)-1], hist_mc_pass[len(hist_mc_pass)-1], cat, False)
 
-    loop_one_sample(file_data, varName, hist_data_all, hist_data_pass, cat, True)
+    if file_data != '':
+        loop_one_sample(file_data, varName, hist_data_all, hist_data_pass, cat, True)
 
 
     g_mc = []
@@ -146,7 +207,7 @@ def run(varName, bins, unit, cat = 'et'):
 
     null = r.TH2F("null","", len(bins)-1, bins, 1, 0, 1.1)
     null.SetMaximum(1.2)
-    null.SetTitle("tau trigger turn-on curve; %s; Effeciency" %unit)
+    null.SetTitle("electron trigger turn-on curve; %s; Effeciency" %unit)
     null.SetStats(False)
 
 
@@ -180,9 +241,9 @@ def run(varName, bins, unit, cat = 'et'):
     c.Close()
 
 
-bins = array.array('d', range(0, 45, 5) + range(40, 70, 10)+[60,100,200])
+bins = array.array('d', range(20, 42, 2) + range(40, 70, 10)+[60,100, 150, 200, 250, 500, 750])
 bins2 = []
 for i in range(21):
     bins2.append(-4 + i*0.4)
-run('tPt', bins, "#tau pt")
+run('ePt', bins, "e pt")
 # run('tEta',  array.array('d', bins2), "#tau eta")
