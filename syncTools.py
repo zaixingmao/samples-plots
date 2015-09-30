@@ -106,6 +106,13 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         else:
             object_1 = 't2'
             object_2 = 't1'
+    elif FS[0] == FS[1]:
+        if getattr(iChain, '%s1RelIso' %FS[0]) <= getattr(iChain, '%s2RelIso' %FS[0]):
+            object_1 = '%s1' %FS[0]
+            object_2 = '%s2' %FS[0]
+        else:
+            object_1 = '%s2' %FS[0]
+            object_2 = '%s1' %FS[0]
     else:
         object_1 = FS[0]
         object_2 = FS[1]
@@ -148,8 +155,10 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['npu'][0] = iChain.nTruePU
 
         for ikey in commonVarsDict.keys():
-            syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey]))
-            syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))
+            if hasattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey])):
+                syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey]))
+            if hasattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey])):
+                syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))
 
         if 't' in object_1:
             for ikey in tauVarsDict.keys():
@@ -165,9 +174,9 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
             for ikey in eMuVarsDict.keys():
                 syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, eMuVarsDict[ikey]))
 
-        if FS == 'tt':
-            syncVarsDict['m_vis'][0] = getattr(iChain, 't1_t2_Mass')
- #            syncVarsDict['m_sv'][0] = getattr(iChain, 't1_t2_SVfit').Pt()
+        if FS[0] == FS[1]:
+            syncVarsDict['m_vis'][0] = getattr(iChain, '%s1_%s2_Mass' %(FS[0], FS[0]))
+#             syncVarsDict['m_sv'][0] = getattr(iChain, 't1_t2_SVfit').Pt()
 #             syncVarsDict['pt_sv'][0] = getattr(iChain, 't1_t2_SVfit').Eta()
 #             syncVarsDict['eta_sv'][0] = getattr(iChain, 't1_t2_SVfit').Phi()
 #             syncVarsDict['phi_sv'][0] = getattr(iChain, 't1_t2_SVfit').M()
