@@ -79,6 +79,29 @@ def findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptV
         currentIsoValue = iChain.mRelIso + iChain.tByCombinedIsolationDeltaBetaCorrRaw3Hits
         currentPtValue = iChain.mPt + iChain.tPt
         currentPtValue_1 = iChain.mPt
+    elif FS == 'ee':
+        if iChain.e1RelIso <= iChain.e2RelIso:
+            object_1 = 'e1'
+            object_2 = 'e2'
+        else:
+            object_1 = 'e2'
+            object_2 = 'e1'
+        currentIsoValue_1 = getattr(iChain, "%sRelIso" %object_1)
+        currentPtValue_1 = getattr(iChain, "%sPt" %object_1)
+        currentIsoValue = iChain.e1RelIso + iChain.e2RelIso
+        currentPtValue = iChain.e1Pt + iChain.e2Pt
+    elif FS == 'mm':
+        if iChain.m1RelIso <= iChain.m2RelIso:
+            object_1 = 'm1'
+            object_2 = 'm2'
+        else:
+            object_1 = 'm2'
+            object_2 = 'm1'
+        currentIsoValue_1 = getattr(iChain, "%sRelIso" %object_1)
+        currentPtValue_1 = getattr(iChain, "%sPt" %object_1)
+        currentIsoValue = iChain.m1RelIso + iChain.m2RelIso
+        currentPtValue = iChain.m1Pt + iChain.m2Pt
+
 
     if pairChoice == 'iso':
         # most isolated candidate 1
@@ -377,10 +400,28 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
 #                           'singleMu27': ['mIsoMu27']
                          }
 
-    HLTandFilter['em'] = {'Mu23e12': ['mMu23El12', 'eMu23El12'],
-                          'Mu8e23': ['mMu8El23', 'eMu8El23'],
+    HLTandFilter['em'] = {'singleMu24': ['mIsoMu24'],
+#                           'Mu23e12': ['mMu23El12', 'eMu23El12'],
+#                           'Mu8e23': ['mMu8El23', 'eMu8El23'],
 #                           'singleMu24': ['mIsoMu24'],
 #                           'singleMu27': ['mIsoMu27']
+                          }
+
+    HLTandFilter['ee_data'] = {'singleETight': ['e1SingleEleTight'],
+                          'singleETight': ['e2SingleEleTight'],
+                          'doubleE_WPLoose': ['e1DoubleE_WPLooseLeg1', 'e2DoubleE_WPLooseLeg2'],
+                          'doubleE_WPLoose': ['e1DoubleE_WPLooseLeg2', 'e2DoubleE_WPLooseLeg1'],
+                          }
+
+    HLTandFilter['ee'] = {'singleE': ['e1SingleEle'],
+                          'singleE': ['e2SingleEle'],
+                          'doubleE_WP75': ['e1DoubleE_WP75Leg1', 'e2DoubleE_WP75Leg2'],
+                          'doubleE_WP75': ['e1DoubleE_WP75Leg2', 'e2DoubleE_WP75Leg1'],
+                          }
+
+    HLTandFilter['mm'] = {'singleMu24': ['m1IsoMu24'],
+                          'singleMu24': ['m2IsoMu24'],
+                          'doubleMu': ['m1MatchesDoubleMu', 'm2MatchesDoubleMu'],
                           }
 
     if isData:
@@ -404,6 +445,15 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
                     elif iHLT == 'Mu8e23':
                         if iTree.ePt > 24:
                             return True
+                    elif iHLT == 'doubleE_WP75':
+                        if (iTree.e1DoubleE_WP75Leg1 and iTree.e2DoubleE_WP75Leg2) or (iTree.e1DoubleE_WP75Leg2 and iTree.e2DoubleE_WP75Leg1):
+                            if iTree.e1Pt > 25 and iTree.e2Pt > 25:
+                                return True
+                    elif iHLT == 'doubleE_WPLoose':
+                        if (iTree.e1DoubleE_WPLooseLeg1 and iTree.e2DoubleE_WPLooseLeg2) or (iTree.e1DoubleE_WPLooseLeg2 and iTree.e2DoubleE_WPLooseLeg1):
+                            if iTree.e1Pt > 25 and iTree.e2Pt > 25:
+                                return True
+
                     else:
                         return True
 
@@ -414,6 +464,14 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
             return 1 if iTree.mPt > 25.0 else 0
         if 'et' in channel:
             return 1 if iTree.ePt > 33.0 else 0
+        if 'ee' in channel:
+            if (iTree.e1SingleEle or iTree.e1SingleEleTight) and iTree.e1Pt > 33:
+                return 1
+            if (iTree.e2SingleEle or iTree.e2SingleEleTight) and iTree.e2Pt > 33:
+                return 1
+            return 0
+        if 'mm' in channel:
+            return 1
 
     return 0
 
@@ -453,11 +511,39 @@ def passCut(iTree, FS, isData = False):
             return 0, 'tauCharge'
 
 ########et
+    elif FS == 'ee':
+        if not (abs(iTree.e1dZ) < 0.2 and abs(iTree.e1dXY) < 0.045 and abs(iTree.e2dZ) < 0.2 and abs(iTree.e2dXY) < 0.045):
+            return 0, 'dZ'
+        if not (iTree.e1MVANonTrigWP80 and iTree.e2MVANonTrigWP80):
+            return 0, 'ID'
+#         if not iTree.eHEEPIDD:
+#             return 0, 'HEEPID'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if iTree.e1PassNumberOfHits == 0 or iTree.e2PassNumberOfHits == 0:
+            return 0, 'eNHits'
+        if not (iTree.e1_passConversionVeto and iTree.e2_passConversionVeto):
+                return 0, 'e_passCov'
+        if (iTree.e1_e2_DR) <= 0.3:
+            return 0, 'dR'
+
+########mt
+    elif FS == 'mm':
+        if not (abs(iTree.m1dZ) < 0.2 and abs(iTree.m2dZ) < 0.2 and abs(iTree.m1dXY) < 0.045 and abs(iTree.m2dXY) < 0.045):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.m1_m2_DR > 0.3):
+            return 0, 'dR'
+
+########et
     elif FS == 'em':
         if not triggerMatch(iTree, FS, isData):
             return 0, 'triggerMatch'
-        if not iTree.eMVANonTrigWP80:
-            return 0, 'ID'
+#         if not iTree.eMVANonTrigWP80:
+#             return 0, 'ID'
+        if not iTree.eHEEPIDD:
+            return 0, 'HEEPID'
         if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
             return 0, 'dZ'
         if iTree.ePassNumberOfHits == 0:
@@ -484,10 +570,6 @@ def passCut(iTree, FS, isData = False):
             return 0, 'dR'
         if abs(iTree.tCharge) > 1:
             return 0, 'tauChage'
-
-#     for iCut in cuts.keys():
-#         if not cuts[iCut]:
-#             return False, iCut
     return 1, 'passed'
 
 def getCategory(iTree, FS):
@@ -557,7 +639,7 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
                 return 0, '3rdLepton'
 
-########et
+########em
     elif FS == 'em':
         if type == 'inclusive':
             if (iTree.mRelIso >= 0.15 or iTree.eRelIso >= 0.15):
@@ -567,6 +649,26 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
                 return 0, 'antiIso'
         if type != 'baseline':
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
+                return 0, '3rdLepton'
+
+########em
+    elif FS == 'ee':
+        if type == 'inclusive':
+            if (iTree.e1RelIso >= 0.10 or iTree.e2RelIso >= 0.1):
+                return 0, 'iso'
+            if (abs(iTree.e1Eta) >= 2.1 or abs(iTree.e2Eta) >= 2.1):
+                return 0, 'eta'
+        if type != 'baseline':
+            if iTree.extramuon_veto > 1:
+                return 0, '3rdLepton'
+
+########em
+    elif FS == 'mm':
+        if type == 'inclusive':
+            if (iTree.m1RelIso >= 0.15 or iTree.m1RelIso >= 0.15):
+                return 0, 'iso'
+        if type != 'baseline':
+            if iTree.extraelec_veto > 1:
                 return 0, '3rdLepton'
 
 ########mt
