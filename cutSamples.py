@@ -37,8 +37,8 @@ sv4Vec = lvClass()
 def expandFinalStates(FS):
     finalStates = [x.strip() for x in FS.split(',')]
     for iFS in finalStates:
-        if iFS not in ['tt', 'et', 'mt', 'em']:
-            print 'ERROR::Final state [%s] not supported, please choose [tt, et, mt, em]' %iFS
+        if iFS not in ['tt', 'et', 'mt', 'em', 'ee', 'mm']:
+            print 'ERROR::Final state [%s] not supported, please choose [tt, et, mt, em, ee, mm]' %iFS
             return False
     return finalStates
  
