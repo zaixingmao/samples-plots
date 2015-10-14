@@ -147,30 +147,33 @@ def loop_one_sample(iSample, varName, hist1, hist2, category = 'mt', isData = Fa
                         if tree.e2Pt > 25 and tree.e1Pt > 25:
                             hist2.Fill(getattr(tree, varName))
         elif category == 'em':
-            if isData:
-                if tree.singleETightPass and tree.eSingleEleTight:
-                    hist2.Fill(getattr(tree, varName))
-            else:
-                if tree.singleEPass and tree.eSingleEle:
-                    hist2.Fill(getattr(tree, varName))
+            if tree.eSingleEle_105 and tree.singleE_105Pass:
+                hist2.Fill(getattr(tree, varName))
+# 
+#             if isData:
+#                 if tree.singleETightPass and tree.eSingleEleTight:
+#                     hist2.Fill(getattr(tree, varName))
+#             else:
+#                 if tree.singleEPass and tree.eSingleEle:
+#                     hist2.Fill(getattr(tree, varName))
 
 
     print ''
 
-def run(varName, bins, unit, cat = 'em', eID = '_HEEP'):
+def run(varName, bins, unit, cat = 'em', eID = 'CutBasedTight'):
 
     append_name = ''
     files_mc = [# ("SUSY", '/nfs_scratch/zmao/13TeV_samples_25ns_newSplitting_noChargeMatch/SYNC_SUSY_HToTauTau_M-160_%s_%s.root' %(cat, append_name), r.kRed)
 #                 ('WJets', '/nfs_scratch/zmao/electronTrigger/WJets_all_SYNC_em_inclusive.root', r.kRed),
-                ('DY', '/nfs_scratch/zmao/electronTrigger/DY_all_SYNC_em_inclusive%s.root' %eID, r.kBlue),
+                ('DY', '/nfs_scratch/zmao/%s/DY_all_SYNC_em_inclusive.root' %eID, r.kBlue),
 
 #                 ('DY', '/nfs_scratch/zmao/supy-output//slice/ee//DY_events.root' , r.kBlue),
-                ('ttbar', '/nfs_scratch/zmao/electronTrigger/TTJets_all_SYNC_em_inclusive%s.root' %eID, r.kGreen)
+                ('ttbar', '/nfs_scratch/zmao/%s/TTJets_all_SYNC_em_inclusive.root' %eID, r.kGreen)
                 ]
 
     hist_mc_all = []
     hist_mc_pass = []
-    file_data = '/nfs_scratch/zmao/electronTrigger/data_Muon_all_SYNC_em_inclusive%s.root'  %eID#'/nfs_scratch/zmao/supy-output//slice/ee//data_Electron_events.root'# %(cat, append_name)
+    file_data = '/nfs_scratch/zmao/%s/data_Muon_all_SYNC_em_inclusive.root'  %eID#'/nfs_scratch/zmao/supy-output//slice/ee//data_Electron_events.root'# %(cat, append_name)
     hist_data_all = r.TH1F('hist_data_all', '', len(bins)-1, bins)
     hist_data_pass = r.TH1F('hist_data_pass', '', len(bins)-1, bins)
 

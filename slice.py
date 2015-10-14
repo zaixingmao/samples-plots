@@ -93,6 +93,8 @@ class slice(supy.analysis):
                                       ("et", {}),
                                       ("mt", {}),
                                       ("em", {}),
+                                      #("ee", {}),
+                                      #("mm", {}),
                                       ])
                                 ),
                 }

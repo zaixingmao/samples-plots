@@ -390,7 +390,8 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
     HLTandFilter['tt'] = {'doubleTau': ['t1DiPFTau40', 't2DiPFTau40']}
 
     HLTandFilter['et'] = {'eTau': ['eEle22', 'eOverlapEle22', 'tTau20', 'tTauOverlapEle'],
-                          'singleE': ['eSingleEle']}
+                          'singleE': ['eSingleEle']
+                         }
 
     HLTandFilter['et_data'] = {'eTau_WPLoose': ['eEle22Loose', 'eOverlapEle22Loose', 'tTau20', 'tTauOverlapEleLoose'],
                                 'singleETight': ['eSingleEleTight']}
@@ -400,9 +401,9 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
 #                           'singleMu27': ['mIsoMu27']
                          }
 
-    HLTandFilter['em'] = {'singleMu24': ['mIsoMu24'],
-#                           'Mu23e12': ['mMu23El12', 'eMu23El12'],
-#                           'Mu8e23': ['mMu8El23', 'eMu8El23'],
+    HLTandFilter['em'] = {# 'singleMu24': ['mIsoMu24'],
+                          'Mu23e12': ['mMu23El12', 'eMu23El12'],
+                          'Mu8e23': ['mMu8El23', 'eMu8El23'],
 #                           'singleMu24': ['mIsoMu24'],
 #                           'singleMu27': ['mIsoMu27']
                           }
@@ -493,6 +494,12 @@ def passCut(iTree, FS, isData = False):
             return 0, 'dZ'
         if not iTree.eMVANonTrigWP80:
             return 0, 'ID'
+#         if not iTree.eCBIDLoose:
+#             return 0, 'ID'
+#         if not iTree.eCBIDMedium:
+#             return 0, 'ID'
+#         if not iTree.eCBIDTight:
+#             return 0, 'ID'
 #         if not iTree.eHEEPIDD:
 #             return 0, 'HEEPID'
         if not triggerMatch(iTree, FS, isData):
@@ -540,10 +547,16 @@ def passCut(iTree, FS, isData = False):
     elif FS == 'em':
         if not triggerMatch(iTree, FS, isData):
             return 0, 'triggerMatch'
-#         if not iTree.eMVANonTrigWP80:
+        if not iTree.eMVANonTrigWP80:
+            return 0, 'ID'
+#         if not iTree.eCBIDLoose:
 #             return 0, 'ID'
-        if not iTree.eHEEPIDD:
-            return 0, 'HEEPID'
+#         if not iTree.eCBIDMedium:
+#             return 0, 'ID'
+#         if not iTree.eCBIDTight:
+#             return 0, 'ID'
+#         if not iTree.eHEEPIDD:
+#             return 0, 'HEEPID'
         if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
             return 0, 'dZ'
         if iTree.ePassNumberOfHits == 0:
@@ -627,7 +640,7 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
             if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.5 or iTree.eRelIso >= 0.1):
                 return 0, 'iso'
         if type == 'antiIso':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.eRelIso <= 0.1):
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 2 or iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
                 return 0, 'antiIso'
         if type == 'antiTauIso':
             if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.eRelIso >= 0.1):
@@ -645,8 +658,14 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
             if (iTree.mRelIso >= 0.15 or iTree.eRelIso >= 0.15):
                 return 0, 'iso'
         if type == 'antiIso':
-            if (iTree.mRelIso <= 0.15 or iTree.eRelIso <= 0.15):
+            if (iTree.mRelIso <= 0.2 or iTree.mRelIso >= 1 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
                 return 0, 'antiIso'
+        if type == 'antiEIso':
+            if (iTree.mRelIso >= 0.15 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
+                return 0, 'antiEIso'
+        if type == 'antiMIso':
+            if (iTree.mRelIso <= 0.2 or iTree.mRelIso >= 1 or iTree.eRelIso >= 0.15):
+                return 0, 'antiMIso'
         if type != 'baseline':
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
                 return 0, '3rdLepton'

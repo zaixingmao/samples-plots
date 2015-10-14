@@ -151,11 +151,11 @@ def loop_one_sample(iSample,                    #sample name (DY)
         eventCount = r.TH1D('eventCount', '', 1, -0.5, 0.5)
         eventWeights = r.TH1D('eventWeights', '', 2, 0, 2)
         eventCountWeighted = r.TH1D('eventCountWeighted', '', 1, -0.5, 0.5)
-        if not isData:
-            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
-            print 'initEvents: %i' %eventCount.GetBinContent(1)
-            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
-            print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
+#        if not isData:
+            #tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
+            #print 'initEvents: %i' %eventCount.GetBinContent(1)
+            #tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
+            #print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
         iChain = r.TChain("%s/final/Ntuple" %finalState)
         nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
 

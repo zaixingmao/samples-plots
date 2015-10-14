@@ -52,10 +52,10 @@ def opts():
 
 options = opts()
 
-dataLocations = {'em': '/hdfs/store/user/zmao/data_25ns_Spring15_eletronID/data_MuonEG_Run2015C_PromptReco_25ns/',
-                'et':'/hdfs/store/user/zmao/data_25ns_Spring15_eletronID/data_Electron_Run2015C_PromptReco_25ns/',
-                'mt':'/hdfs/store/user/zmao/nfs_scratch/zmao/data_25ns_Spring15_eletronID/data_Muon_Run2015C_PromptReco_25ns/',
-                'tt':'/hdfs/store/user/zmao/data_25ns_Spring15_eletronID/data_Tau_Run2015C_PromptReco_25ns/'
+dataLocations = {'em': '/hdfs/store/user/zmao/Lumi594/data_MuonEG_Run2015D_PromptReco_25ns/',
+                'et':'/hdfs/store/user/zmao/Lumi594/data_Electron_Run2015D_PromptReco_25ns/',
+                'mt':'',#'/hdfs/store/user/zmao/nfs_scratch/zmao/data_25ns_Spring15_eletronID/data_Muon_Run2015C_PromptReco_25ns/',
+                'tt':'',#'/hdfs/store/user/zmao/data_25ns_Spring15_eletronID/data_Tau_Run2015C_PromptReco_25ns/'
                 }
 
 
@@ -79,7 +79,8 @@ def loop_one_sample(iSample, iLocation):
         iChain = r.TChain("%s/final/Ntuple" %finalState)
         if isData:
             iLocation = dataLocations[finalState]
-
+        if iLocation == "":
+            continue
         nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
         iChain.SetBranchStatus("*",0)
         iChain.SetBranchStatus("nvtx",1)

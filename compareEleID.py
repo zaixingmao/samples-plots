@@ -37,134 +37,90 @@ def ratioHistogram( num, den, relErrMax=0.25) :
         ratio.SetBinError(i+1,groupErr(g))
     return ratio
 
+def getEffCurve(num, denom):
+    g = r.TGraphAsymmErrors()
+    g.BayesDivide(num, denom)
+    return g
 
-
-def loop_one_sample(iSample, hist, hist_match_gen0, hist_match_gen1, hist_no_match_gen0, hist_no_match_gen1, hist_pt_vs_eta, eleID):
+def loop_one_sample(iSample, hist):
     file = r.TFile(iSample)    
     tree = file.Get('Ntuple')
+    initEvents = file.Get('eventCount').GetBinContent(1)
     nEntries = tree.GetEntries()
     hist.Sumw2()
-    if nEntries > 100000:
-        nEntries = 100000
     for iEntry in range(nEntries):
         tree.GetEntry(iEntry)
-        if tree.eGenPt > 0:
-            hist_match_gen0.Fill(tree.ePt)
-        else:
-            hist_no_match_gen0.Fill(tree.ePt)
-
-        if 'HEEP' in eleID and (not tree.eHEEPIDD):
-            continue
-        if 'WP80' in eleID and (not tree.eMVANonTrigWP80):
-            continue
         tool.printProcessStatus(iEntry, nEntries, 'Looping sample %s' %(iSample), iEntry-1)
-        hist.Fill(tree.eGenPt, tree.eGenPt/tree.ePt)
-        hist_pt_vs_eta.Fill(tree.ePt, abs(tree.eEta))
-        if tree.eGenPt > 0:
-            hist_match_gen1.Fill(tree.ePt)
-        else:
-            hist_no_match_gen1.Fill(tree.ePt)
 
+        if tree.eGenPt < 0:
+            continue
+        if tree.q_1 == tree.q_2:
+            continue
+        hist.Fill(tree.ePt)
     print ''
+    return initEvents
 
-def run(eleIDs, cat = 'et', sampleMass = '5000'):
+def run(cat = 'et', sampleMass = '5000'):
 
     append_name = ''
-    files_mc = [#("SUSY", '/nfs_scratch/zmao/13TeV_samples_25ns_newSplitting_noChargeMatch/SYNC_SUSY_HToTauTau_M-160_%s_%s.root' %(cat, append_name), r.kRed)
-#                 ('WJets', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/WJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kRed),
-#                 ('/nfs_scratch/zmao/noEleIDCut/SUSY_all_SYNC_%s_inclusive.root' %cat),
-                ('/nfs_scratch/zmao/noEleIDCut/ZPrime_%s_all_SYNC_%s_inclusive.root' %(sampleMass, cat)),
-#                 ('ttbar', '/nfs_scratch/zmao/13TeV_samples_25ns_noElectronIDCut/TTJets_all_SYNC_%s_%s.root' %(cat, append_name), r.kGreen)
-                ]
-
+    files = [("denom2",r.kWhite, "/nfs_scratch/zmao/denom2//ZPrime_%s_all_SYNC_%s_inclusive.root" %(sampleMass, cat)),
+             ("CBIDLoose", r.kGreen, "/nfs_scratch/zmao/CutBasedLoose//ZPrime_%s_all_SYNC_%s_inclusive.root" %(sampleMass, cat)),
+             ("WP80", r.kRed, "/nfs_scratch/zmao/WP80//ZPrime_%s_all_SYNC_%s_inclusive.root" %(sampleMass, cat)),
+             ("HEEP", r.kBlue, "/nfs_scratch/zmao/HEEP//ZPrime_%s_all_SYNC_%s_inclusive.root" %(sampleMass, cat)),
+             ("CBIDMedium", r.kMagenta, "/nfs_scratch/zmao/CutBasedMedium//ZPrime_%s_all_SYNC_%s_inclusive.root" %(sampleMass, cat)),
+             ("CBIDTight", r.kCyan, "/nfs_scratch/zmao/CutBasedTight//ZPrime_%s_all_SYNC_%s_inclusive.root" %(sampleMass, cat)),
+            ]
     hists = []
-    hists_gen_match0 = []
-    hists_gen_match = []
-    hists_no_gen_match0 = []
-    hists_no_gen_match = []
-    hists_pt_vs_eta = []
+    if sampleMass == '500':
+        bins = array.array('d', range(0, 110, 10) + range(100, 425, 25))
+    elif sampleMass == '2000':
+        bins = array.array('d', range(0, 110, 10) + range(100, 425, 25) + range(400, 1200, 100))
+    else:
+        bins = array.array('d', range(0, 425, 25) + range(400, 2100, 100))
 
-    bins = array.array('d', range(0, 110, 10) + range(100, 425, 25) + range(400, 2100, 100))
     bins2 = array.array('d', range(0, 2100, 100))
+    for i in range(len(files)):
+        hists.append(r.TH1D('hist_%s' %files[i][0], '', len(bins)-1, bins))
+        hists[i].SetMarkerColor(files[i][1])
+        hists[i].SetMarkerStyle(8)
+        hists[i].SetMarkerSize(0.9)
+        hists[i].SetLineColor(files[i][1])
+        initEvents = loop_one_sample(files[i][2], hists[i])
 
-    for iEleID in eleIDs:
-#         hists.append(r.TH2D('hist_%s' %iEleID, '', len(bins)-1, bins, 20, 0, 2))
-        hists.append(r.TProfile('hist_%s' %iEleID, '', len(bins)-1, bins, 's'))
-        hists_gen_match.append(r.TH1D('hist_gen_match_%s' %iEleID,'',  len(bins2)-1, bins2))
-        hists_no_gen_match.append(r.TH1D('hist_no_gen_match_%s' %iEleID,'',  len(bins2)-1, bins2))
-        hists_gen_match0.append(r.TH1D('hist_gen_match0_%s' %iEleID,'',  len(bins2)-1, bins2))
-        hists_no_gen_match0.append(r.TH1D('hist_no_gen_match0_%s' %iEleID,'',  len(bins2)-1, bins2))
-        hists_pt_vs_eta.append(r.TProfile('hist_pt_vs_eta_%s' %iEleID,'',  50, 0, 50, 's'))
-
-
-    for iSample in files_mc:
-        counter = 0
-        for iEleID in eleIDs:
-            loop_one_sample(iSample, hists[counter], hists_gen_match0[counter], hists_gen_match[counter], hists_no_gen_match0[counter], hists_no_gen_match[counter], hists_pt_vs_eta[counter], iEleID)
-            counter += 1
-
-    psfile = 'eleID_ZPrime%s.pdf' %sampleMass 
+    psfile = 'eleID_comapre_ZPrime%s_%s.pdf' %(sampleMass, cat) 
     c = r.TCanvas("c","Test", 800, 600)
     r.gPad.SetTicky()
     r.gPad.SetTickx()
-    hists[0].SetTitle("ZPrime %s; gen e pt;  reco e pt/gen e pt" %sampleMass)
-    hists[0].Draw()
-    hists[1].SetLineColor(r.kRed)
-    hists[1].Draw('same')
-    hists[1].SetLineStyle(2)
+#     r.gPad.SetLogx()
 
-    leg = tool.setMyLegend((0.65, 0.6 - 0.06*2, 0.92, 0.6), [(hists[0], eleIDs[0], "L"), (hists[1], eleIDs[1], "L")])
-    leg.Draw("same")
+    graphs = []
+    histList = []
+    histList.append((hists[0], "denominator/initEvents = %.4f" %((hists[0].Integral(0, len(bins)+1)+0.0)/(initEvents + 0.0)), 'ep'))
 
-    c.Print('%s(' %psfile)
-    c.Clear()
-    hists_pt_vs_eta[0].SetTitle("%s; reco e pt; reco e eta" %eleIDs[0])
-    hists_pt_vs_eta[0].Draw("COLZ")
-    c.Print('%s' %psfile)
-    c.Clear()
-    hists_pt_vs_eta[1].SetTitle("%s; reco e pt; reco e eta" %eleIDs[1])
-    hists_pt_vs_eta[1].Draw("COLZ")
-    c.Print('%s' %psfile)
-    c.Clear()
+    null = r.TH2F("null","", len(bins)-1, bins, 1, 0, 1.0)
+    null.SetTitle("ZPrime %s; e pt;  eff" %sampleMass)
 
-    delta_genMatch_HEEP = ratioHistogram(num = hists_gen_match[0], den = hists_gen_match0[0], relErrMax=0.25)
-    delta_genMatch_WP80 = ratioHistogram(num = hists_gen_match[1], den = hists_gen_match0[1], relErrMax=0.25)
-    delta_genMatch_WP80.SetLineColor(r.kRed)
-    delta_genMatch_WP80.SetLineStyle(2)
-    delta_genMatch_HEEP.SetTitle("ZPrime %s gen-matched; electron ID effeciency;  reco e pt" %sampleMass)
+    null.Draw()
+    for i in range(1, len(files)):
+        graphs.append(getEffCurve(num = hists[i], denom = hists[0]))
+        graphs[i-1].SetMarkerStyle(8)
+        graphs[i-1].SetMarkerSize(0.9)
+        graphs[i-1].SetMarkerColor(files[i][1])
+        graphs[i-1].SetLineColor(files[i][1])
+        if files[0][0] == 'denom':
+            histList.append((hists[i], files[i][0] + " + trigger + iso", 'ep'))
+        else:
+            histList.append((hists[i], files[i][0] + " + iso", 'ep'))
 
-    delta_genMatch_HEEP.Draw()
-    delta_genMatch_WP80.Draw("same")
+        graphs[i-1].Draw("same pe")
+
+
+    leg = tool.setMyLegend((0.2, 0.5 - 0.07*(len(files)-1), 0.5, 0.5), histList)
     leg.Draw("same")
 
     c.Print('%s' %psfile)
-    c.Clear()
-    delta_no_genMatch_HEEP = ratioHistogram(num = hists_no_gen_match[0], den = hists_no_gen_match0[0], relErrMax=0.25)
-    delta_no_genMatch_WP80 = ratioHistogram(num = hists_no_gen_match[1], den = hists_no_gen_match0[1], relErrMax=0.25)
-    delta_no_genMatch_WP80.SetLineColor(r.kRed)
-    delta_no_genMatch_WP80.SetLineStyle(2)
-    delta_no_genMatch_HEEP.SetTitle("ZPrime %s no gen-matched; electron ID effeciency;  reco e pt" %sampleMass)
-    delta_no_genMatch_HEEP.Draw()
-    delta_no_genMatch_WP80.Draw("same")
-    leg.Draw("same")
-
-    c.Print('%s)' %psfile)
-
-#     for i in range(len(eleIDs)):
-#         hists[i].SetTitle("%s; gen e pt;  reco e pt/gen e pt" %eleIDs[i])
-#         type = ''
-#         if i != 0:
-#             type = "same"
-#             hists[i].SetLineColor(r.kRed)
-#         hists[i].Draw(type)
-#         if i == 0 and len(eleIDs) != 1:
-#             c.Print('%s(' %psfile)
-#         elif i == len(eleIDs) - 1 and len(eleIDs) != 1:
-#             c.Print('%s)' %psfile)
-#         else:
-#             c.Print('%s' %psfile)
     c.Close()
 
-run(["HEEP", "WP80"], 'et', '500')
-run(["HEEP", "WP80"], 'et', '2000')
-run(["HEEP", "WP80"], 'et', '5000')
+run('et', '500')
+run('et', '2000')
+run('et', '5000')
