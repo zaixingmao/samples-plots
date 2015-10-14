@@ -89,24 +89,32 @@ def printProcessStatus(iCurrent, total, processName = 'Foo process', iPrevious =
         sys.stdout.flush()
 
 def findFilesInDir(dirName):
+    fileList = []
     for iFile in os.listdir(dirName):
         fName = dirName + '/' + iFile
         if fName.endswith(".root"):
-            print fName
+            fileList.append(fName)
+    return fileList
 
-def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents = False, blackList = []):
+def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents = False, blackList = [], match1 = '', match2 = ''):
     added = 0.
     totalAmount = len(os.listdir(dirName))
     for iFile in os.listdir(dirName):
         fName = dirName + '/' + iFile
         if fName in blackList:
             continue
+        if match1 != '':
+            if not (match1 in iFile):
+                continue
+        if match2 != '':
+            if not (match2 in iFile):
+                continue
         if fName.endswith(".root"):
             ch.Add(fName, knownEventNumber)
             added+=1
             if maxFileNumber-added == 0:
                 break
-            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName)
+            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName, iPrevious = added - 1)
     if printTotalEvents:
         nEntries = ch.GetEntries()
         print "  -- found %d events" %(nEntries)
@@ -304,7 +312,7 @@ def setMyLegend(lPosition, lHistList):
     l.SetFillStyle(0)
     l.SetBorderSize(0)
     for i in range(len(lHistList)):
-        l.AddEntry(lHistList[i][0], lHistList[i][1])
+        l.AddEntry(lHistList[i][0], lHistList[i][1], lHistList[i][2])
     return l
 
 def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
@@ -321,7 +329,7 @@ def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
             tmpHist = ifile.Get("TT/results")
             firstBinSum+=tmpHist.GetBinContent(1)
             added+=1
-            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName)
+            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding files from [%s]' %dirName, iPrevious = added -1)
     print ""
     return firstBinSum
 
@@ -347,7 +355,7 @@ def addHistFromFiles(dirName, histName, hist, xAxisLabels = ['']):
                 else:
                     hist.Fill(xAxisLabels[i], 0)
             added+=1.
-            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding Histogram from files in [%s]' %dirName)
+            printProcessStatus(iCurrent=added, total=totalAmount, processName = 'Adding Histogram from files in [%s]' %dirName, iPrevious = added - 1)
     print ""
 
 def addEventsCount2Hist(hist, count, labelName):

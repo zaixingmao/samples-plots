@@ -3,10 +3,10 @@ import os as os
 import makeWholeTools2
 import makeWholeSample_cfg
 
-preFixTauOn = "/nfs_scratch/zmao/samples_new/tauESOn/normal/"
-preFixTauOff = "/nfs_scratch/zmao/samples_new/tauESOff/normal/"
-preFixData = "/nfs_scratch/zmao/samples_new/data/"
-outputFileDir = "/nfs_scratch/zmao/samples_new/BDT/"
+preFixTauOn = "/nfs_scratch/zmao/samples_Iso/tauESOn/normal/"
+preFixTauOff = "/nfs_scratch/zmao/samples_Iso/tauESOff/normal/"
+preFixData = "/nfs_scratch/zmao/samples_Iso/data/"
+outputFileDir = "/nfs_scratch/zmao/samples_Iso/BDT_new/"
 postFix = ""
 relaxedRegion = 'one1To4'
 sign = 'OS'
@@ -29,17 +29,17 @@ for iMass in massPoints:
     outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
     command = "python makeTrainingSample.py --i "
     command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion)
-#     os.system(command) 
+    os.system(command) 
 
 for iMCSample in MC_Samples:
     inputFile = iMCSample
     outputFile = '%s/%s' %(outputFileDir, inputFile[inputFile.rfind('/'):inputFile.rfind('.')])
     command = "python makeTrainingSample.py --i "
-    if 'dy.root' in inputFile or 'TT.root' in inputFile:
+    if 'TT.root' in inputFile:
         command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion %s" %(inputFile, outputFile, iso, sign, relaxedRegion, bRegion)
     else:
         command += "%s --o %s --iso %s --sign %s --relaxRegion %s --bRegion L --useLooseForShape 1" %(inputFile, outputFile, iso, sign, relaxedRegion)
-#     os.system(command)
+    os.system(command)
 
 iso = 'Relax'
 bRegion = 'L'

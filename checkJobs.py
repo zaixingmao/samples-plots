@@ -15,12 +15,19 @@ def trueSize(sizeofFile):
         print "invalid size:", sizeOfFile
         return None
 
+def get_hdfs_location(location):
+    hdfs_location = '/hdfs/store/user/'
+    if location.find('/submit') > 0:
+        hdfs_location += location[len('/nfs_scratch/'):location.find('/submit')]
+    else:
+        hdfs_location += location[len('/nfs_scratch/'):]
+    return hdfs_location
 
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("--l", dest="location", default='currentLocation', help="location for dump file")
     parser.add_option("--threshold", dest="threshold", default=4, help="threshold for dir size")
-    parser.add_option("--fileType", dest="fileType", default='patTuple_cfg', help="prefix of dir name")
+    parser.add_option("--fileType", dest="fileType", default='make_ntuples_cfg', help="prefix of dir name")
     options, args = parser.parse_args()
     return options
 
@@ -33,6 +40,12 @@ def checkJobs(opt):
         location = opt.location
         os.chdir(location)
     print 'In %s' %location
+
+    os.system("ls %s | wc > check.txt" %get_hdfs_location(location))
+    lines2 = open(location + '/check.txt', "r").readlines()
+    finishedFiles = lines2[0].split()[0]
+    os.system("rm check.txt")
+
     os.system("du -lh > check.txt")
     location = location + '/check.txt'
     lines = open(location, "r").readlines()
@@ -67,6 +80,8 @@ def checkJobs(opt):
         print 'All %i jobs seems to have been completed' %foundCompleteJobs
     else:
         print 'No file with *%s* found' %opt.fileType
+
+    print 'Found %s root files out of %i jobs' %(finishedFiles, foundCompleteJobs+foundIncompleteJobs)
 
     os.system("rm check.txt")
 

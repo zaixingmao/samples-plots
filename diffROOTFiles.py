@@ -10,6 +10,8 @@ def opts():
     parser = optparse.OptionParser()
     parser.add_option("--file1", dest="file1", default="", help="REQUIRED: .root file 1 over which to run")
     parser.add_option("--file2", dest="file2", default="", help="REQUIRED: .root file 2 over which to run")
+    parser.add_option("--tree1", dest="tree1", default="tt/final/Ntuple", help="REQUIRED: tree name of file 1")
+    parser.add_option("--tree2", dest="tree2", default="tt/final/Ntuple", help="REQUIRED: tree name of file 2")
     options, args = parser.parse_args()
 
     if not all([options.file1, options.file2]):
@@ -21,11 +23,11 @@ options = opts()
 
 f1 = r.TFile(options.file1)
 f2 = r.TFile(options.file2)
-tree1 = f1.Get("eventTree")
+tree1 = f1.Get(options.tree1)
 tree1.SetLineColor(r.kAzure+9)
 tree1.SetFillColor(r.kAzure+9)
 tree1.SetFillStyle(3003)
-tree2 = f2.Get("eventTree")
+tree2 = f2.Get(options.tree2)
 tree2.SetLineColor(2)
 tree2.SetLineWidth(2)
 tree2.SetLineStyle(2)
@@ -43,7 +45,7 @@ legendHistos = [(tHist1,"%s with %d events" %(options.file1, tree1.GetEntries())
                 (tHist2,"%s with %d events" %(options.file2, tree2.GetEntries()))]
 listBranch = tree1.GetListOfBranches()
 
-oFileName = "%s_%s" %(options.file1[0:options.file1.find('.')], options.file2)
+oFileName = "diff.root"
 ofile = r.TFile(oFileName, "RECREATE")
 
 nBranches = listBranch.GetEntries()

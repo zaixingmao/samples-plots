@@ -5,7 +5,7 @@ import varsList
 import FWCore.ParameterSet.Config as cms
 import math
 import os
-
+# from makeWholeTools2 import findRightPair
 r.gSystem.Load("libFWCoreFWLite.so")
 r.AutoLibraryLoader.enable()
 # r.gSystem.Load("libPhysicsToolsUtilities.so")
@@ -13,37 +13,22 @@ r.AutoLibraryLoader.enable()
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 combinedJJ = lvClass()
 reWeight = 1.0
-def findRightPair(tree, choice = 'pt'):
-    if choice == 'pt':
-        return 0
-    elif choice == 'iso':
-        isoMin = 100.0
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) + tree.iso2.at(iPair)) < isoMin:
-                isoMin = tree.iso1.at(iPair) + tree.iso2.at(iPair)
-                bestPair = iPair
-        return bestPair
-    elif choice == 'region':
-        #Prioritize in OSTight
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
-                return iPair
-        #Prioritize in SSTight
-        for iPair in range(len(tree.pt1)):
-            if (tree.iso1.at(iPair) < 1.0) and (tree.iso2.at(iPair) < 1.0) and (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
-                return iPair
-        #Prioritize in OSRelax
-        for iPair in range(len(tree.pt1)):
-            if (tree.charge1.at(iPair) + tree.charge2.at(iPair) == 0):
-                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
-                    return iPair
-        #Prioritize in SSTight
-        for iPair in range(len(tree.pt1)):
-            if (tree.charge1.at(iPair) == tree.charge2.at(iPair)):
-                if ((tree.iso1.at(iPair) < 1.0) and (1.0 < tree.iso2.at(iPair) < 4.0)) or ((tree.iso2.at(iPair) < 1.0) and (1.0 < tree.iso1.at(iPair) < 4.0)):
-                    return iPair
-        #if not in any category, return the pt leading pair
-        return 0
+
+
+loose_53X_WP = [
+    (0, 2.5, -0.63),
+    (2.5, 2.75, -0.60),
+    (2.75, 3.0, -0.55),
+    (3.0, 5.2, -0.45),
+    ]
+
+def puJetId(jetEta, jetFullDiscriminant):
+    wp = loose_53X_WP
+    for etamin, etamax, cut in wp:
+        if not(jetEta>=etamin and jetEta<etamax):
+            continue
+        return jetFullDiscriminant>cut
+
 
 def findCategory(csv1, csv2):
     if csv1 < 0.679:
@@ -57,7 +42,7 @@ def setupLumiReWeight():
     location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
 #     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
-    reWeight = r.edm.LumiReWeighting("%sMC_Summer12_PU_S10-600bins.root" %location,"%sData_Pileup_2012_ReReco-600bins.root" %location,"pileup","pileup")
+    reWeight = r.edm.LumiReWeighting("%sMC_600bins.root" %location,"%sdata_600bins.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
     return reWeight.weight(npu)
@@ -65,6 +50,51 @@ def getPUWeight(npu = 0):
 def freeLumiReWeight():
     global reWeight
     del reWeight
+
+def findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice = 'pt', FS = 'tt'):
+    if FS == 'tt':
+        #order by iso
+        if iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits <= iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits:
+            object_1 = 't1'
+            object_2 = 't2'
+        else:
+            object_1 = 't2'
+            object_2 = 't1'
+        currentIsoValue_1 = getattr(iChain, "%sByCombinedIsolationDeltaBetaCorrRaw3Hits" %object_1)
+        currentPtValue_1 = getattr(iChain, "%sPt" %object_1)
+        currentIsoValue = iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits + iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits
+        currentPtValue = iChain.t1Pt + iChain.t2Pt
+    elif FS == 'et':
+        currentIsoValue_1 = iChain.eRelIso
+        currentIsoValue = iChain.eRelIso + iChain.tByCombinedIsolationDeltaBetaCorrRaw3Hits
+        currentPtValue = iChain.ePt + iChain.tPt
+        currentPtValue_1 = iChain.ePt
+    elif FS == 'em':
+        currentIsoValue_1 = iChain.mRelIso
+        currentIsoValue = iChain.eRelIso + iChain.mRelIso
+        currentPtValue_1 = iChain.mPt
+        currentPtValue = iChain.ePt + iChain.mPt
+    elif FS == 'mt':
+        currentIsoValue_1 = iChain.mRelIso
+        currentIsoValue = iChain.mRelIso + iChain.tByCombinedIsolationDeltaBetaCorrRaw3Hits
+        currentPtValue = iChain.mPt + iChain.tPt
+        currentPtValue_1 = iChain.mPt
+
+    if pairChoice == 'iso':
+        # most isolated candidate 1
+        if currentIsoValue_1 < isoValue_1:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
+        # highest candidate 1 pt
+        elif currentIsoValue_1 == isoValue_1 and currentPtValue_1 > ptValue_1:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
+        # most isolated candidate 2
+        elif currentIsoValue_1 == isoValue_1 and currentPtValue_1 == ptValue_1 and currentIsoValue < isoValue:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
+        # highest candidate 1 pt
+        elif currentIsoValue_1 == isoValue_1 and currentPtValue_1 == ptValue_1 and currentIsoValue == isoValue and currentPtValue > ptValue:
+            return iEntry, currentIsoValue_1, currentIsoValue, currentPtValue_1, currentPtValue
+        else:
+            return bestPair, isoValue_1, isoValue, ptValue_1, ptValue
 
 def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen = lvClass()
@@ -76,6 +106,20 @@ def findDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     tmpGen.SetCoordinates(genPt, genEta, genPhi, 0)
     dR = r.Math.VectorUtil.DeltaR(tmpParticle, tmpGen)
     return dR
+
+def findDR_betweenTau(pt1, eta1, phi1, pt2, eta2, phi2, jpt, jeta, jphi):
+    tau1 = lvClass()
+    tau2 = lvClass()
+    jet = lvClass()
+    tau1.SetCoordinates(pt1, eta1, phi1, 0)
+    tau2.SetCoordinates(pt2, eta2, phi2, 0)
+    jet.SetCoordinates(jpt, jeta, jphi, 0)
+    dR1 = r.Math.VectorUtil.DeltaR(tau1, jet)
+    dR2 = r.Math.VectorUtil.DeltaR(tau2, jet)
+    if dR1 < dR2:
+        return dR1
+    else:
+        return dR2
 
 def findMinDR(genPt, genEta, genPhi, pt, eta, phi, genPtThreshold):
     minDR = 99999.9
@@ -183,13 +227,27 @@ def passCategory(iChain, separate, pairOption):
     print 'If it got to this point, check separate option: %s' %separate
 
 
-def findFullMass(jetsList = [], sv4Vec = '', ptThreshold = 20):
+def findFullMass(iTree, rightPair = 0, jetsList = [], sv4Vec = '', ptThreshold = 20):
     newList = []
     emptyV4 = lvClass()
     emptyV4.SetCoordinates(0,0,0,0)
     for i in range(len(jetsList)):
         if jetsList[i][1].pt() > ptThreshold and abs(jetsList[i][1].eta()) < 2.4:
-            newList.append(jetsList[i])
+            dR = findDR_betweenTau(iTree.pt1.at(rightPair),
+                                   iTree.eta1.at(rightPair),
+                                   iTree.phi1.at(rightPair),
+                                   iTree.pt2.at(rightPair),
+                                   iTree.eta2.at(rightPair),
+                                   iTree.phi2.at(rightPair), 
+                                   jetsList[i][1].pt(),
+                                   jetsList[i][1].eta(), 
+                                   jetsList[i][1].phi())
+
+            if dR > 0.5:
+                if iTree.EVENT == 179372769:
+                    print ''
+                    print dR, jetsList[i]
+                newList.append(jetsList[i])
     newList = sorted(newList, key=itemgetter(0), reverse=True)
     if len(newList) < 2:
         return emptyV4, -1.0, -1.0, emptyV4, emptyV4, 0.0, -1.0, 'J1', 'J1'
@@ -198,6 +256,30 @@ def findFullMass(jetsList = [], sv4Vec = '', ptThreshold = 20):
     return combinedJJ, newList[0][0], newList[1][0], newList[0][1], newList[1][1], (combinedJJ+sv4Vec).mass(), r.Math.VectorUtil.DeltaR(newList[0][1], newList[1][1]), newList[0][2], newList[1][2]
 #     else:
 #         return emptyV4, -1.0, -1.0, emptyV4, emptyV4, 0.0, -1.0, 'J1', 'J1'
+
+
+def findJetPair(iTree, jetsList = [], ptThreshold = 20):
+    newList = []
+    emptyV4 = lvClass()
+    emptyV4.SetCoordinates(0,0,0,0)
+    for i in range(len(jetsList)):
+        if jetsList[i][1].pt() > ptThreshold and abs(jetsList[i][1].eta()) < 2.4:
+            dR = findDR_betweenTau(iTree.t1Pt,
+                                   iTree.t1Eta,
+                                   iTree.t1Phi,
+                                   iTree.t2Pt,
+                                   iTree.t2Eta,
+                                   iTree.t2Phi, 
+                                   jetsList[i][1].pt(),
+                                   jetsList[i][1].eta(), 
+                                   jetsList[i][1].phi())
+
+            if dR > 0.5:
+                newList.append(jetsList[i])
+    newList = sorted(newList, key=itemgetter(0), reverse=True)
+    if len(newList) < 2:
+        return -1.0, -1.0, emptyV4, emptyV4, -9999, -9999
+    return newList[0][0], newList[1][0], newList[0][1], newList[1][1], newList[0][2], newList[1][2]
 
 
 def findGenJet(j1Name, jet1, j2Name, jet2, tChain):
@@ -280,9 +362,233 @@ def getRegVars(j1Name, j2Name, tChain):
 
     return PtUncorr1, Et1, Mt1, ptLeadTrk1, Vtx3dL1,Vtx3deL1, vtxMass1, VtxPt1, JECUnc1, float(Ntot1), SoftLepPtRel1, SoftLepPt1, SoftLepdR1, PtUncorr2, Et2, Mt2, ptLeadTrk2, Vtx3dL2,Vtx3deL2, vtxMass2, VtxPt2, JECUnc2, float(Ntot2), SoftLepPtRel2, SoftLepPt2, SoftLepdR2
 
+def triggerMatch(iTree, channel = 'tt', isData = False):
+    HLTandFilter = {}
+    HLTandFilter['tt'] = {'doubleTau': ['t1DiPFTau40', 't2DiPFTau40']}
+
+    HLTandFilter['et'] = {'eTau': ['eEle22', 'eOverlapEle22', 'tTau20', 'tTauOverlapEle'],
+                          'singleE': ['eSingleEle']}
+
+    HLTandFilter['et_data'] = {'eTau_WPLoose': ['eEle22Loose', 'eOverlapEle22Loose', 'tTau20', 'tTauOverlapEleLoose'],
+                                'singleETight': ['eSingleEleTight']}
+
+    HLTandFilter['mt'] = {'muTau': ['mMuTau', 'mMuTauOverlap', 'tTau20AgainstMuon', 'tTauOverlapMu'],
+                          'singleMu24': ['mIsoMu24'],
+#                           'singleMu27': ['mIsoMu27']
+                         }
+
+    HLTandFilter['em'] = {'Mu23e12': ['mMu23El12', 'eMu23El12'],
+                          'Mu8e23': ['mMu8El23', 'eMu8El23'],
+#                           'singleMu24': ['mIsoMu24'],
+#                           'singleMu27': ['mIsoMu27']
+                          }
+
+    if isData:
+        if (channel + "_data") in HLTandFilter.keys():
+            channel = channel + "_data"
+
+    passSingleTrigger = False
+    for iHLT in HLTandFilter[channel].keys():
+        if getattr(iTree, '%sPass' %iHLT):
+            passFilter = True
+            for ihlt_filter in HLTandFilter[channel][iHLT]:
+                if not getattr(iTree, '%s' %ihlt_filter):
+                    passFilter = False
+            if passFilter: #if pass all filters for that HLT
+                if 'single' in iHLT:
+                    passSingleTrigger = True
+                else: #return true if it passed cross trigger
+                    if iHLT == 'Mu23e12':
+                        if iTree.mPt > 24:
+                            return True
+                    elif iHLT == 'Mu8e23':
+                        if iTree.ePt > 24:
+                            return True
+                    else:
+                        return True
+
+    if passSingleTrigger: #if it only passed single lepton trigger
+        if 'em' in channel:
+            return 1 if iTree.mPt > 24.0 else 0
+        if 'mt' in channel:
+            return 1 if iTree.mPt > 25.0 else 0
+        if 'et' in channel:
+            return 1 if iTree.ePt > 33.0 else 0
+
+    return 0
+
+def passCut(iTree, FS, isData = False):
+########tt
+    if FS == 'tt':
+        if not (abs(iTree.t1dZ) < 0.2 and abs(iTree.t2dZ) < 0.2):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.t1_t2_DR > 0.5):
+            return 0, 'dR'
+        if (abs(iTree.t1Charge) > 1 or abs(iTree.t2Charge) > 1):
+            return 0, 'tauChage'
+
+########et
+    elif FS == 'et':
+        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if iTree.ePassNumberOfHits == 0:
+            return 0, 'eNHits'
+        if hasattr(iTree, 'e_passConversionVeto'):
+            if not iTree.e_passConversionVeto:
+                return 0, 'e_passCov'
+        if hasattr(iTree, 'ePassConversionVeto'):
+            if not iTree.ePassConversionVeto:
+                return 0, 'e_passCov'
+        if (iTree.e_t_DR) <= 0.5:
+            return 0, 'dR'
+        if abs(iTree.tCharge) > 1:
+            return 0, 'tauCharge'
+
+########et
+    elif FS == 'em':
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
+            return 0, 'dZ'
+        if iTree.ePassNumberOfHits == 0:
+            return 0, 'eNHits'
+        if hasattr(iTree, 'e_passConversionVeto'):
+            if not iTree.e_passConversionVeto:
+                return 0, 'e_passCov'
+        if hasattr(iTree, 'ePassConversionVeto'):
+            if not iTree.ePassConversionVeto:
+                return 0, 'e_passCov'
+        if not (iTree.e_m_DR > 0.3):
+            return 0, 'dR'
+        if not (iTree.mPt > 10):
+            return 0, 'mPt'
 
 
+########mt
+    elif FS == 'mt':
+        if not (abs(iTree.tdZ) < 0.2 and abs(iTree.mdZ) < 0.2 and abs(iTree.mdXY) < 0.045):
+            return 0, 'dZ'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+        if not (iTree.m_t_DR > 0.5):
+            return 0, 'dR'
+        if abs(iTree.tCharge) > 1:
+            return 0, 'tauChage'
 
+#     for iCut in cuts.keys():
+#         if not cuts[iCut]:
+#             return False, iCut
+    return 1, 'passed'
+
+def getCategory(iTree, FS):
+    if FS == 'em':
+        return 'ZTT'
+
+    elif FS == 'tt':
+        if iTree.nPromptTaus == 2:
+#         if iTree.isZtautau:
+            #require Z -> tau tau at gen level
+            return 'ZTT'
+        elif (iTree.t1MatchToGenMuPt > 8 and iTree.t2MatchToGenMuPt  > 8) or (iTree.t1MatchToGenElePt > 8 and iTree.t2MatchToGenElePt  > 8):
+            #require both reco taus matching to gen Ele/Mu
+            return 'ZL'
+        else:
+            #catch remaining events
+            return 'ZJ'
+
+    else: #mt/et case
+        if iTree.nPromptTaus == 2 and (iTree.tGenVisPt > 18) and (iTree.tMatchToGenMuPt <= 8) and (iTree.tMatchToGenElePt <= 8):
+#         if iTree.isZtautau and (iTree.tGenVisPt > 18) and (iTree.tMatchToGenMu == 0) and (iTree.tMatchToGenEle == 0):
+            #require Z -> tau tau at gen level, reco tau matching to gen visTau and not gen Ele/Mu
+            return 'ZTT'
+        elif iTree.nPromptTaus == 2 and (iTree.tMatchToGenMuPt > 8 or iTree.tMatchToGenElePt > 8):
+#         elif iTree.isZtautau and (iTree.tMatchToGenMu > 0 or iTree.tMatchToGenEle > 0):
+            #require Z -> tau tau at gen level, reco tau matching to gen Ele/Mu
+            return 'ZTT'
+        elif (not iTree.nPromptTaus == 2) and ((iTree.tMatchToGenMuPt > 8) or (iTree.tMatchToGenElePt > 8)):
+            #require not Z -> tau tau at gen level and reco tau matching to gen Ele/Mu
+            return 'ZL'
+        else:
+            #catch remaining events
+            return 'ZJ'
+
+def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
+########tt
+    if FS == 'tt':
+        if type == 'inclusive':
+            if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1):
+                return 0, 'antiIso'
+
+        if type != 'baseline':
+            if not (iTree.t1AgainstElectronTightMVA5 > 0.5 and iTree.t1AgainstMuonLoose3 > 0.5):
+                return 0, 'againstTau1'
+            if not (iTree.t2AgainstElectronTightMVA5 > 0.5 and iTree.t2AgainstMuonLoose3 > 0.5):
+                return 0, 'againstTau2'
+            if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 0):
+                return 0, '3rdLepton'
+########et
+    elif FS == 'et':
+        if type == 'inclusive':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.5 or iTree.eRelIso >= 0.1):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.eRelIso <= 0.1):
+                return 0, 'antiIso'
+        if type == 'antiTauIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.eRelIso >= 0.1):
+                return 0, 'antiTauIso'
+
+        if type != 'baseline':
+            if not (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
+                return 0, 'tauAgainst'
+            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
+                return 0, '3rdLepton'
+
+########et
+    elif FS == 'em':
+        if type == 'inclusive':
+            if (iTree.mRelIso >= 0.15 or iTree.eRelIso >= 0.15):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.mRelIso <= 0.15 or iTree.eRelIso <= 0.15):
+                return 0, 'antiIso'
+        if type != 'baseline':
+            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
+                return 0, '3rdLepton'
+
+########mt
+    elif FS == 'mt':
+        if type == 'inclusive':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.5 or iTree.mRelIso >= 0.1):
+                return 0, 'iso'
+        if type == 'antiIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso <= 0.1):
+                return 0, 'antiIso'
+        if type == 'antiTauIso':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso >= 0.1):
+                return 0, 'antiTauIso'
+        if type != 'baseline':
+            if (iTree.tAgainstElectronVLooseMVA5 == 0 or iTree.tAgainstMuonTight3 == 0):
+                return 0, 'tauAgainst'
+            if ((iTree.extraelec_veto > 0) or (iTree.extramuon_veto > 1) or (iTree.diMuon_veto > 0)):
+                return 0, '3rdLepton'
+    return 1,'passed'
+
+
+def passCatSelection(iTree, category, FS):
+    if category == 'all':
+        return 1
+    if getCategory(iTree, FS) == category:
+        return 1
+    else:
+        return 0
 
 def setDPhiInRange(dPhi):
     if dPhi > 3.14:

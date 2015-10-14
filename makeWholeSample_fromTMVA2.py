@@ -20,7 +20,7 @@ def setUpFloatVarsDict():
     names = ['mJJ', 'CSVJ2', 'BDT', 'met', 'fMass',
              'iso1','iso2','fMassKinFit','chi2KinFit',
              'chi2KinFit2','svMass', 'CSVJ2', 'dRTauTau', 'dRJJ',
-             'triggerEff', 'PUWeight', 'xs']
+             'triggerEff', 'PUWeight', 'xs', 'embeddedWeight', 'decayModeWeight']
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
@@ -77,7 +77,8 @@ def getEventsCountInTree(iTree):
     return eventCountInTree
 
 def isWhichUseLooseForShape(sampleName):
-    list = ['ZZ', 'WZ3L', 'WW', 'WZJetsTo2L2Q', 'zzTo2L2Nu', 'zzTo4L', 'DY_embed', 'tt_embed', 't', 'tbar', 'MCOSRelax']
+    list = ['ZZ', 'WZ3L', 'WW', 'WZJetsTo2L2Q', 'zzTo2L2Nu', 'zzTo4L', 'DY_embed', 'tt_embed', 't', 'tbar', 'MCOSRelax',
+            'DYJetsToLL', 'DY2JetsToLL', 'DY3JetsToLL', 'DY4JetsToLL', 'ZLL']
     if 'data' in sampleName and (sampleName != 'dataOSTight'):
         return True
     for i in list:
@@ -85,7 +86,7 @@ def isWhichUseLooseForShape(sampleName):
             return True
     return False
 
-def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles = [], shift = 'normal'):
+def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, sf0, additionalFiles = [], shift = 'normal'):
     #get event count in train/test tree
     ifile = r.TFile(iLocation)
     iTrainTree = ifile.Get('TrainTree')
@@ -123,15 +124,19 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
     #Store additional files
     ifiles = []
     trees = []
-    for iName, iFile in additionalFiles:
+    for iName, iFile, save0tagOnly in additionalFiles:
         last = len(ifiles)
         ifiles.append(r.TFile(iFile))
+        print iName
         trees.append(ifiles[last].Get('eventTree'))
         total = trees[last].GetEntries()
         for i in range(total):
             trees[last].GetEntry(i)
             tool.printProcessStatus(iCurrent=i+1, total=total, processName = 'Looping sample [%s]' %iFile)
             rightNBTags = trees[last].NBTags
+            if 'embed' not in iName:
+                if not makeWholeTools2.passJetTrigger(trees[last]):
+                    continue
             if 'data' not in iName:
                 if shift == 'bSysUp':
                     rightNBTags = trees[last].NBTagsSysUp
@@ -141,14 +146,13 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
                     rightNBTags = trees[last].NBTagsMisUp
                 if shift == 'bMisDown':
                     rightNBTags = trees[last].NBTagsMisDown
-
             if isWhichUseLooseForShape(iName):
                 if trees[last].category2 == 1:
                     charVarsDict['Category'][:31] = '1M'
                 elif trees[last].category2 == 2:
                     charVarsDict['Category'][:31] = '2M'
                 else:
-                    charVarsDict['Category'][:31] = 'None'
+                    charVarsDict['Category'][:31] = '0M'
                 floatVarsDict['PUWeight'][0] = 1.0
             else:
                 if rightNBTags == 1:
@@ -156,7 +160,12 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
                 elif rightNBTags > 1:
                     charVarsDict['Category'][:31] = '2M'
                 else:
-                    charVarsDict['Category'][:31] = 'None'
+                    charVarsDict['Category'][:31] = '0M'
+            if save0tagOnly and rightNBTags != 0:
+                continue
+            elif save0tagOnly and rightNBTags == 0:
+                charVarsDict['Category'][:31] = '0M'
+
             charVarsDict['sampleName'][:31] = iName
             if iName == 'useRealName':
                 charVarsDict['sampleName'][:31] = tool.nameEnDecoder(int(trees[last].sampleName2), 'decode')
@@ -177,7 +186,8 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
             floatVarsDict['dRTauTau'][0] = trees[last].dRTauTau
             floatVarsDict['dRJJ'][0] = trees[last].dRJJ
             intVarsDict['NBTags'][0] = int(trees[last].NBTags)
-
+            floatVarsDict['embeddedWeight'][0] = trees[last].embeddedWeight
+            floatVarsDict['decayModeWeight'][0] = trees[last].decayModeWeight
 
             intVarsDict['initEvents'][0] = int(trees[last].initEvents)
             if iName not in eventYieldDict[1].keys():
@@ -193,12 +203,13 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
             elif iName == 'DY_embed':
                 if trees[last].HLT_Any == 0 or trees[last].ZTT == 0:
                     continue
-                eventYieldDict[int(trees[last].category2)][iName] += floatVarsDict['triggerEff'][0]
+                eventYieldDict[int(trees[last].category2)][iName] += floatVarsDict['triggerEff'][0]*floatVarsDict['embeddedWeight'][0]*floatVarsDict['decayModeWeight'][0]
             elif iName == 'tt_embed':
                 if trees[last].HLT_Any == 0 or trees[last].ZTT == 0:
                     continue
+                intVarsDict['initEvents'][0] = int(embedDYYieldCalculator.tt_semi_InitEvents)
                 floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*0.983
-                eventYieldDict[int(trees[last].category2)][iName] += floatVarsDict['xs'][0]*floatVarsDict['triggerEff'][0]*lumi/embedDYYieldCalculator.tt_semi_InitEvents
+                eventYieldDict[int(trees[last].category2)][iName] += floatVarsDict['xs'][0]*floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['embeddedWeight'][0]*lumi/embedDYYieldCalculator.tt_semi_InitEvents
             else:
                 if intVarsDict['NBTags'][0] > 2:
                     eventYieldDict[2][iName] += floatVarsDict['xs'][0]*floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*lumi/intVarsDict['initEvents'][0]
@@ -209,7 +220,11 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
                 initEventsDict[iName] = trees[last].initEvents
                 xsDict[iName] = trees[last].xs
             oTree.Fill()
-            if charVarsDict['sampleName'][:31] not in savedSamples:
+            if (not save0tagOnly) and (rightNBTags == 0) and (charVarsDict['Category'][:31] != "0M"): #save twice for events that must used loose for shape
+                charVarsDict['Category'][:31] = '0M'
+                oTree.Fill()
+
+            if (charVarsDict['sampleName'][:31] not in savedSamples) and (not save0tagOnly):
                 savedSamples.append(charVarsDict['sampleName'][:31])
         print ''
 
@@ -291,14 +306,19 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
  
     L_to_T_1M = r.TH1F('L_to_T_1M', 'L_to_T_1M', 1, 0, 1)
     L_to_T_2M = r.TH1F('L_to_T_2M', 'L_to_T_2M', 1, 0, 1)
+    L_to_T_SF_0M = r.TH1F('L_to_T_SF_0M', 'L_to_T_SF_0M', 1, 0, 1)
     L_to_T_SF_1M = r.TH1F('L_to_T_SF_1M', 'L_to_T_SF_1M', 1, 0, 1)
     L_to_T_SF_2M = r.TH1F('L_to_T_SF_2M', 'L_to_T_SF_2M', 1, 0, 1)
+    MC2Embed2Cat_0M = r.TH1F('MC2Embed2Cat_0M', 'MC2Embed2Cat_0M', 1, 0, 1)
     MC2Embed2Cat_1M = r.TH1F('MC2Embed2Cat_1M', 'MC2Embed2Cat_1M', 1, 0, 1)
     MC2Embed2Cat_2M = r.TH1F('MC2Embed2Cat_2M', 'MC2Embed2Cat_2M', 1, 0, 1)
     VV_1M = r.TH1F('VV_1M', 'VV_1M', 1, 0, 1)
     VV_2M = r.TH1F('VV_2M', 'VV_2M', 1, 0, 1)
     singleT_1M = r.TH1F('singleT_1M', 'singleT_1M', 1, 0, 1)
     singleT_2M = r.TH1F('singleT_2M', 'singleT_2M', 1, 0, 1)
+    ZLL_1M = r.TH1F('ZLL_1M', 'ZLL_1M', 1, 0, 1)
+    ZLL_2M = r.TH1F('ZLL_2M', 'ZLL_2M', 1, 0, 1)
+
     xsHist = r.TH1F('xs', '', len(xsDict), 0, len(xsDict))
     initEventsHist = r.TH1F('initEvents', '', len(initEventsDict), 0, len(initEventsDict))
     nBtag = ''
@@ -310,35 +330,44 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
         nBtag = shift
     else:
         shiftLocation = shift
-    if shift == 'normal' or shift == 'taUp' or shift == 'tauDown':
+    if shift == 'normal' or 'tau' in shift:
         shiftLocation2 = shift
     else:
         shiftLocation2 = 'normal'
-
-    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '/nfs_scratch/zmao/samples_new/tauESOn/%s/dy.root' %shiftLocation, 
-                                                                            tt_full_mc = '/nfs_scratch/zmao/samples_new/tauESOff/%s/tt_all.root' %shiftLocation, 
-                                                                            dy_embed = '/nfs_scratch/zmao/samples_new/tauESOn/%s/DY_embed.root' %shiftLocation2, 
-                                                                            tt_embed = '/nfs_scratch/zmao/samples_new/tauESOff/%s/tt_embed_all.root' %shiftLocation, 
+    locationStem = '/nfs_scratch/zmao/samples_Iso'
+    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '%s/tauESOn/%s/dy_OSTight.root' %(locationStem, shiftLocation),
+                                                                            tt_full_mc = '%s/tauESOff/%s/tt_all.root' %(locationStem, shiftLocation), 
+                                                                            dy_embed = '%s/tauESOn/%s/DY_embed.root' %(locationStem, shiftLocation2), 
+                                                                            tt_embed = '%s/tauESOff/%s/tt_embed_all.root' %(locationStem, shiftLocation), 
                                                                             massWindow = False,
-                                                                            pairOption = 'pt',
+                                                                            pairOption = 'iso',
                                                                             nBtag = nBtag)
 
 
-    VV_SF_1M, VV_SF_2M = embedDYYieldCalculator.l2MYieldCalculator(sample = '/nfs_scratch/zmao/samples_new/tauESOff/%s/Electroweak.root' %shiftLocation, 
+    VV_SF_1M, VV_SF_2M = embedDYYieldCalculator.l2MYieldCalculator(sample = '%s/tauESOff/%s/Electroweak.root' %(locationStem, shiftLocation), 
                                                                    massWindow = False,
                                                                    nBtag = nBtag)
-    singleT_SF_1M, singleT_SF_2M = embedDYYieldCalculator.l2MYieldCalculator(sample = '/nfs_scratch/zmao/samples_new/tauESOff/%s/singleTop.root' %shiftLocation, 
+    singleT_SF_1M, singleT_SF_2M = embedDYYieldCalculator.l2MYieldCalculator(sample = '%s/tauESOff/%s/singleTop.root' %(locationStem, shiftLocation), 
                                                                              massWindow = False,
                                                                              nBtag = nBtag)
+    ZLL_SF_1M, ZLL_SF_2M = embedDYYieldCalculator.l2MYieldCalculator(sample = '%s/tauESOn/%s/dy_OSTight.root' %(locationStem, shiftLocation), 
+                                                                     massWindow = False,
+                                                                     nBtag = nBtag,
+                                                                     ZLL = True)
+
 
     L_to_T_1M.Fill(0.5, weight1*(eventCountInTestTree['dataOSRelax']+eventCountInTrainTree['dataOSRelax'])/eventCountInTestTree['dataOSRelax'])
     L_to_T_2M.Fill(0.5, weight2*(eventCountInTestTree['dataOSRelax']+eventCountInTrainTree['dataOSRelax'])/eventCountInTestTree['dataOSRelax'])
-    L_to_T_SF_1M.Fill(0.5, sf1)
-    L_to_T_SF_2M.Fill(0.5, sf2)
+    L_to_T_SF_0M.Fill(0.5, sf0)
+    L_to_T_SF_1M.Fill(0.5, sf1*(eventCountInTestTree['dataOSRelax']+eventCountInTrainTree['dataOSRelax'])/eventCountInTestTree['dataOSRelax'])
+    L_to_T_SF_2M.Fill(0.5, sf2*(eventCountInTestTree['dataOSRelax']+eventCountInTrainTree['dataOSRelax'])/eventCountInTestTree['dataOSRelax'])
     VV_1M.Fill(0.5, VV_SF_1M)
     VV_2M.Fill(0.5, VV_SF_2M)
     singleT_1M.Fill(0.5, singleT_SF_1M)
     singleT_2M.Fill(0.5, singleT_SF_2M)
+    ZLL_1M.Fill(0.5, ZLL_SF_1M)
+    ZLL_2M.Fill(0.5, ZLL_SF_2M)
+    MC2Embed2Cat_0M.Fill(0.5, preScaleFactor)
     MC2Embed2Cat_1M.Fill(0.5, scaleFactor_1M)
     MC2Embed2Cat_2M.Fill(0.5, scaleFactor_2M)
     for iSample in xsDict.keys():
@@ -348,14 +377,18 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
     oFile.cd()
     L_to_T_1M.Write()
     L_to_T_2M.Write()
+    L_to_T_SF_0M.Write()
     L_to_T_SF_1M.Write()
     L_to_T_SF_2M.Write()
+    MC2Embed2Cat_0M.Write()
     MC2Embed2Cat_1M.Write()
     MC2Embed2Cat_2M.Write()
     VV_1M.Write()
     VV_2M.Write()
     singleT_1M.Write()
     singleT_2M.Write()
+    ZLL_1M.Write()
+    ZLL_2M.Write()
     xsHist.Write()
     initEventsHist.Write()
 
@@ -364,18 +397,20 @@ def makeWhole(iFileName, iLocation, weight1, weight2, sf1, sf2, additionalFiles 
     oFile.Close()
 
     print 'sampleName\ttrain\ttest'
-    for iKey in eventCountInTrainTree.keys():
-        if len(iKey) < 7:
-            space = '\t\t'
-        else:
-            space = '\t' 
-        print '%s:%s%i\t%i' %(iKey, space, eventCountInTrainTree[iKey], eventCountInTestTree[iKey])
+#     for iKey in eventCountInTrainTree.keys():
+#         if len(iKey) < 7:
+#             space = '\t\t'
+#         else:
+#             space = '\t' 
+#         print '%s:%s%i\t%i' %(iKey, space, eventCountInTrainTree[iKey], eventCountInTestTree[iKey])
     
 # weights = [1,1,1,1,1]
 # massPoints = ['270', '280', '290', ]
 massPoints = ['260', '270', '280', '290', '300', '310', '320', '330', '340', '350']
-Shifts = ['tauUp', 'tauDown', 'jetUp', 'jetDown', 'bSysUp', 'bSysDown']
-
+Shifts = ['tauUp', 'tauDown','jetUp', 'jetDown', 'bSysUp', 'bSysDown', 'bMisUp', 'bMisDown']
+# Shifts = ['normal']
+locationStem = '/nfs_scratch/zmao/samples_Iso/'
+bdt_location = 'BDT_new'
 for shift in Shifts:
     bTagShift = ''
     shiftDir = shift
@@ -386,17 +421,14 @@ for shift in Shifts:
         bTagShift = shift
         shiftDir = 'bMis'
     
-    if 'tau' not in shift:
-        preFixTauESOffVV = '/nfs_scratch/zmao/samples_new/tauESOff/%s/' %shiftDir
-    else:
-        preFixTauESOffVV = '/nfs_scratch/zmao/samples_new/tauESOff/normal/'
-    preFixTauESOff = '/nfs_scratch/zmao/samples_new/tauESOff/%s/' %shiftDir
-    preFixTauESOn = '/nfs_scratch/zmao/samples_new/tauESOn/%s/' %shiftDir
+    preFixTauESOffVV = '%s/tauESOff/%s/' %(locationStem, shiftDir)
+    preFixTauESOff = '%s/tauESOff/%s/' %(locationStem, shiftDir)
+    preFixTauESOn = '%s/tauESOn/%s/' %(locationStem, shiftDir)
 
     fileList = [('VV', '%s/Electroweak_withSingleTop.root' %preFixTauESOffVV),
-                ('DYJetsToLL', '%s/dy.root' %preFixTauESOn),
+                ('DYJetsToLL', '%s/dy_OSTight.root' %preFixTauESOn),
                 ('t#bar{t}','%s/TT.root' %preFixTauESOff),
-                ('data','/nfs_scratch/zmao/samples_new/data/data.root')]
+                ('data','%s/data/data.root' %locationStem)]
 
     weights = makeWholeTools2.calculateSF(fileList = fileList,
                                           sigRegionOption = 'Tight', 
@@ -409,27 +441,36 @@ for shift in Shifts:
                                           nBtag = bTagShift)
     for iMass in massPoints:
         if 'bSys' in shift:
-            locationPreFix = '/nfs_scratch/zmao/samples_new/BDT/bSys/'
+            locationPreFix = '%s/%s/bSys/' %(locationStem, bdt_location)
         elif 'bMis' in shift:
-            locationPreFix = '/nfs_scratch/zmao/samples_new/BDT/bMis/'
+            locationPreFix = '%s/%s/bMis/' %(locationStem, bdt_location)
         else:
-            locationPreFix = '/nfs_scratch/zmao/samples_new/BDT/%s/' %shift
+            locationPreFix = '%s/%s/%s/' %(locationStem, bdt_location, shift)
 
-        additionalFiles = [('tt_embed', '%s/%s/ClassApp_both_tt_embed_all_OSTightnone.root' %(locationPreFix, iMass)),
-                           ('MCOSRelax', '%s/%s/ClassApp_both_MCOSRelaxL.root' %(locationPreFix, iMass)),
-                           ('dataOSTight', '/nfs_scratch/zmao/samples_new/BDT/normal/%s/ClassApp_both_data_OSTightM.root' %iMass)]
+        additionalFiles = [('tt_embed', '%s/%s/ClassApp_both_tt_embed_all_OSTightnone.root' %(locationPreFix, iMass), False),
+                           ('MCOSRelax', '%s/%s/ClassApp_both_MCOSRelaxnone.root' %(locationPreFix, iMass), False),
+                           ('dataOSRelax', '%s/%s/normal/%s/ClassApp_both_data_OSRelaxnone.root' %(locationStem, bdt_location, iMass), True),
+                           ('dataOSTight', '%s/%s/normal/%s/ClassApp_both_data_OSTightnone.root' %(locationStem, bdt_location, iMass), False),
+                           ('useRealName', '%s/%s/ClassApp_both_WJets_OSTight_OSTightnone.root' %(locationPreFix, iMass), True)]
 
         if shift == 'normal':
-            additionalFiles.append(('DY_embed', '%s/%s/ClassApp_both_DY_embed_OSTightnone.root' %(locationPreFix, iMass)))
-        else:
-            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_H2hh%s_all_OSTightnone.root' %(locationPreFix, iMass, iMass)))
-            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_TT_OSTightnone.root' %(locationPreFix, iMass)))
-            additionalFiles.append(('ZLL', '%s/%s/ClassApp_both_dy_OSTightnone.root' %(locationPreFix, iMass)))
-            if 'tau' in shift:
-                additionalFiles.append(('DY_embed', '%s/%s/ClassApp_both_DY_embed_OSTightnone.root' %(locationPreFix, iMass)))
-            else:
-                additionalFiles.append(('DY_embed', '/nfs_scratch/zmao/samples_new/BDT/normal/%s/ClassApp_both_DY_embed_OSTightnone.root' %(iMass)))
-                additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_Electroweak_OSTightnone.root' %(locationPreFix, iMass)))
-                additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_singleTop_OSTightnone.root' %(locationPreFix, iMass)))
+            additionalFiles.append(('DY_embed', '%s/%s/ClassApp_both_DY_embed_OSTightnone.root' %(locationPreFix, iMass), False))
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_H2hh%s_all_OSTightnone.root' %(locationPreFix, iMass, iMass), True))
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_TT_OSTightnone.root' %(locationPreFix, iMass), True))
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_Electroweak_OSTightnone.root' %(locationPreFix, iMass), True))
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_singleTop_OSTightnone.root' %(locationPreFix, iMass), True))
+            additionalFiles.append(('ZLL', '%s/%s/ClassApp_both_dy_OSTightnone.root' %(locationPreFix, iMass), True))
 
-        makeWhole('H%s' %(iMass), '/nfs_scratch/zmao/TMVA/TMVA%s_7_n150_mJJ.root' %(iMass), weights[0], weights[1], weights[2],weights[3], additionalFiles, shift)
+        else:
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_H2hh%s_all_OSTightnone.root' %(locationPreFix, iMass, iMass), False))
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_TT_OSTightnone.root' %(locationPreFix, iMass), False))
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_Electroweak_OSTightnone.root' %(locationPreFix, iMass), False))
+            additionalFiles.append(('useRealName', '%s/%s/ClassApp_both_singleTop_OSTightnone.root' %(locationPreFix, iMass), False))
+            additionalFiles.append(('ZLL', '%s/%s/ClassApp_both_dy_OSTightnone.root' %(locationPreFix, iMass), False))
+
+            if 'tau' in shift:
+                additionalFiles.append(('DY_embed', '%s/%s/ClassApp_both_DY_embed_OSTightnone.root' %(locationPreFix, iMass), False))
+            else:
+                additionalFiles.append(('DY_embed', '%s/%s/normal/%s/ClassApp_both_DY_embed_OSTightnone.root' %(locationStem, bdt_location, iMass), False))
+
+        makeWhole('H%s' %(iMass), '/nfs_scratch/zmao/TMVA/TMVA%s_7_n150_mJJ.root' %(iMass), weights[0], weights[1], weights[2],weights[3],weights[4], additionalFiles, shift)

@@ -128,6 +128,14 @@ def run():
                         makeWholeSample_cfg.sampleConfigs[i][1], 
                         makeWholeSample_cfg.sampleConfigs[i][2],
                         makeWholeSample_cfg.sampleConfigs[i][3]))
+        if makeWholeSample_cfg.sampleConfigs[i][0] == 'DY_inclusive':
+            dy_mc = makeWholeSample_cfg.sampleConfigs[i][1]
+        if makeWholeSample_cfg.sampleConfigs[i][0] == 't#bar{t}':
+            tt_full_mc = makeWholeSample_cfg.sampleConfigs[i][1]
+        if makeWholeSample_cfg.sampleConfigs[i][0] == 'DY_embed':
+            dy_embed = makeWholeSample_cfg.sampleConfigs[i][1]
+        if makeWholeSample_cfg.sampleConfigs[i][0] == 'tt_embed':
+            tt_embed = makeWholeSample_cfg.sampleConfigs[i][1]
 
     oFileName = makeWholeSample_cfg.oFileName
     oFile = r.TFile(oFileName, 'RECREATE')
@@ -264,7 +272,7 @@ def run():
                                                                                       usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
                                                                                       nBtag = makeWholeSample_cfg.bTagShift)
 
-            if signSelection == None or isoSelection == None:
+            if signSelection == None or isoSelection == None or bTagSelection == None:
                 continue
             looseTag, mediumTag = getRightBTagCatName(bTagSelection)
 
@@ -283,6 +291,9 @@ def run():
                                 yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff
                             else:
                                 yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*0.983*lumi/tt_semi_InitEvents
+                        elif name == 'ZLL':
+                            yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight*iTree.decayModeWeight/iTree.initEvents
+
                         else:
                             yieldForMediumCat["%s_%s" %(name, mediumTag)] += iTree.triggerEff*iTree.xs*lumi*iTree.PUWeight/iTree.initEvents
         
@@ -335,8 +346,10 @@ def run():
                     sampleName[:21] = name
                 elif name == 'ZLL':
                     sampleName[:21] = 'ZLL'
+                    decayModeWeight[0] = iTree.decayModeWeight
                 elif name == 'ZTT':
                     sampleName[:21] = 'ZTT'
+                    decayModeWeight[0] = iTree.decayModeWeight
             else:
                 initEvents[0] = tt_semi_InitEvents
                 xs[0] = iTree.xs*0.983
@@ -410,12 +423,12 @@ def run():
                                           usePassJetTrigger = makeWholeSample_cfg.usePassJetTrigger,
                                           nBtag = '')
 
-    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = '%s/dy_new.root' %makeWholeSample_cfg.preFixTauESOn, 
-                                                                            tt_full_mc = '%s/tt_all.root' %makeWholeSample_cfg.preFixTauESOff,
-                                                                            dy_embed = '%s/DY_embed_new.root' %makeWholeSample_cfg.preFixTauESOnDYEmbed, 
-                                                                            tt_embed = '%s/tt_embed_all_new.root' %makeWholeSample_cfg.preFixTauESOff, 
-                                                                            massWindow = makeWholeSample_cfg.massWindow,
-                                                                            pairOption = makeWholeSample_cfg.pairOption)
+    scaleFactor_1M, scaleFactor_2M, scaleFactor_1M2, scaleFactor_2M2, preScaleFactor = embedDYYieldCalculator.yieldCalculator(dy_mc = dy_mc, 
+                                                                                                                              tt_full_mc = tt_full_mc,
+                                                                                                                              dy_embed = dy_embed, 
+                                                                                                                              tt_embed = tt_embed, 
+                                                                                                                              massWindow = makeWholeSample_cfg.massWindow,
+                                                                                                                              pairOption = makeWholeSample_cfg.pairOption)
 
 
     print weights

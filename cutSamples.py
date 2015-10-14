@@ -1,68 +1,87 @@
 #!/usr/bin/env python
 
 import ROOT as r
+r.PyConfig.IgnoreCommandLineOptions = True
+
 import tool
 import os
 import cProfile
 from cfg import enVars
 from array import array
 import optparse
-import kinfit
+# import kinfit
 from cutSampleTools import *
 import trigger
 import data_certification
+import syncTools
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
 r.gStyle.SetOptStat("e")
+r.gStyle.SetOptStat(0)
 
-xLabels = ['processedEvents', 'initialEventsTT', 'extraEleVeto','extraMuVeto', 'AtLeastOneDiTau', 'ttPtEta1',
-           'ttPtEta2','tau1Hadronic','tau2Hadronic','ttMuonVeto1', 'ttMuonVeto2', 'ttElectronVeto1', 'ttElectronVeto2', 
-           'ttIsolation1', 'ttRelaxed2', 'myCut']
+xLabels = ['Topology', 'Leg0Pt', 'Leg0Eta','Leg1Pt', 'Leg1Eta', 't_UniqueByPt', 'myCut']
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
-J1 = lvClass()
-J2 = lvClass()
-J3 = lvClass()
-J4 = lvClass()
-J5 = lvClass()
-J6 = lvClass()
 
 matchedGenJet = lvClass()
 mGenJet1 = lvClass()
 mGenJet2 = lvClass()
 CSVJet1 = lvClass()
 CSVJet2 = lvClass()
-tau1 = lvClass()
-tau2 = lvClass()
 combinedJJ = lvClass()
 sv4Vec = lvClass()
 
-kinfit.setup()
+# kinfit.setup()
 
-
+def expandFinalStates(FS):
+    finalStates = [x.strip() for x in FS.split(',')]
+    for iFS in finalStates:
+        if iFS not in ['tt', 'et', 'mt', 'em']:
+            print 'ERROR::Final state [%s] not supported, please choose [tt, et, mt, em]' %iFS
+            return False
+    return finalStates
+ 
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 'CSVJ1','CSVJ1Pt','CSVJ1Eta','CSVJ1Phi', 'CSVJ1Mass',
-             'CSVJ2', 'CSVJ2Pt', 'CSVJ2Eta', 'CSVJ2Phi', 'CSVJ2Mass', 'dRTauTau', 'dRJJ', 'dRhh', 'mTop1', 'mTop2',
-             'pZ_new', 'pZV_new', 'pZ_new2', 'pZV_new2', 'triggerEff', 'triggerEff1', 'triggerEff2', 'metTau1DPhi', 'metTau2DPhi',
-             'metJ1DPhi', 'metJ2DPhi', 'metTauPairDPhi', 'metJetPairDPhi', 'metSvTauPairDPhi', 'dRGenJet1Match', 'dRGenJet2Match',
-             'matchGenJet1Pt', 'matchGenJet1Eta', 'matchGenJet1Phi', 'matchGenJet1Mass', 'matchGenJet2Pt', 'matchGenJet2Eta', 'matchGenJet2Phi', 'matchGenJet2Mass', 
-             'matchGenMJJ', 'matchGenPtJJ', 'matchGendRJJ', 'CSVJ1PtUncorr', 'CSVJ1Et', 'CSVJ1Mt', 'CSVJ1ptLeadTrk', 'CSVJ1Vtx3dL', 
-             'CSVJ1Vtx3deL', 'CSVJ1VtxPt', 'CSVJ1vtxMass', 'CSVJ1JECUnc', 'CSVJ1Ntot', 'CSVJ1SoftLeptPtRel', 'CSVJ1SoftLeptPt', 'CSVJ1SoftLeptdR', 
-             'CSVJ2PtUncorr', 'CSVJ2Et', 'CSVJ2Mt', 'CSVJ2ptLeadTrk', 'CSVJ2Vtx3dL', 'CSVJ2Vtx3deL', 'CSVJ2VtxPt', 'CSVJ2JECUnc', 
-             'CSVJ2Ntot', 'CSVJ2SoftLeptPtRel', 'CSVJ2SoftLeptPt', 'CSVJ2SoftLeptdR', 'chi2KinFit', 'chi2KinFit2', 'fMassKinFit', 'PUWeight', 
-             'xs', 'decayModeWeight1', 'decayModeWeight2', 'decayModeWeight',
-            ]
+    names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 
+            'bjcsv_1','bjpt_1','bjeta_1','bjphi_1', 'bjmass_1', 'bjrawf_1','bjmva_1','bjpfid_1', 'bjpuid_1',
+            'bjcsv_2','bjpt_2','bjeta_2','bjphi_2', 'bjmass_2', 'bjrawf_2','bjmva_2','bjpfid_2', 'bjpuid_2','dRTauTau', 'dRJJ']
+
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
 
+def setUpSyncVarsDict():
+    varDict = {}
+    names = ['weight', 'puweight','npv', 'npu',
+            'pt_1', 'phi_1', 'eta_1','m_1','q_1','d0_1', 'dZ_1', 'mt_1', 'iso_1', 'id_m_loose_1', 'id_m_medium_1', 'id_m_tight_1', 'id_m_tightnovtx_1', 'id_m_highpt_1',
+            'id_e_mva_nt_loose_1', 'id_e_mva_nt_loose_1', 'id_e_cut_veto_1', 'id_e_cut_loose_1', 'id_e_cut_medium_1', 'id_e_cut_tight_1', 'trigweight_1', 
+            'againstElectronLooseMVA5_1','againstElectronMediumMVA5_1', 'againstElectronTightMVA5_1', 'againstElectronVLooseMVA5_1', 'againstElectronVTightMVA5_1', 'againstMuonLoose3_1', 'againstMuonTight3_1', 
+            'byCombinedIsolationDeltaBetaCorrRaw3Hits_1', 'byIsolationMVA3newDMwoLTraw_1', 'byIsolationMVA3oldDMwoLTraw_1', 'byIsolationMVA3newDMwLTraw_1', 'byIsolationMVA3oldDMwLTraw_1',
+            'chargedIsoPtSum_1', 'decayModeFinding_1', 'decayModeFindingNewDMs_1', 'neutralIsoPtSum_1', 'puCorrPtSum_1',
+            'pt_2', 'phi_2', 'eta_2','m_2','q_2','d0_2', 'dZ_2', 'mt_2', 'iso_2', 'id_m_loose_2', 'id_m_medium_2', 'id_m_tight_2', 'id_m_tightnovtx_2', 'id_m_highpt_2',
+            'id_e_mva_nt_loose_2', 'id_e_mva_nt_loose_2', 'id_e_cut_veto_2', 'id_e_cut_loose_2', 'id_e_cut_medium_2', 'id_e_cut_tight_2', 'trigweight_2', 'againstElectronLooseMVA5_2',
+            'againstElectronMediumMVA5_2', 'againstElectronTightMVA5_2', 'againstElectronVLooseMVA5_2', 'againstElectronVTightMVA5_2', 'againstMuonLoose3_2', 'againstMuonTight3_2', 
+            'byCombinedIsolationDeltaBetaCorrRaw3Hits_2', 'byIsolationMVA3newDMwoLTraw_2', 'byIsolationMVA3oldDMwoLTraw_2', 'byIsolationMVA3newDMwLTraw_2', 'byIsolationMVA3oldDMwLTraw_2',
+            'chargedIsoPtSum_2', 'decayModeFinding_2', 'decayModeFindingNewDMs_2', 'neutralIsoPtSum_2', 'puCorrPtSum_2',
+            'pth', 'm_vis', 'm_sv', 'pt_sv', 'eta_sv', 'phi_sv', 'met_sv',
+            'met', 'metphi', 'mvamet', 'mvametphi', 'pzetavis', 'pzetamiss',
+            'jpt_1', 'jeta_1', 'jphi_1', 'jrawf_1', 'jmva_1', 'jpfid_1', 'jpuid_1', 'jcsv_1',
+            'jpt_2', 'jeta_2', 'jphi_2', 'jrawf_2', 'jmva_2', 'jpfid_2', 'jpuid_2', 'jcsv_2',
+            'dXY_1','dXY_2'
+            ]
+
+    for iName in names:
+        varDict[iName] = array('f', [0.])
+
+    return varDict
+
 def setUpIntVarsDict():
     varDict = {}
-    names = ['nElectrons', 'nMuons', 'initEvents', 'ZTT', 'ZLL']
+    names = ['nElectrons', 'nMuons', 'initEvents', 'ZTT', 'ZLL', 'njets', 'nbtag', 'njetspt20', 'njetingap20', 'njetingap', 'sumWeights']
     for iName in names:
-        varDict[iName] = array('i', [0])
+        varDict[iName] = array('l', [0])
     return varDict
 
 def setUpCharVarsDict():
@@ -77,27 +96,38 @@ def opts():
     parser.add_option("-l", dest="location", default="/scratch/%s" % os.environ["USER"], help="location to be saved")
     parser.add_option("-n", dest="nevents", default="-1", help="amount of events to be saved")
     parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
-    parser.add_option("-a", dest="addFiles", default="False", help="")
-    parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
-    parser.add_option("-c", dest="cutLHEProduct", default=False, action="store_true", help="cut to 0 jet")
-    parser.add_option("--pair", dest="pairChoice", default="pt", help="which pair")
-
+    parser.add_option("--pair", dest="pairChoice", default="iso", help="which pair")
+    parser.add_option("--sync", dest="sync", default=True, action="store_true", help="which pair")
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
+    parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
+    parser.add_option("--inclusive", dest="inclusive", default=False, action="store_true", help="apply inclusive cut")
+    parser.add_option("--antiIso", dest="antiIso", default=False, action="store_true", help="apply inclusive cut")
+    parser.add_option("--antiTauIso", dest="antiTauIso", default=False, action="store_true", help="apply inclusive cut")
+    parser.add_option("--cat", dest="category", default='all', help="apply category cut")
+
     options, args = parser.parse_args()
 
     return options
 
-options = opts()
+def loop_one_sample(iSample,                    #sample name (DY)
+                    iLocation,                  #input file location
+                    iXS,                        #sample xs
+                    finalState,                 #final state (et, em, mt, tt)
+                    type = enVars.type,         #selection type (baseline, inclusive)
+                    category = enVars.category, #ZLL splitting (all, ZTT, ZL, ZJ)
+                    location = '',              #output location, will be overwritten if outPutFileName != None
+                    pairChoice = enVars.pairChoice,         #pair selection method (iso, pt)
+                    nevents = '-1',             #n entries to loop over
+                    chain = None,               #input TChain
+                    outPutFileName = None,      #output file name,
+                    histos = None,              #input histograms, preferred to be a list
+                    ):
+    print 'Ntuplizing sample [%s] for channel [%s]' %(iSample, finalState)
 
-r.gStyle.SetOptStat(0)
-
-def loop_one_sample(iSample, iLocation, iXS):
     if 'data' in iSample:
         isData = True
-#         varList = preVarList
     else:
         isData = False
-#         varList = fullVarList
     if 'emb' in iSample:
         isEmbedded = True
     else:
@@ -106,33 +136,51 @@ def loop_one_sample(iSample, iLocation, iXS):
         isSignal = True
     else:
         isSignal = False
-        
-    cutFlow = r.TH1F('cutFlow', '', len(xLabels), 0, len(xLabels))
-    if options.addFiles == 'True':
-        tool.addHistFromFiles(dirName=iLocation, histName = "preselection", hist = cutFlow, xAxisLabels=xLabels)
-    else:
-        tool.addHistFromFiles(dirName=iLocation, histName = "TT/results", hist = cutFlow, xAxisLabels=xLabels)
-    cutFlow.SetName('preselection')
 
-    if options.addFiles == 'True':
-        iChain = r.TChain("eventTree")
+    sync = True
+
+    #histograms
+    if chain:
+        iChain = chain
+        nEntries = iChain.GetEntries()
     else:
-        folderName = options.folderName
-        iChain = r.TChain("%s/eventTree" %folderName)
-    nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList=enVars.corruptedROOTfiles)
+        cutFlow = r.TH1D('cutFlow', '', len(xLabels), 0, len(xLabels))
+        eventCount = r.TH1D('eventCount', '', 1, -0.5, 0.5)
+        eventWeights = r.TH1D('eventWeights', '', 2, 0, 2)
+        eventCountWeighted = r.TH1D('eventCountWeighted', '', 1, -0.5, 0.5)
+        if not isData:
+            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
+            print 'initEvents: %i' %eventCount.GetBinContent(1)
+            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
+            print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
+        iChain = r.TChain("%s/final/Ntuple" %finalState)
+        nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
+
     iChain.SetBranchStatus("*",1)
-#     iChain.SetBranchStatus("mJJ",0)
 
     #set up vars dict
     charVarsDict = setUpCharVarsDict()
     floatVarsDict = setUpFloatVarsDict()
     intVarsDict = setUpIntVarsDict()
+    syncVarsDict = None
 
-
+    cat = ''
+    if category != 'all':
+        cat = '_%s' %category
+    
     iChain.LoadTree(0)
     oTree = iChain.GetTree().CloneTree(0)
-    iSample = iSample + '_%s' %('all' if options.nevents == "-1" else options.nevents)
-    iFile = r.TFile("%s/%s.root" %(options.location,iSample),"recreate")
+    
+    if outPutFileName:
+        outputFileName = outPutFileName
+        iFile = r.TFile(outputFileName, "update")
+    else:
+        iSample = iSample + '_%s' %('all' if nevents == "-1" else nevents)
+        if sync:
+            outputFileName = "%s/%s%s_SYNC_%s_%s.root" %(location, iSample, cat, finalState, type)
+        else:
+            outputFileName = "%s/%s%s_%s_%s.root" %(location, iSample, cat, finalState, type)
+        iFile = r.TFile(outputFileName, "recreate")
 
     #setup branches
     for iVar in charVarsDict.keys():
@@ -140,195 +188,152 @@ def loop_one_sample(iSample, iLocation, iXS):
     for iVar in floatVarsDict.keys():
         oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/F" %iVar)
     for iVar in intVarsDict.keys():
-        oTree.Branch("%s" %iVar, intVarsDict[iVar], "%s/I" %iVar)
+        oTree.Branch("%s" %iVar, intVarsDict[iVar], "%s/L" %iVar)
+    
+    if sync:
+        syncVarsDict = setUpSyncVarsDict()
+        for iVar in syncVarsDict.keys():
+            oTree.Branch("%s" %iVar, syncVarsDict[iVar], "%s/F" %iVar)
 
     charVarsDict['sampleName'][:31] = iSample
-    intVarsDict['initEvents'][0] = int(cutFlow.GetBinContent(1))
+#     intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
+#     intVarsDict['sumWeights'][0] = int(eventCountWeighted.GetBinContent(1))
+
     floatVarsDict['xs'][0] = iXS
+    
     counter = 0
+
+    preEvt = -1
+    preLumi = -1
+    preRun = -1
+    bestPair = -1
+    ptValue = -1.0
+    ptValue_1 = -1.0
+
+    isoValue = 9999.0
+    isoValue_1 = 9999.0
+
+    preEvt = 0
+    preLumi = 0
+    preRun = 0
+    weightedNEvents = 0
+
+    cutCounter = {}
+
     for iEntry in range(nEntries):
         iChain.LoadTree(iEntry)
         iChain.GetEntry(iEntry)
+        if not chain:
+            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s' %(outputFileName), iEntry-1)
 
-        if options.addFiles == 'True':
-            oTree.Fill()
-            counter += 1
-            tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample), iEntry-1)
-            continue
-#         if not (iChain.HLT_Any > 0):
-#             continue
-        if not data_certification.passes(iChain, isData):
-            continue
-        if options.cutLHEProduct:
-            if iChain.LHEProduct != 5:
-                continue
-        if counter == int(options.nevents):
-            break
-        if iChain.svMass.size() == 0:
-            continue
+        if not isData:
+            if iChain.genEventWeight < 0:
+                weightedNEvents -= 1
+            else:
+                weightedNEvents += 1
 
-        jetsList = [(iChain.J1CSVbtag, J1.SetCoordinates(iChain.J1Pt, iChain.J1Eta, iChain.J1Phi, iChain.J1Mass), 'J1'),
-                    (iChain.J2CSVbtag, J2.SetCoordinates(iChain.J2Pt, iChain.J2Eta, iChain.J2Phi, iChain.J2Mass), 'J2'),
-                    (iChain.J3CSVbtag, J3.SetCoordinates(iChain.J3Pt, iChain.J3Eta, iChain.J3Phi, iChain.J3Mass), 'J3'),
-                    (iChain.J4CSVbtag, J4.SetCoordinates(iChain.J4Pt, iChain.J4Eta, iChain.J4Phi, iChain.J4Mass), 'J4'),
-                    (iChain.J5CSVbtag, J5.SetCoordinates(iChain.J5Pt, iChain.J5Eta, iChain.J5Phi, iChain.J5Mass), 'J5'),
-                    (iChain.J6CSVbtag, J6.SetCoordinates(iChain.J6Pt, iChain.J6Eta, iChain.J6Phi, iChain.J6Mass), 'J6')]
-        sv4Vec.SetCoordinates(iChain.svPt.at(0), iChain.svEta.at(0), iChain.svPhi.at(0), iChain.svMass.at(0))
-        bb = lvClass()
-        bb, floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0], CSVJet1, CSVJet2, floatVarsDict['fullMass'][0], floatVarsDict['dRJJ'][0], j1Name, j2Name = findFullMass(jetsList=jetsList, sv4Vec=sv4Vec, ptThreshold = enVars.jetPtThreshold) 
+        passSelection =  passCatSelection(iChain, category, finalState)
+        passCuts, comment = passCut(iChain, finalState, isData)
+        passCuts = passCuts*passSelection
 
-        charVarsDict['category'][:31] = findCategory(floatVarsDict['CSVJ1'][0], floatVarsDict['CSVJ2'][0])
-
-        #Gen Matching
-        floatVarsDict['matchGenJet1Pt'][0] = 0
-        floatVarsDict['matchGenJet2Pt'][0] = 0
-        if (not isData):
-            floatVarsDict['PUWeight'][0] = getPUWeight(iChain.puTruth)
-#             if options.genMatch == 'jet':
-#                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenJet(j1Name, CSVJet1, j2Name, CSVJet2, iChain)
-#             else:
-#                 dRGenJet1Match[0], mGenJet1, dRGenJet2Match[0], mGenJet2 = findGenBJet(CSVJet1, CSVJet2, iChain)                
-#            
-#             matchGenJet1Pt[0] = mGenJet1.pt()
-#             matchGenJet1Eta[0] = mGenJet1.eta()
-#             matchGenJet1Phi[0] = mGenJet1.phi()
-#             matchGenJet1Mass[0] = mGenJet1.mass()
-# 
-#             matchGenJet2Pt[0] = mGenJet2.pt()
-#             matchGenJet2Eta[0] = mGenJet2.eta()
-#             matchGenJet2Phi[0] = mGenJet2.phi()
-#             matchGenJet2Mass[0] = mGenJet2.mass()
-# 
-#             genJJ = mGenJet1 + mGenJet2
-#             matchGenMJJ[0] = genJJ.mass()
-#             matchGenPtJJ[0] = genJJ.pt()
-#             matchGendRJJ[0] = r.Math.VectorUtil.DeltaR(mGenJet1, mGenJet2)
-# 
-#             if matchGenMJJ[0] < 0:
-#                 matchGenMJJ[0] = 0
-#                 matchGenPtJJ[0] = 0
+        if comment not in cutCounter.keys():
+            cutCounter[comment] = 1
         else:
-            floatVarsDict['PUWeight'][0] = 1.0
-        #Store values
-        floatVarsDict['CSVJ1Pt'][0] = CSVJet1.pt()
-        floatVarsDict['CSVJ1Eta'][0] = CSVJet1.eta()
-        floatVarsDict['CSVJ1Phi'][0] = CSVJet1.phi()
-        floatVarsDict['CSVJ1Mass'][0] = CSVJet1.mass()
-        floatVarsDict['CSVJ2Pt'][0] = CSVJet2.pt()
-        floatVarsDict['CSVJ2Eta'][0] = CSVJet2.eta()
-        floatVarsDict['CSVJ2Phi'][0] = CSVJet2.phi()
-        floatVarsDict['CSVJ2Mass'][0] = CSVJet2.mass()
+            cutCounter[comment] += 1
 
-#         CSVJ1PtUncorr[0], CSVJ1Et[0], CSVJ1Mt[0], CSVJ1ptLeadTrk[0], CSVJ1Vtx3dL[0], CSVJ1Vtx3deL[0], CSVJ1vtxMass[0], CSVJ1VtxPt[0], CSVJ1JECUnc[0], CSVJ1Ntot[0], CSVJ1SoftLeptPtRel[0], CSVJ1SoftLeptPt[0], CSVJ1SoftLeptdR[0], CSVJ2PtUncorr[0], CSVJ2Et[0], CSVJ2Mt[0], CSVJ2ptLeadTrk[0], CSVJ2Vtx3dL[0], CSVJ2Vtx3deL[0], CSVJ2vtxMass[0], CSVJ2VtxPt[0], CSVJ2JECUnc[0], CSVJ2Ntot[0], CSVJ2SoftLeptPtRel[0], CSVJ2SoftLeptPt[0], CSVJ2SoftLeptdR[0] = getRegVars(j1Name, j2Name, iChain)
+        if not chain:
+            if iEntry == int(nevents):
+                break
 
-        if floatVarsDict['CSVJ1Vtx3dL'][0] == -10:
-            floatVarsDict['CSVJ1Vtx3dL'][0] = 0
-            floatVarsDict['CSVJ1Vtx3deL'][0] = 0
-            floatVarsDict['CSVJ1vtxMass'][0] = 0
-            floatVarsDict['CSVJ1VtxPt'][0] = 0
-        if floatVarsDict['CSVJ1ptLeadTrk'][0] < 0:
-            floatVarsDict['CSVJ1ptLeadTrk'][0] = 0
+        if (not passCuts) and (iEntry != nEntries - 1):
+            continue
 
-        if floatVarsDict['CSVJ2Vtx3dL'][0] == -10:
-            floatVarsDict['CSVJ2Vtx3dL'][0] = 0
-            floatVarsDict['CSVJ2Vtx3deL'][0] = 0
-            floatVarsDict['CSVJ2vtxMass'][0] = 0
-            floatVarsDict['CSVJ2VtxPt'][0] = 0
-        if floatVarsDict['CSVJ2ptLeadTrk'][0] < 0:
-            floatVarsDict['CSVJ2ptLeadTrk'][0] = 0
+        if (preEvt == 0 and preLumi == 0 and preRun == 0) or (preEvt == iChain.evt and preLumi == iChain.lumi and preRun == iChain.run):
+            if passCuts:
+                bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice, finalState)
 
-        if floatVarsDict['CSVJ1SoftLeptPtRel'][0] == -10:
-            floatVarsDict['CSVJ1SoftLeptPtRel'][0] == 0
-            floatVarsDict['CSVJ1SoftLeptPt'][0] == 0
-        if floatVarsDict['CSVJ2SoftLeptPtRel'][0] == -10:
-            floatVarsDict['CSVJ2SoftLeptPtRel'][0] == 0
-            floatVarsDict['CSVJ2SoftLeptPt'][0] == 0
+            if (iEntry == nEntries - 1): #save last event
+                iChain.LoadTree(bestPair)
+                iChain.GetEntry(bestPair)
+                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+                if passAdditional:
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                    oTree.Fill()
+                    counter += 1
 
-        floatVarsDict['ptJJ'][0] = bb.pt()
-        floatVarsDict['etaJJ'][0] = bb.eta()
-        floatVarsDict['phiJJ'][0] = bb.phi()
-        floatVarsDict['mJJ'][0] = bb.mass()
+        elif bestPair != -1:
+            #store best pair
+            iChain.LoadTree(bestPair)
+            iChain.GetEntry(bestPair)
+            passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+            if passAdditional:
+                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                oTree.Fill()
+                counter += 1
 
-        rightPair = findRightPair(iChain, options.pairChoice)
+            #reset best pair info
+            bestPair = -1
+            ptValue = -1.0
+            isoValue = 999.0
+            ptValue_1 = -1.0
+            isoValue_1 = 999.0
 
-        #separate sample into ZLL and ZTT category:
-        intVarsDict['ZTT'][0] = 0
-        intVarsDict['ZLL'][0] = 0
-        if isEmbedded or ('DY' in iSample) or ('dy' in iSample):
-            if passCategory(iChain, 'ZTT', options.pairChoice):
-                intVarsDict['ZTT'][0] = 1
-            if passCategory(iChain, 'ZLL', options.pairChoice):
-                intVarsDict['ZLL'][0] = 1
+            #reload to current entry
+            iChain.LoadTree(iEntry)
+            iChain.GetEntry(iEntry)
+            bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice, finalState)
 
-        tau1.SetCoordinates(iChain.pt1.at(rightPair), iChain.eta1.at(rightPair), iChain.phi1.at(rightPair), iChain.m1.at(rightPair))
-        tau2.SetCoordinates(iChain.pt2.at(rightPair), iChain.eta2.at(rightPair), iChain.phi2.at(rightPair), iChain.m2.at(rightPair))
-#         mTop1[0] = (CSVJet1 + tau1).mass()
-#         mTop2[0] = (CSVJet2 + tau2).mass()
+            if (iEntry == nEntries - 1) and passCuts:  #save last event, it's already loaded with the current value
+                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+                if passAdditional:
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                    oTree.Fill()
+                    counter += 1
 
-        intVarsDict['nElectrons'][0] = iChain.nElectrons
-        intVarsDict['nMuons'][0] = iChain.nMuons
-#         pZ_new[0] = iChain.pZ/iChain.svPt.at(0)
-#         pZV_new[0] = iChain.pZV/iChain.svPt.at(0)
-#         pZ_new2[0] = iChain.pZ/fullMass[0]
-#         pZV_new2[0] = iChain.pZV/fullMass[0]
+        preEvt = iChain.evt
+        preLumi = iChain.lumi
+        preRun = iChain.run
 
-        floatVarsDict['dRTauTau'][0] = r.Math.VectorUtil.DeltaR(tau1, tau2)
-#         dRhh[0] = r.Math.VectorUtil.DeltaR(bb, sv4Vec)
-
-        #Trigger Calc MetDPhiValues
-#         metTau1DPhi[0], metTau2DPhi[0], metJ1DPhi[0], metJ2DPhi[0], metTauPairDPhi[0], metJetPairDPhi[0], metSvTauPairDPhi[0] = calcdPhiMetValues(iChain.phi1.at(0), iChain.phi2.at(0), CSVJet1.phi(), CSVJet2.phi(), iChain.metphi.at(0), (tau1+tau2).phi(), bb.phi(), iChain.svPhi.at(0))
-
-        #Trigger Eff
-        if isEmbedded:
-            eff1 = trigger.dataEff_leg1(iChain, rightPair)
-            eff2 = trigger.dataEff_leg2(iChain, rightPair)
-        else:
-            eff1 = trigger.correction_leg1(iChain, rightPair)
-            eff2 = trigger.correction_leg2(iChain, rightPair)
-
-        floatVarsDict['triggerEff1'][0] = eff1
-        floatVarsDict['triggerEff2'][0] = eff2        
-        floatVarsDict['triggerEff'][0] = eff1*eff2
-        if isData and not isEmbedded:
-            floatVarsDict['triggerEff'][0] = 1
-            floatVarsDict['triggerEff1'][0] = 1
-            floatVarsDict['triggerEff2'][0] = 1
-
-        #Kinematic Fit
-        if not floatVarsDict['CSVJ1'][0] == -1.0:
-            floatVarsDict['chi2KinFit'][0], floatVarsDict['fMassKinFit'][0], status = kinfit.fit(iChain, CSVJet1, CSVJet2, rightPair)
-            floatVarsDict['chi2KinFit2'][0] = floatVarsDict['chi2KinFit'][0]
-            if floatVarsDict['chi2KinFit2'][0] > 200:
-                floatVarsDict['chi2KinFit2'][0] = 200
-
-        #decayModeWeight
-        if (isData and isEmbedded) or (isSignal):
-            floatVarsDict['decayModeWeight1'][0], floatVarsDict['decayModeWeight2'][0] = getDecayModeWeight(iChain, rightPair)
-        else:
-            floatVarsDict['decayModeWeight1'][0] = 1.0
-            floatVarsDict['decayModeWeight2'][0] = 1.0
-        floatVarsDict['decayModeWeight'][0] = floatVarsDict['decayModeWeight1'][0]*floatVarsDict['decayModeWeight2'][0]
-
-        oTree.Fill()
-        counter += 1
-        tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s/%s.root' % (options.location, iSample))
     print '  -- saved %d events' %(counter)
-    tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
+    print cutCounter
+#     tool.addEventsCount2Hist(hist = cutFlow, count = counter, labelName = 'myCut')
     iFile.cd()
-    cutFlow.Write()
+    if not histos:
+        eventWeights.Fill(0.5, nEntries)
+        eventWeights.Fill(1.5, weightedNEvents)
+        eventWeights.Write()
+        eventCountWeighted.Write()
+        eventCount.Write()
+    else:
+        for iHist in histos:
+            iHist.Write()
     oTree.Write()
     iFile.Close()
 
 
-def go():
-    setupLumiReWeight()
-    for iSample, iLocation, xs in enVars.sampleLocations:
-        loop_one_sample(iSample, iLocation, float(xs))
-    freeLumiReWeight()
+def go(options):
+#     setupLumiReWeight()
+    finalStates = expandFinalStates(options.FS)
+    if not finalStates:
+        return 0
+    type = 'baseline'
+    if options.inclusive:
+        type = 'inclusive'
+
+    for iSample, iLocation, xs, fs in enVars.sampleLocations:
+
+        if fs != '':
+            loop_one_sample(iSample, iLocation, float(xs), fs, type, options.category, options.location, options.pairChoice, options.nevents)
+        else:
+            for iFS in finalStates:
+                loop_one_sample(iSample, iLocation, float(xs), iFS, type, options.category, options.location, options.pairChoice, options.nevents)
+#     freeLumiReWeight()
 
 
 if __name__ == "__main__":
+    options = opts()
+
     if options.profile:
-        cProfile.run("go()", sort="time")
+        cProfile.run("go(options)", sort="time")
     else:
-        go()
+        go(options)
