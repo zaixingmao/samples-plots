@@ -35,17 +35,6 @@ sv4Vec = lvClass()
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("-l", dest="location", default="/scratch/%s" % os.environ["USER"], help="location to be saved")
-    parser.add_option("-n", dest="nevents", default="-1", help="amount of events to be saved")
-    parser.add_option("-g", dest="genMatch", default="jet", help="gen particle for the reco-jet to match to")
-    parser.add_option("-t", dest="folderName", default="ttTreeBeforeChargeCut", help="")
-    parser.add_option("--pair", dest="pairChoice", default="iso", help="which pair")
-    parser.add_option("--sync", dest="sync", default=False, action="store_true", help="which pair")
-    parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
-    parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
-    parser.add_option("--inclusive", dest="inclusive", default=False, action="store_true", help="apply inclusive cut")
-    parser.add_option("--antiIso", dest="antiIso", default=False, action="store_true", help="apply inclusive cut")
-    parser.add_option("--antiTauIso", dest="antiTauIso", default=False, action="store_true", help="apply inclusive cut")
-
     options, args = parser.parse_args()
 
     return options
@@ -75,12 +64,14 @@ def loop_one_sample(iSample, iLocation):
         outputFileName = "%s/MC_600bins.root" %(options.location)
     iFile = r.TFile(outputFileName,"recreate")
 
-    for finalState in ['et', 'em', 'mt', 'tt']:
-        iChain = r.TChain("%s/final/Ntuple" %finalState)
+    for finalState in ['et', 'em']:#, 'mt', 'tt']:
+        print 'running final state: %s' %finalState
+        iChain = r.TChain("Ntuple")
+        match2 = ''
         if isData:
-            iLocation = dataLocations[finalState]
-
-        nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
+#             iLocation = dataLocations[finalState]
+            match2 = 'data'
+        nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='', match1 = finalState, match2 = match2)
         iChain.SetBranchStatus("*",0)
         iChain.SetBranchStatus("nvtx",1)
 
@@ -90,8 +81,16 @@ def loop_one_sample(iSample, iLocation):
             iChain.LoadTree(iEntry)
             iChain.GetEntry(iEntry)
             tool.printProcessStatus(iEntry, nEntries, 'Saving to file %s' %(outputFileName), iEntry-1)
-            pileup.Fill(iChain.nvtx)
+            weight = 1.0
+            if not isData:
+                if hasattr(iChain, 'genEventWeight'):
+                    if iChain.genEventWeight < 0:
+                        weight = -1.0
+                    pileup.Fill(iChain.nvtx, weight)
 
+            else:
+                pileup.Fill(iChain.nvtx, weight)
+        print ''
     iFile.cd()
 
     pileup.Write()
@@ -99,12 +98,9 @@ def loop_one_sample(iSample, iLocation):
 
 
 def go():
-    loop_one_sample('data', '')
-#     loop_one_sample('MC', '/hdfs/store/user/zmao/Spring15_eletronID2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/')
+    loop_one_sample('data', '/user_data/zmao/RunD_594/')
+#     loop_one_sample('MC', '/user_data/elaird/svSkim-sep18/')
 
 
 if __name__ == "__main__":
-    if options.profile:
-        cProfile.run("go()", sort="time")
-    else:
-        go()
+    go()
