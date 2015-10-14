@@ -96,13 +96,19 @@ def findFilesInDir(dirName):
             fileList.append(fName)
     return fileList
 
-def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents = False, blackList = []):
+def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents = False, blackList = [], match1 = '', match2 = ''):
     added = 0.
     totalAmount = len(os.listdir(dirName))
     for iFile in os.listdir(dirName):
         fName = dirName + '/' + iFile
         if fName in blackList:
             continue
+        if match1 != '':
+            if not (match1 in iFile):
+                continue
+        if match2 != '':
+            if not (match2 in iFile):
+                continue
         if fName.endswith(".root"):
             ch.Add(fName, knownEventNumber)
             added+=1
