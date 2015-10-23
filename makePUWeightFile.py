@@ -98,8 +98,8 @@ def loop_one_sample(iSample, iLocation):
 
 
 def go():
-    loop_one_sample('data', '/user_data/zmao/RunD_594/')
-#     loop_one_sample('MC', '/user_data/elaird/svSkim-sep18/')
+    loop_one_sample('data', '/user_data/zmao/forPU_Data/')
+    loop_one_sample('MC', '/user_data/zmao/forPU_MC')
 
 
 if __name__ == "__main__":
