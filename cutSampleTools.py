@@ -42,7 +42,7 @@ def setupLumiReWeight():
     location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
 #     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
-    reWeight = r.edm.LumiReWeighting("%sMC_600bins.root" %location,"%sdata_600bins.root" %location,"pileup","pileup")
+    reWeight = r.edm.LumiReWeighting("%sMC_50bins.root" %location,"%sdata_50bins.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
     return reWeight.weight(npu)
@@ -389,24 +389,29 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
     HLTandFilter = {}
     HLTandFilter['tt'] = {'doubleTau': ['t1DiPFTau40', 't2DiPFTau40']}
 
-    HLTandFilter['et'] = {'eTau': ['eEle22', 'eOverlapEle22', 'tTau20', 'tTauOverlapEle'],
-                          'singleE': ['eSingleEle']
+    HLTandFilter['et'] = {# 'eTau': ['eEle22', 'eOverlapEle22', 'tTau20', 'tTauOverlapEle'],
+                          'singleE': ['eSingleEle'],
+#                           'singleE22': ['eSingleEle22hlt23'],
                          }
 
-    HLTandFilter['et_data'] = {'eTau_WPLoose': ['eEle22Loose', 'eOverlapEle22Loose', 'tTau20', 'tTauOverlapEleLoose'],
+    HLTandFilter['et_data'] = {#'eTau_WPLoose': ['eEle22Loose', 'eOverlapEle22Loose', 'tTau20', 'tTauOverlapEleLoose'],
                                 'singleETight': ['eSingleEleTight']}
 
     HLTandFilter['mt'] = {'muTau': ['mMuTau', 'mMuTauOverlap', 'tTau20AgainstMuon', 'tTauOverlapMu'],
                           'singleMu24': ['mIsoMu24'],
+#                           'singleMu17': ['mIsoMu17hlt18'],
+
 #                           'singleMu27': ['mIsoMu27']
                          }
 
-    HLTandFilter['em'] = {# 'singleMu24': ['mIsoMu24'],
-                          'Mu23e12': ['mMu23El12', 'eMu23El12'],
-                          'Mu8e23': ['mMu8El23', 'eMu8El23'],
-#                           'singleMu24': ['mIsoMu24'],
-#                           'singleMu27': ['mIsoMu27']
-                          }
+#     HLTandFilter['em'] = {# 'singleMu24': ['mIsoMu24'],
+#                           'Mu23e12': ['mMu23El12', 'eMu23El12'],
+#                           'Mu8e23': ['mMu8El23', 'eMu8El23'],
+# #                           'singleMu24': ['mIsoMu24'],
+# #                           'singleMu27': ['mIsoMu27']
+#                           }
+    HLTandFilter['em'] = {'Mu30e30': ['mMu30El30_MC', 'eMu30El30']}
+    HLTandFilter['em_data'] = {'Mu30e30': ['mMu30El30_data', 'eMu30El30']}
 
     HLTandFilter['ee_data'] = {'singleETight': ['e1SingleEleTight'],
                           'singleETight': ['e2SingleEleTight'],
@@ -463,8 +468,10 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
             return 1 if iTree.mPt > 24.0 else 0
         if 'mt' in channel:
             return 1 if iTree.mPt > 25.0 else 0
+#             return 1 if iTree.mPt > 19.0 else 0
         if 'et' in channel:
             return 1 if iTree.ePt > 33.0 else 0
+#             return 1 if iTree.ePt > 24.0 else 0
         if 'ee' in channel:
             if (iTree.e1SingleEle or iTree.e1SingleEleTight) and iTree.e1Pt > 33:
                 return 1
@@ -549,6 +556,10 @@ def passCut(iTree, FS, isData = False):
             return 0, 'triggerMatch'
         if not iTree.eMVANonTrigWP80:
             return 0, 'ID'
+#         if not iTree.ePt > 31:
+#             return 0, 'ePt'
+#         if not iTree.mPt > 31:
+#             return 0, 'mPt'
 #         if not iTree.eCBIDLoose:
 #             return 0, 'ID'
 #         if not iTree.eCBIDMedium:
@@ -642,13 +653,15 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
         if type == 'antiIso':
             if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 2 or iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
                 return 0, 'antiIso'
-        if type == 'antiTauIso':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.eRelIso >= 0.1):
-                return 0, 'antiTauIso'
+        if type == 'notInclusive':
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 and iTree.eRelIso <= 0.1):
+                return 0, 'notInclusive'
 
-        if type != 'baseline':
+        if type != 'baseline' and type != 'notInclusive':
             if not (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
                 return 0, 'tauAgainst'
+            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10):
+                return 0, 'iso'
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
                 return 0, '3rdLepton'
 
@@ -666,7 +679,10 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
         if type == 'antiMIso':
             if (iTree.mRelIso <= 0.2 or iTree.mRelIso >= 1 or iTree.eRelIso >= 0.15):
                 return 0, 'antiMIso'
-        if type != 'baseline':
+        if type == 'notInclusive':
+            if (iTree.mRelIso <= 0.15 and iTree.eRelIso <= 0.15):
+                return 0, 'antiMIso'
+        if type != 'baseline' and type != 'notInclusive':
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
                 return 0, '3rdLepton'
 

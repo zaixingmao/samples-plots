@@ -45,8 +45,8 @@ def expandFinalStates(FS):
 def setUpFloatVarsDict():
     varDict = {}
     names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 
-            'bjcsv_1','bjpt_1','bjeta_1','bjphi_1', 'bjmass_1', 'bjrawf_1','bjmva_1','bjpfid_1', 'bjpuid_1',
-            'bjcsv_2','bjpt_2','bjeta_2','bjphi_2', 'bjmass_2', 'bjrawf_2','bjmva_2','bjpfid_2', 'bjpuid_2','dRTauTau', 'dRJJ']
+            'bcsv_1','bpt_1','beta_1','bphi_1', 'bmass_1', 'brawf_1','bmva_1','bpfid_1', 'bpuid_1',
+            'bcsv_2','bpt_2','beta_2','bphi_2', 'bmass_2', 'brawf_2','bmva_2','bpfid_2', 'bpuid_2','dRTauTau', 'dRJJ']
 
     for iName in names:
         varDict[iName] = array('f', [0.])
@@ -67,6 +67,7 @@ def setUpSyncVarsDict():
             'chargedIsoPtSum_2', 'decayModeFinding_2', 'decayModeFindingNewDMs_2', 'neutralIsoPtSum_2', 'puCorrPtSum_2',
             'pth', 'm_vis', 'm_sv', 'pt_sv', 'eta_sv', 'phi_sv', 'met_sv',
             'met', 'metphi', 'mvamet', 'mvametphi', 'pzetavis', 'pzetamiss',
+            'metcov00', 'metcov01', 'metcov10', 'metcov11',
             'jpt_1', 'jeta_1', 'jphi_1', 'jrawf_1', 'jmva_1', 'jpfid_1', 'jpuid_1', 'jcsv_1',
             'jpt_2', 'jeta_2', 'jphi_2', 'jrawf_2', 'jmva_2', 'jpfid_2', 'jpuid_2', 'jcsv_2',
             'dXY_1','dXY_2',
@@ -151,11 +152,11 @@ def loop_one_sample(iSample,                    #sample name (DY)
         eventCount = r.TH1D('eventCount', '', 1, -0.5, 0.5)
         eventWeights = r.TH1D('eventWeights', '', 2, 0, 2)
         eventCountWeighted = r.TH1D('eventCountWeighted', '', 1, -0.5, 0.5)
-#        if not isData:
-            #tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
-            #print 'initEvents: %i' %eventCount.GetBinContent(1)
-            #tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
-            #print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
+        if not isData:
+            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCount" %finalState, hist = eventCount, xAxisLabels=['eventCount'])
+            print 'initEvents: %i' %eventCount.GetBinContent(1)
+            tool.addHistFromFiles(dirName=iLocation, histName = "%s/eventCountWeighted" %finalState, hist = eventCountWeighted, xAxisLabels=['eventCountWeighted'])
+            print 'initWeightedEvents: %i' %eventCountWeighted.GetBinContent(1)
         iChain = r.TChain("%s/final/Ntuple" %finalState)
         nEntries = tool.addFiles(ch=iChain, dirName=iLocation, knownEventNumber=0, printTotalEvents=True, blackList='')
 

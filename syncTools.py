@@ -44,7 +44,7 @@ def getCrossCleanJets(jetsList, lepList, type = 'jet', iChain = None):
 
     else:
         jetCuts['pt'] = 20.0
-        jetCuts['bTag'] = 0.814
+        jetCuts['bTag'] = 0.89
         jetCuts['eta'] = 2.4
 
     for iCSV, iJet, iJetMVA, PFLoose in jetsList:
@@ -134,16 +134,22 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
 
     bJets, pt20bjets, pt30bjets = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'b', iChain = None)
 
-    intVarsDict['nbtag'][0] = len(pt20bjets)
-    floatVarsDict['bjcsv_1'][0] = bJets[0][0]
-    floatVarsDict['bjcsv_2'][0] = bJets[1][0] 
-    floatVarsDict['bjmva_1'][0] = bJets[0][2]
-    floatVarsDict['bjmva_2'][0] = bJets[1][2]
+    first = 0
+    second = 1
+    if bJets[0][1].pt() < bJets[1][1].pt():
+        first = 1
+        second = 0
 
-    floatVarsDict['bjpt_1'][0] = bJets[0][1].pt()
-    floatVarsDict['bjeta_1'][0] =bJets[0][1].eta()
-    floatVarsDict['bjpt_2'][0] = bJets[1][1].pt()
-    floatVarsDict['bjeta_2'][0] = bJets[1][1].eta()
+    intVarsDict['nbtag'][0] = len(pt20bjets)
+    floatVarsDict['bcsv_1'][0] = bJets[first][0]
+    floatVarsDict['bmva_1'][0] = bJets[first][2]
+    floatVarsDict['bpt_1'][0] = bJets[first][1].pt()
+    floatVarsDict['beta_1'][0] =bJets[first][1].eta()
+
+    floatVarsDict['bcsv_2'][0] = bJets[second][0] 
+    floatVarsDict['bmva_2'][0] = bJets[second][2]
+    floatVarsDict['bpt_2'][0] = bJets[second][1].pt()
+    floatVarsDict['beta_2'][0] = bJets[second][1].eta()
     floatVarsDict['mJJ'][0] = (bJets[0][1] + bJets[1][1]).mass()
 
     if sync:
@@ -182,11 +188,17 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
 
         syncVarsDict['met'][0] = iChain.pfMetEt
         syncVarsDict['metphi'][0] = iChain.pfMetPhi
+        syncVarsDict['metcov00'][0] = iChain.pfmetCovariance_00
+        syncVarsDict['metcov01'][0] = iChain.pfmetCovariance_01
+        syncVarsDict['metcov10'][0] = iChain.pfmetCovariance_10
+        syncVarsDict['metcov11'][0] = iChain.pfmetCovariance_11
+
 #         syncVarsDict['mvamet'][0] = iChain.mvametEt
 #         syncVarsDict['mvametphi'][0] = iChain.mvametPhi
         
 
         goodJets, pt20jets, pt30jets = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'jet', iChain = iChain)
+
         intVarsDict['njetspt20'][0] = len(pt20jets)
         intVarsDict['njets'][0] = len(pt30jets)
         intVarsDict['njetingap20'][0] = getNJetinGap(pt20jets)

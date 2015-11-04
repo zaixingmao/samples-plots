@@ -125,16 +125,16 @@ def addVars(iTree, a):
 #             'mvaPhi', iTree.mvametphi, 
 #             'muVeto', getVetoValue(iTree.extramuon_veto),
 #             'iso2', iTree.iso_2, 
-            'gen_match_2', iTree.gen_match_2, 
+              'cov00', iTree.metcov00,   #var to check
 
-            'lumi', int(iTree.lumi), 
-          'run', iTree.run, 
+              'lumi', int(iTree.lumi), 
+              'run', iTree.run, 
 
 #             'q1', iTree.q_1, 
 
-            'iso1', iTree.iso_1, 
-            'gen_match_1', iTree.gen_match_1, 
-            'gen_match_2', iTree.gen_match_2, 
+#             'iso1', iTree.iso_1, 
+#             'gen_match_1', iTree.gen_match_1, 
+#             'gen_match_2', iTree.gen_match_2, 
 
 #             'dZ_1', iTree.dZ_1, 
 
@@ -142,7 +142,7 @@ def addVars(iTree, a):
 #             'tw_1', iTree.trigweight_1, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
-            'phi1', iTree.phi_1, 
+#             'phi1', iTree.phi_1, 
 #             'mass1', iTree1.m_1,
             'pt2', iTree.pt_2, 
             'eta2', iTree.eta_2, 
@@ -151,9 +151,9 @@ def addVars(iTree, a):
 #             'iso2', iTree.iso_2, 
 #             'tw_2', iTree.trigweight_2, 
 
-            'phi2', iTree.phi_2, 
+#             'phi2', iTree.phi_2, 
 #             'dR', r.Math.VectorUtil.DeltaR(tau1, tau2),
-#             'met', iTree.met, 
+            'met', iTree.met, 
 #             'metphi', iTree.metphi, 
 #             'mvamet', iTree.mvamet,
 #             'mvametphi', iTree.mvametphi, 
@@ -164,6 +164,8 @@ def addVars(iTree, a):
 #             'muVeto', int(iTree.extramuon_veto), 
 
 #             'njets', iTree.njets, 
+#             'njets20', iTree.njetspt20, 
+#             'nbtag', iTree.nbtag, 
 
 #             'mass2', iTree1.m_2,
 #             'jptraw1', iTree.jptraw_1,
@@ -183,12 +185,12 @@ def addVars(iTree, a):
 #             'dZ_2', iTree.dZ_2, 
 
 # 
-#             'bcsv_1', iTree.bjcsv_1,
-#             'bpt_1', iTree.bjpt_1,
+#             'bcsv_1', iTree.bcsv_1,
+#             'bpt_1', iTree.bpt_1,
 #             'beta_1', iTree.bjeta_1,
 #             'bphi_1', iTree.bjphi_1,
-#             'bcsv_2', iTree.bjcsv_2,
-#             'bpt_2', iTree.bjpt_2,
+#             'bcsv_2', iTree.bcsv_2,
+#             'bpt_2', iTree.bpt_2,
 #             'beta_2', iTree.bjeta_2,
 #             'bphi_2', iTree.bjphi_2,
 #             'dr2', r.Math.VectorUtil.DeltaR(tau2, jet2),
@@ -196,9 +198,9 @@ def addVars(iTree, a):
 #             'bpt_3', iTree.bpt_3,
 #             'beta_3', iTree.beta_3,
 #             'NBTags', iTree.nbtag,
-#             'cov00', iTree.mvacov00,
-#             'cov01', iTree.mvacov01,
-#             'cov10', iTree.mvacov10,
+            'cov00', iTree.metcov00,
+            'cov01', iTree.metcov01,
+            'cov10', iTree.metcov10,
 #             'mJJ', iTree.m_bb,
 #             'svMass', iTree.m_sv
     ]
