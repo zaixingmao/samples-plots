@@ -45,6 +45,8 @@ def setupLumiReWeight():
     reWeight = r.edm.LumiReWeighting("%sMC_50bins.root" %location,"%sdata_50bins.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
+    if npu < 5:
+        npu = 5
     return reWeight.weight(npu)
 
 def freeLumiReWeight():
