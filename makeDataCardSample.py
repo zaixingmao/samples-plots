@@ -20,6 +20,7 @@ lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 l1 = lvClass()
 l2 = lvClass()
 met = lvClass()
+deltaTauES = lvClass()
 
 def expandFinalStates(FS):
     finalStates = [x.strip() for x in FS.split(',')]
@@ -103,6 +104,7 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
     yieldEstimator_OS = 0.0
     yieldEstimator_SS = 0.0
     fillcounter=0
+    met = lvClass()
     for iEntry in range(nEntries):
         iTree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'looping over file %s' %(iSample), iEntry-1)
@@ -111,6 +113,13 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
             met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
         elif options.sys == 'jetECDown' and not isData:
             met.SetCoordinates(iTree.pfMet_jesDown_Et, 0.0, iTree.pfMet_jesDown_Phi, 0)
+        elif (options.sys == 'tauECUp' or options.sys == 'tauECDown') and not isData:
+            met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
+            if iTree.pt_2 - iTree.tPt > 0:
+                deltaTauES.SetCoordinates(abs(iTree.pt_2 - iTree.tPt), 0.0, -iTree.tPhi, 0)
+            else:
+                deltaTauES.SetCoordinates(abs(iTree.pt_2 - iTree.tPt), 0.0, iTree.tPhi, 0)
+            met = met + deltaTauES
         else:
             met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
 
