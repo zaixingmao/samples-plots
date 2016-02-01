@@ -32,7 +32,7 @@ def expandFinalStates(FS):
  
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'pfMEtNoHF', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso']
+    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'pfMEtNoHF', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso', 'mt_1']
 
     for iName in names:
         varDict[iName] = array('f', [0.])
@@ -149,6 +149,8 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
 
         floatVarsDict['pt_1'][0] = iTree.pt_1
         floatVarsDict['pt_2'][0] = iTree.pt_2
+        floatVarsDict['mt_1'][0] = iTree.mt_1
+
         floatVarsDict['triggerEff'][0] = iTree.trigweight_1*iTree.trigweight_2
         charVarsDict['Category'][:31] = iFS
 
@@ -199,6 +201,11 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
             floatVarsDict['genEventWeight'][0] = iTree.genEventWeight
 
         oTree.Fill()
+        if (charVarsDict['sampleName'][:31] == 'MC' + controlRegionName) and ("WJets" in iSample):
+            charVarsDict['sampleName'][:31] = 'WJets' + controlRegionName
+            oTree.Fill()
+            
+
         if plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and isData:
             yieldEstimator_SS += 1.0
         elif plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and not isData:
@@ -241,11 +248,21 @@ def go():
         oFile.cd()
         QCDScale = r.TH1F('%s_to_%s_%s' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
         QCDScale.Fill(0.5, plots_cfg.QCD_scale[iFS][0][0])
+        QCDScale.SetBinError(1, plots_cfg.QCD_scale[iFS][0][1])
         QCDScale.Write()
         if iFS == 'et':
             QCDScale_1prong_3prong = r.TH1F('%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
             QCDScale_1prong_3prong.Fill(0.5, plots_cfg.QCD_scale_1prong_3prong[0])
+            QCDScale_1prong_3prong.SetBinError(1, plots_cfg.QCD_scale_1prong_3prong[1])
             QCDScale_1prong_3prong.Write()
+            WJetsLoose2Tight = r.TH1F('WJets_%s_to_%s' %(controlRegionName, signalRegionName), '', 1, 0, 1)
+            WJetsLoose2Tight.Fill(0.5, plots_cfg.WJetsLoose2Tight[0])
+            WJetsLoose2Tight.SetBinError(1, plots_cfg.WJetsLoose2Tight[1])
+            WJetsLoose2Tight.Write()
+            WJetsScale = r.TH1F('WJetsScale', '', 1, 0, 1)
+            WJetsScale.Fill(0.5, plots_cfg.WJetsScanRange[0])
+            WJetsScale.Write()
+
         oTree.Write()
         oFile.Close()
         print 'total QCD: %.2f' %(totalQCD*plots_cfg.QCD_scale[iFS][0][0])

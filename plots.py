@@ -233,7 +233,7 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
                 return False
             if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
                 return False
-            if math.cos(tree.phi_1 - tree.phi_2) <= -0.95:
+            if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
                 return False
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
@@ -260,7 +260,7 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
                 return False
             if met.pt()  <= 30:
                 return False
-            if math.cos(tree.phi_1 - tree.phi_2) >= -0.6:
+            if math.cos(tree.phi_1 - tree.phi_2) >= -0.9:
                 return False
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
@@ -391,13 +391,17 @@ def expandFinalStates(FS):
             return False
     return finalStates
 
-def getWJetsScale(histDict, varName, varBins):
-    intBin = 8
-    endBin = 14
+def getWJetsScale(histDict, varName, start, end, sf = 1):
+    intBin = histDict['Observed'].FindBin(start)
+    endBin = histDict['Observed'].FindBin(end)
     if varName != 'mt_1':
         return 0
     else:
-        print (histDict['Observed'].Integral(intBin, endBin) - histDict['Diboson'].Integral(intBin, endBin) - histDict['t#bar{t}'].Integral(intBin, endBin) - histDict['Z#rightarrow#tau#tau'].Integral(intBin, endBin))/histDict['WJets'].Integral(intBin, endBin) + 1
+        if options.looseRegion:
+            print (histDict['Observed'].Integral(intBin, endBin) - histDict['Diboson'].Integral(intBin, endBin) - histDict['t#bar{t}'].Integral(intBin, endBin) - histDict['Z#rightarrow#tau#tau'].Integral(intBin, endBin))/(histDict['WJets_CR'].Integral(intBin, endBin)*sf)
+
+        else:
+            print (histDict['Observed'].Integral(intBin, endBin) - histDict['Diboson'].Integral(intBin, endBin) - histDict['t#bar{t}'].Integral(intBin, endBin) - histDict['Z#rightarrow#tau#tau'].Integral(intBin, endBin))/histDict['WJets'].Integral(intBin, endBin)
 
 
 def ratioHistogram( num, den, relErrMax=0.25) :
@@ -594,7 +598,7 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
 def getError(hist, startBin, endBins):
     error = 0.0
     for i in range(startBin, endBins+1):
-        error += hist.GetBinError(i)*hist.GetBinError(i)
+        error += hist.GetBinError(i)**2
     return error
 
 def getQCDScale(histDict, varBins, iQCD, W_SF = 1.0, binned = False):
@@ -728,7 +732,7 @@ def buildStackFromDict(histDict, FS, option = 'width', iQCD = 0, SF_WJ = 1.0, sf
     return stack
 
 def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negative
-    print scale
+#     print scale
 
     if binned:
         print "hist.GetNbinsX()", hist.GetNbinsX()
@@ -742,7 +746,7 @@ def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negat
                 hist.SetBinError(i, iScale*error)
             else:
                 hist.SetBinContent(i, iScale*content)
-                hist.SetBinError(i, math.sqrt(iScale*error*iScale*error + scale[i][1]*content*scale[i][1]*content))
+                hist.SetBinError(i, math.sqrt((iScale*error)**2 + (scale[i][1]*content)**2))
                 print 'binned', iScale, iScale*content
                 
     else:
@@ -750,7 +754,7 @@ def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negat
         hist.Scale(iScale)
         for i in range(1, hist.GetNbinsX()+2):
             content = hist.GetBinContent(i)
-            print 'uniScale', content
+#             print 'uniScale', content
             error = hist.GetBinError(i)
             x = hist.GetBinCenter(i)
             if content < 0:
@@ -789,7 +793,7 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
             if ikey == 'WJets':
                 if options.looseRegion:
                     tmpHist = setWJetsLooseShape(histDict['WJets_CR'], WJetSF, WJets_L2T, WJets_L2T_error, bins)
-                    bkg.Add(histDict['WJets_CR'].Clone())
+                    bkg.Add(tmpHist)
                 else:
                     bkg.Add(histDict[ikey].Clone(), WJetSF)
             else:
@@ -914,7 +918,6 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
             else:
                 setQCD(histDict['QCD_%i' %j], [(0.0, 0.0)])                                                                                                       
                 scaleFactors.append((0, 0))
-#     getWJetsScale(histDict, varName, varBins)
 
 #     if options.saveHisto:
 #         oFile = r.TFile('/user_data/zmao/ZPrimeHistos/%s/QCD_all_%s.root' %(FS, varName),"recreate")
@@ -931,8 +934,16 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     bkgStacks = []
     deltas = []
     endBin = histDict['WJets'].GetNbinsX()+2
-    sf = histDict['WJets'].Integral(0,endBin, option)/histDict['WJets_CR'].Integral(0, endBin, option)
-    sf_error = calcSysUnc(sf, histDict['WJets_CR'].Integral(0, endBin, option), histDict['WJets'].Integral(0, endBin, option), math.sqrt(getError(histDict['WJets'], 0, endBin)), math.sqrt(getError(histDict['WJets_CR'], 0, endBin)))
+    WJets_Integral = histDict['WJets'].Integral(0,endBin, option)
+    WJets_CR_Integral = histDict['WJets_CR'].Integral(0,endBin, option)
+
+    print 'WJets Isolated: %.3f +/- %.3f (%i)' %(WJets_Integral, math.sqrt(getError(histDict['WJets'], 0, endBin)), histDict['WJets'].GetEntries())
+    print 'WJets Anti-Isolated: %.3f +/- %.3f (%i)' %(WJets_CR_Integral,  math.sqrt(getError(histDict['WJets_CR'], 0, endBin)), histDict['WJets_CR'].GetEntries())
+    sf = 1.0
+    sf_error = 0
+    if WJets_CR_Integral > 0:
+        sf = WJets_Integral/WJets_CR_Integral
+        sf_error = calcSysUnc(sf, WJets_Integral, WJets_CR_Integral, math.sqrt(getError(histDict['WJets'], 0, endBin)), math.sqrt(getError(histDict['WJets_CR'], 0, endBin)))
 
     for i in range(scanPoints):
         if len(plots_cfg.WJetsScanRange) == 1:
@@ -942,6 +953,9 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
         bkgStacks.append(buildStackFromDict(histDict, FS, option, i, WJetScale, sf, sf_error, options.looseRegion))
         delta, result, error = buildDelta('%s_delta_%i' %(varName, i), histDict, varBins, varName, unit, relErrMax, 0.5, 1.5, i, WJetScale, sf, sf_error)
         deltas.append((delta, result, error))
+
+#     getWJetsScale(histDict, varName, start, end, sf)
+
 
     delta2 = None
     if options.ratio:
@@ -965,6 +979,9 @@ def setLegend(position, histDict, bins, option = 'width', iQCD = 0):
             if plots_cfg.addIntegrals:
                 if len(plots_cfg.WJetsScanRange) != 1 and ikey == 'WJets':
                     histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)*plots_cfg.WJetsScanRange[iQCD]), 'f'))
+                elif ikey == 'WJets':
+                    histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)*plots_cfg.WJetsScanRange[0]), 'f'))
+
                 else:
                     if plots_cfg.unc:
                         unc = r.Double(0)
