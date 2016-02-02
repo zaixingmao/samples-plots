@@ -251,11 +251,11 @@ def go():
         QCDScale.SetBinError(1, plots_cfg.QCD_scale[iFS][0][1])
         QCDScale.Write()
         if iFS == 'et':
-            QCDScale_1prong_3prong = r.TH1F('%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
+            QCDScale_1prong_3prong = r.TH1F('QCD_%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
             QCDScale_1prong_3prong.Fill(0.5, plots_cfg.QCD_scale_1prong_3prong[0])
             QCDScale_1prong_3prong.SetBinError(1, plots_cfg.QCD_scale_1prong_3prong[1])
             QCDScale_1prong_3prong.Write()
-            WJetsLoose2Tight = r.TH1F('WJets_%s_to_%s' %(controlRegionName, signalRegionName), '', 1, 0, 1)
+            WJetsLoose2Tight = r.TH1F('WJets_%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
             WJetsLoose2Tight.Fill(0.5, plots_cfg.WJetsLoose2Tight[0])
             WJetsLoose2Tight.SetBinError(1, plots_cfg.WJetsLoose2Tight[1])
             WJetsLoose2Tight.Write()

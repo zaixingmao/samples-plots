@@ -24,7 +24,10 @@ dirMC = '/user_data/zmao/Jan13Production_highMETlowPZeta0B/'
 # # dirMC = '/user_data/zmao/Jan13Production_jetEC/'
 # dirMC = '/user_data/zmao/signalRegionBTagged/'
 # dirMC = '/user_data/zmao/signalRegionNoMET/'
-# dirMC = '/user_data/zmao/Jan13Production_signalRegion/'
+dirMC = '/user_data/zmao/Jan13Production_signalRegion/'
+# dirMC = '/user_data/zmao/signalRegion_bScaleDown/'
+# dirMC = '/user_data/zmao/Jan13Production_jetEC/'
+# dirMC = '/user_data/zmao/Jan13Production_tauUp/'
 
 # 
 # dirMC = '/user_data/zmao/signalRegionNoCosPhi/'
@@ -98,8 +101,8 @@ sampleList = [
     ('ggH', '%s/ggH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
     ('vbfH', '%s/vbfH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
 #     ]
-    ] + [('Zprime_2000', '%s/ZPrime_2000_all_SYNC_' %dirMC, 'ZPrime_2000')]
-#      ]+ [('Zprime_%d' % m, '%s/ZPrime_%d_all_SYNC_' % (dirMC, m), 'ZPrime_%d' % m) for m in (set(range(500, 5500, 500)))]
+#     ] + [('Zprime_2000', '%s/ZPrime_2000_all_SYNC_' %dirMC, 'ZPrime_2000')]
+     ]+ [('Zprime_%d' % m, '%s/ZPrime_%d_all_SYNC_' % (dirMC, m), 'ZPrime_%d' % m) for m in (set(range(500, 5500, 500)))]
 
 
 # selection = '_antiIso'
@@ -147,13 +150,13 @@ vars = [# ( "ePt", array('d', range(0,160,10)), 'GeV', 0.25),
 #        ("m_vis", array('d', range(0, 300, 50) + [300, 400, 600, 800, 1200]), 'GeV', 0.25), 
 #        ("pfmet_svmc_mass", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
 #        ("m_vis", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
-#        ("m_withMET", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
+       ("m_withMET", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
 #         ("m_vis", array('d', range(0, 550, 50)), 'GeV', 0.25),
 #         ("m_vis", array('d', range(0, 300, 25) + [315, 450]), 'GeV', 0.25),
 #         ("m_withMET", array('d', [0, 50] + range(60, 310, 10) + range(320, 380, 20) + [400]), 'GeV', 0.25), #a
 
 #         ("m_withMET", array('d', [0, 100] + range(125, 300, 25) + [315, 450]), 'GeV', 0.25),
-        ("m_withMET", array('d', range(100, 475, 25)), 'GeV', 0.50), #em os hMEtlPZeta
+#         ("m_withMET", array('d', [0,100] + range(100, 475, 25)), 'GeV', 0.50), #em os hMEtlPZeta
 #         ("m_withMET", array('d', range(50, 470, 20)), 'GeV', 0.25), #em os hMEtlPZeta
 #         ("m_withMET", array('d', range(50, 160, 10)), 'GeV', 0.25), #em os hMEtlPZeta
 
@@ -205,18 +208,17 @@ vars = [# ( "ePt", array('d', range(0,160,10)), 'GeV', 0.25),
 QCD_scale = {'tt': 1.0,
              'mt': 1.0,
              'et': [# (0.089, 0.008),
-                    (0.154, 0.054),
-                    (0.117, 0.014),
-                    (0.118, 0.016),
-                    (0.119, 0.018),
+                    (0.128, 0.021),
+                    (0.119, 0.015),
+                    (0.120, 0.016),
+                    (0.120, 0.018),
                     (0.121, 0.020),
-                    (0.123, 0.023),
-                    (0.125, 0.027),
-                    (0.127, 0.031),
-                    (0.131, 0.037),
-                    (0.136, 0.045),
-                    (0.232, 0.102),
-                    (0.142, 0.057),
+                    (0.122, 0.023),
+                    (0.122, 0.026),
+                    (0.123, 0.030),
+                    (0.125, 0.035),
+                    (0.126, 0.042),
+                    (0.129, 0.051),
                     (0, 0),
                     (0, 0),
                     (0.093, 0.084),
@@ -239,7 +241,7 @@ QCD_scale = {'tt': 1.0,
             }
 
 # QCD_scale_1prong_3prong = (0.119, 0.009)
-QCD_scale_1prong_3prong = (0.111, 0.018)
+QCD_scale_1prong_3prong = (0.128, 0.021)
 
 
 
@@ -253,8 +255,8 @@ for i in range(9):
     scanRange.append(i+2)
 scanRange = ['Tight', 5]
 
-SF_prong1 = 0.309
-SF_prong3 = 0.113
+SF_prong1 = [0.287, 0.118]
+SF_prong3 = [0.126, 0.136]
 WJetsScanRange = [1.15]#, 1.0, 1.1]#, 1.0, 1.15]#, 1.0, 2.0]
 WJetsLoose2Tight = [0.146, 0.014]
 # WJetsScanRange = [0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3]#, 1.0, 1.1]#, 1.0, 1.15]#, 1.0, 2.0]

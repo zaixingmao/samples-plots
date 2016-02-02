@@ -260,7 +260,7 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
                 return False
             if met.pt()  <= 30:
                 return False
-            if math.cos(tree.phi_1 - tree.phi_2) >= -0.9:
+            if math.cos(tree.phi_1 - tree.phi_2) >= -0.6:
                 return False
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
@@ -356,7 +356,7 @@ def getZPrimeXS(mass):
           '4500': 0.000108,
           '5000': 0.0000559
         }
-    return xs[mass]
+    return 1#xs[mass]
 
 def fixNegativBins(hist):
     nBins = hist.GetNbinsX()
@@ -504,9 +504,9 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
                 weight = weight*cutSampleTools.getPUWeight(tree.nTruePU)
         if options.diffQCD:
             if tree.tDecayMode < 4:
-                QCD_weight = plots_cfg.SF_prong1
+                QCD_weight = plots_cfg.SF_prong1[0]
             elif tree.tDecayMode > 8:
-                QCD_weight = plots_cfg.SF_prong3
+                QCD_weight = plots_cfg.SF_prong3[0]
 
         if 'WJets' in iSample:
             weight = 1.0*weight
@@ -559,7 +559,9 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
                         if not isData:
                             if iCategory == 'WJets':
                                 histDict['WJets_CR'].Fill(value, weight)
-                            tmpHist_qcds[iWJetScan].Fill(value, -weight*plots_cfg.WJetsScanRange[iWJetScan]*QCD_weight)
+                                tmpHist_qcds[iWJetScan].Fill(value, -weight*plots_cfg.WJetsScanRange[iWJetScan]*QCD_weight)
+                            else:
+                                tmpHist_qcds[iWJetScan].Fill(value, -weight*QCD_weight)
                         else:
                             tmpHist_qcds[iWJetScan].Fill(value, weight*QCD_weight)
 
@@ -568,9 +570,12 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
                     for iUpper in range(len(plots_cfg.scanRange) - iLower - 1):
                         if regionSelection(tree, FS, "control", options.method, plots_cfg.scanRange[iLower], plots_cfg.scanRange[iLower + iUpper + 1]):
                             if not isData:
-                                tmpHist_qcds[iScanPoint].Fill(value, -weight*QCD_weight)
                                 if iCategory == 'WJets':
                                     histDict['WJets_CR'].Fill(value, weight)
+                                    tmpHist_qcds[iScanPoint].Fill(value, -weight*plots_cfg.WJetsScanRange[0]*QCD_weight)
+                                else:
+                                    tmpHist_qcds[iScanPoint].Fill(value, -weight*QCD_weight)
+
                             else:
                                 tmpHist_qcds[iScanPoint].Fill(value, weight*QCD_weight)
                         iScanPoint += 1
