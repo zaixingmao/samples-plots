@@ -2,9 +2,17 @@
 import os
 
 
-inputDir = '/user_data/zmao/supy-output/svSkim/'
-outputDir = '/user_data/zmao/Nov18Prodruction_ntuple_svfit/'
-append_name = 'BSM3G'
+inputDir = '/nfs_scratch/zmao/supy-output//slice/'
+# outputDir = '/nfs_scratch/zmao/triggerStudy/MVATrigWP80/'
+outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_looseE/'
+outputDir = '/nfs_scratch/zmao/triggerStudy/MVANonTrig80_mu/'
+outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_singleEforEMu/'
+outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_TightTo5/'
+
+outputDir = '/nfs_scratch/zmao//highMEToB/'
+# outputDir = '/nfs_scratch/zmao/signalRegion_bScaleUp/'
+
+append_name = 'noIso'
 
 
 
@@ -22,41 +30,58 @@ append_name = 'BSM3G'
 #                }
 
 files = [# 'DY-50_events.root',
-          'DY-10to50_events.root',
-#         'WJets_events.root',
+#          'WJets_events.root',
 #          'WJets_MLM_events.root',
+
 #          'WW_events.root',
-          'ggH_events.root',
-          'WZ_events.root',
-          'ZZ_events.root',
-          'T_events.root',
-          'antiT_events.root',
-          'ZPrime_1000_events.root',
-          'ZPrime_2000_events.root',
-          'ZPrime_2500_events.root',
-          'ZPrime_4000_events.root',
-          'ZPrime_4500_events.root',
-          'ZPrime_5000_events.root',
-          'ZPrime_3500_events.root',
-          'ZPrime_3000_events.root',
-          'ZPrime_500_events.root',
-          'ZPrime_1500_events.root',
-          'SUSY_events.root',
-          'vbfH_events.root',
-          'TTJets_events.root',
-#          'TTJets_LO_events.root',
-#         'DY-50_LO_events.root',
-          'DY-50_LO_HT-0to100_events.root',
-          'DY-50_LO_HT-100to200_events.root',
-         'DY-50_LO_HT-200to400_events.root',
-         'DY-50_LO_HT-400to600_events.root',
-         'DY-50_LO_HT-600toInf_events.root',
-#         'WJets_LO_events.root',
-         'WJets_LO_HT-0to100_events.root',
-         'WJets_LO_HT-100to200_events.root',
-         'WJets_LO_HT-200to400_events.root',
-         'WJets_LO_HT-400to600_events.root',
-         'WJets_LO_HT-600toInf_events.root',
+#          'WZ_events.root',
+#          'ZZ_events.root',
+# # 
+         'T_events.root',
+         'antiT_events.root',
+         'T_t-channel_events.root',
+         'antiT_t-channel_events.root',
+         'ggH_events.root',
+         'vbfH_events.root',
+         'ZPrime_500_events.root',
+         'ZPrime_1000_events.root',
+         'ZPrime_1500_events.root',
+         'ZPrime_2000_events.root',
+         'ZPrime_2500_events.root',
+         'ZPrime_3000_events.root',
+         'ZPrime_3500_events.root',
+         'ZPrime_4000_events.root',
+         'ZPrime_4500_events.root',
+         'ZPrime_5000_events.root',
+# # #          'SUSY_events.root',
+#         'TTJets_events.root',
+        'TTJets_LO_events.root',
+#         'DY-10to50_events.root',
+        'DY-50_LO_events.root',
+        'DY-50_LO_HT-100to200_events.root',
+        'DY-50_LO_HT-200to400_events.root',
+        'DY-50_LO_HT-400to600_events.root',
+        'DY-50_LO_HT-600toInf_events.root',
+        'WJets_LO_events.root',
+        'WJets_LO_HT-100to200_events.root',
+        'WJets_LO_HT-200to400_events.root',
+        'WJets_LO_HT-400to600_events.root',
+        'WJets_LO_HT-600toInf_events.root',
+#         'TTJets_LO_events.root',
+        "WZTo1L3Nu_events.root",
+        "WWTo1L1Nu2Q_events.root",
+        "WZTo1L1Nu2Q_events.root",
+        "WZJets_events.root",
+        "ZZTo2L2Q_events.root",
+        "WZTo2L2Q_events.root",
+        "VVTo2L2Nu_events.root",
+        "ZZTo4L_events.root",
+
+#         "DY-5to50_LO_events.root",
+#         "DY-5to50_LO_HT-100to200_events.root",
+#         "DY-5to50_LO_HT-200to400_events.root",
+#         "DY-5to50_LO_HT-400to600_events.root",
+#         "DY-5to50_LO_HT-600toInf_events.root",
         ]
 
 

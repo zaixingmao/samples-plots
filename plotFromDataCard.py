@@ -213,7 +213,7 @@ def buildUnc(inputHist, sumErrSquareUp, sumErrSquareDown):
 
 def setRatioCanvas(hist, fs):
     fakeHist = r.TH1F('fakeHist', '', hist.GetNbinsX(), hist.GetBinLowEdge(1), hist.GetBinLowEdge(hist.GetNbinsX()+1))
-    fakeHist.SetMaximum(2.5)
+    fakeHist.SetMaximum(3)
     fakeHist.SetMinimum(0)
     secondLeg = '#tau_{h}'
     if fs == 'em':
@@ -303,12 +303,12 @@ def plot(inputFile, fs, mass = '500'):
 
     uncShape, uncShape_rel = buildUnc(histos['sum_b'], sumErrSquareUp, sumErrSquareDown)
     stack = buildStack(histos)
-    stack.SetTitle('CMS Preliminary 2.09 fb^{-1} (13 TeV); ; Events')
+    stack.SetTitle('CMS Preliminary 2.2 fb^{-1} (13 TeV); ; Events')
 
     option = ''
     if options.width:
         option = 'width'
-        stack.SetTitle('CMS Preliminary 2.09 fb^{-1} (13 TeV); ; Events / GeV')
+        stack.SetTitle('CMS Preliminary 2.2 fb^{-1} (13 TeV); ; Events / GeV')
         histos['data_obs'].Scale(1, 'width')
         histos['ggH%s' %mass].Scale(1, 'width')
 
@@ -362,7 +362,7 @@ def plot(inputFile, fs, mass = '500'):
         ratio.Draw('same')
     c.Print('%s' %psfile)
 print options.FS
-m = 500
-plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v2.root" %(options.FS), options.FS, str(m))
+m = 1500
+plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v3.root" %(options.FS), options.FS, str(m))
 # for m in range(500, 5500, 500):
 #     plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v2.root" %(options.FS), options.FS, str(m))

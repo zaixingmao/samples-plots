@@ -25,7 +25,8 @@ l_2 = lvClass()
 jet = lvClass()
 met = lvClass()
 
-lumi = 2093.30#2153.0#2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
+
+lumi = 2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
 Lumi = lumi #3000.0
 
 def opts():
@@ -178,11 +179,16 @@ def regionSelection(tree, FS, region, method, lowerBound = 0, upperBound = 1):
             return True
         return False            
     if method == 'Loose':
+        if region == 'signal' and tree.q_1 == tree.q_2:
+            return False
+        elif (region == 'controlOS') and tree.q_1 == tree.q_2:
+            return False
+        elif (region == 'controlSS') and tree.q_1 != tree.q_2:
+            return False
         if FS == 'et':
             if (tree.tByTightCombinedIsolationDeltaBetaCorr3Hits > 0.5) and (tree.eRelIso < 0.15) and region == 'signal':
-#             if (tree.tByCombinedIsolationDeltaBetaCorrRaw3Hits < 0.1) and (tree.eRelIso < 0.15) and region == 'signal':
                 return True
-            elif region == 'control' and tree.eRelIso < 0.15 and passBound(tree, FS, lowerBound, 'lower') and passBound(tree, FS, upperBound, 'upper'):
+            elif ('control' in region) and tree.eRelIso < 0.15 and passBound(tree, FS, lowerBound, 'lower') and passBound(tree, FS, upperBound, 'upper'):
                 return True
         elif FS == 'em':
             if (tree.eRelIso < 0.15) and (tree.mRelIso < 0.15) and region == 'signal':
@@ -248,8 +254,6 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
         elif options.signalRegion:
-#             if not ( 300 < (l1 + l2 + met).mass() < 600):
-#                 return False
             if met.pt()  <= 30:
                 return False
             if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
@@ -258,7 +262,6 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
                 return False
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
-
         elif options.signalRegionReverseCosPhi:
             if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
                 return False
@@ -278,17 +281,19 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
             if getNCSVLJets(tree, sys, isData) == 0:
                 return False
         elif options.signalRegionReversePZeta:
-            if (pZetaCut(l1, l2, met) >= -50) and (math.cos(tree.phi_1 - tree.phi_2) <= -0.95):
-                return False#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
+            if pZetaCut(l1, l2, met) > -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
+                return False
             if met.pt()  <= 30:
+                return False
+            if math.cos(tree.phi_1 - tree.phi_2) >= -0.8:
                 return False
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
         elif options.signalRegionLowMET:
             if met.pt()  >= 30:
                 return False
-#             if (l1 + l2 + met).mass() > 125:
-#                 return False
+            if (l1 + l2 + met).mass() > 125:
+                return False
 #             if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
 #                 return False
 #             if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
@@ -310,10 +315,11 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
     #     if (tree.eRelIso > 0.15):# and tree.tByTightCombinedIsolationDeltaBetaCorr3Hits > 0.5):# and (tree.mRelIso < 0.15)):
     #         return False
         if options.method != 'SS':
-            if options.OS and tree.q_1 == tree.q_2:
-                return False
-            elif (not options.OS) and tree.q_1 != tree.q_2:
-                return False
+#             if options.OS and tree.q_1 == tree.q_2:
+#                 return False
+#             elif (not options.OS) and tree.q_1 != tree.q_2:
+#                 return False
+            return True
         else:
             if FS == 'et' and (tree.eRelIso >= 0.15 or tree.tByTightCombinedIsolationDeltaBetaCorr3Hits < 0.5):
                 return False
@@ -342,14 +348,14 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
             if abs(tree.eEta) >= 2.1 or abs(tree.mEta) >= 2.1:
                 return False
     else: #signal region
-#         if pZetaCut(l1, l2, met) <= -50:# and tree.pfMetEt >= 30:
-#             return False
-#         if met.pt() <= 30:
-#             return False
-#         if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
-#             return False
-#         if getNCSVLJets(tree, sys, isData) >= 1:
-#             return False
+        if pZetaCut(l1, l2, met) <= -50:# and tree.pfMetEt >= 30:
+            return False
+        if met.pt() <= 30:
+            return False
+        if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
+            return False
+        if getNCSVLJets(tree, sys, isData) >= 1:
+            return False
         if tree.ePt <= 35:
             return False
 
@@ -369,7 +375,7 @@ def passUnblindPartial(varname, var):
 def getZPrimeXS(mass):
     xs = {'500': 9.33,
           '1000': 0.468,
-          '1500': 0.0723,
+          '1500': 0.0723*10,
           '2000': 0.0173,
           '2500': 0.00554,
           '3000': 0.00129,
@@ -401,12 +407,9 @@ def getFinalStateLatex(FS):
     return (getLatex(FS[0]) + getLatex(FS[1]))
 
 def getColor(cat):
-    if 'QCD' in cat:
-        cat = 'QCD'
     for iCat, iColor in defaultOrder:
         if iCat == cat:
             return iColor
-    return r.kBlue
 
 def expandFinalStates(FS):
     finalStates = [x.strip() for x in FS.split(',')]
@@ -427,6 +430,7 @@ def getWJetsScale(histDict, varName, start, end, sf = 1):
 
         else:
             print (histDict['Observed'].Integral(intBin, endBin) - histDict['Diboson'].Integral(intBin, endBin) - histDict['t#bar{t}'].Integral(intBin, endBin) - histDict['Z#rightarrow#tau#tau'].Integral(intBin, endBin))/histDict['WJets'].Integral(intBin, endBin)
+
 
 def ratioHistogram( num, den, relErrMax=0.25) :
 
@@ -483,9 +487,12 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
     tmpHist = r.TH1F("tmp_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
     tmpHist.Sumw2()
     tmpHist_qcds = []
+    tmpHist_qcds_OS = []
     for iScanPoint in range(scanPoints):
         tmpHist_qcds.append(r.TH1F("tmp_qcd_%s_%s_%i" %(iCategory, varName, iScanPoint), '', len(varBins)-1, varBins))
         tmpHist_qcds[iScanPoint].Sumw2()
+        tmpHist_qcds_OS.append(r.TH1F("tmp_qcd_OS_%s_%s_%i" %(iCategory, varName, iScanPoint), '', len(varBins)-1, varBins))
+        tmpHist_qcds_OS[iScanPoint].Sumw2()
     tmpHist_forROOTFile = r.TH1F("%s" %(varName), '', len(varBins)-1, varBins)
     tmpHist_forROOTFile.Sumw2()
     isData = False
@@ -585,32 +592,50 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
             iScanPoint = 0
             if len(plots_cfg.WJetsScanRange) != 1:
                 for iWJetScan in range(scanPoints):
-                    if regionSelection(tree, FS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
+                    if regionSelection(tree, FS, "controlSS", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
                         if not isData:
                             if iCategory == 'WJets':
-                                histDict['WJets_CR'].Fill(value, weight)
                                 tmpHist_qcds[iWJetScan].Fill(value, -weight*plots_cfg.WJetsScanRange[iWJetScan]*QCD_weight)
                             else:
                                 tmpHist_qcds[iWJetScan].Fill(value, -weight*QCD_weight)
                         else:
                             tmpHist_qcds[iWJetScan].Fill(value, weight*QCD_weight)
+                    elif regionSelection(tree, FS, "controlOS", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
+                        if not isData:
+                            if iCategory == 'WJets':
+                                histDict['WJets_CR'].Fill(value, weight)
+                                tmpHist_qcds_OS[iWJetScan].Fill(value, -weight*plots_cfg.WJetsScanRange[iWJetScan]*QCD_weight)
+                            else:
+                                tmpHist_qcds_OS[iWJetScan].Fill(value, -weight*QCD_weight)
+                        else:
+                            tmpHist_qcds_OS[iWJetScan].Fill(value, weight*QCD_weight)
 
             else:
                 for iLower in range(len(plots_cfg.scanRange)):
                     for iUpper in range(len(plots_cfg.scanRange) - iLower - 1):
-                        if regionSelection(tree, FS, "control", options.method, plots_cfg.scanRange[iLower], plots_cfg.scanRange[iLower + iUpper + 1]):
+                        if regionSelection(tree, FS, "controlSS", options.method, plots_cfg.scanRange[iLower], plots_cfg.scanRange[iLower + iUpper + 1]):
                             if not isData:
                                 if iCategory == 'WJets':
-                                    histDict['WJets_CR'].Fill(value, weight)
                                     tmpHist_qcds[iScanPoint].Fill(value, -weight*plots_cfg.WJetsScanRange[0]*QCD_weight)
                                 else:
                                     tmpHist_qcds[iScanPoint].Fill(value, -weight*QCD_weight)
-
                             else:
                                 tmpHist_qcds[iScanPoint].Fill(value, weight*QCD_weight)
+                        if regionSelection(tree, FS, "controlOS", options.method, plots_cfg.scanRange[iLower], plots_cfg.scanRange[iLower + iUpper + 1]):
+                            if not isData:
+                                if iCategory == 'WJets':
+                                    histDict['WJets_CR'].Fill(value, weight)
+                                    tmpHist_qcds_OS[iScanPoint].Fill(value, -weight*plots_cfg.WJetsScanRange[0]*QCD_weight)
+                                else:
+                                    tmpHist_qcds_OS[iScanPoint].Fill(value, -weight*QCD_weight)
+                            else:
+                                tmpHist_qcds_OS[iScanPoint].Fill(value, weight*QCD_weight)
                         iScanPoint += 1
-    for iScanPoint in range(scanPoints):        
+    for iScanPoint in range(scanPoints):
+        print 'add MC SS Loose: %.3f' %tmpHist_qcds[iScanPoint].Integral(0, len(varBins)+1)    
+        print 'add MC OS Loose: %.3f' %tmpHist_qcds_OS[iScanPoint].Integral(0, len(varBins)+1)    
         histDict['QCD_%i' %iScanPoint].Add(tmpHist_qcds[iScanPoint])
+        histDict['QCD_OS_%i' %iScanPoint].Add(tmpHist_qcds_OS[iScanPoint])
     print iCategory, tmpHist.Integral(0, len(varBins)+1)
     histDict[iCategory].Add(tmpHist)
 #     if 'WJets' in iSample and iCategory != 'WJets':
@@ -761,9 +786,9 @@ def buildStackFromDict(histDict, FS, option = 'width', iQCD = 0, SF_WJ = 1.0, sf
         else:
             print 'missing samples for %s' %ikey
     if option == 'width':
-        stack.SetTitle('CMS Preliminary %.1f fb^{-1} (13 TeV); ; events / GeV' %(lumi/1000.))
+        stack.SetTitle('CMS Preliminary 2.09 fb^{-1} (13 TeV); ; events / GeV')
     else:
-        stack.SetTitle('CMS Preliminary %.1f fb^{-1} (13 TeV); ; events' %(lumi/1000.))
+        stack.SetTitle('CMS Preliminary 2.09 fb^{-1} (13 TeV); ; events / GeV')
     return stack
 
 def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negative
@@ -786,6 +811,9 @@ def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negat
                 
     else:
         iScale = scale[j][0]*Lumi/lumi
+        total = hist.Integral(0, hist.GetNbinsX()+2)
+        print 'total QCD = %.2f' %total
+#         hist.Scale(124.46/total)
         hist.Scale(iScale)
         for i in range(1, hist.GetNbinsX()+2):
             content = hist.GetBinContent(i)
@@ -821,15 +849,8 @@ def addSysUnc(hist, sampleName, bins, fs):
         content = tmpHist.GetBinContent(i)
         tmpHist.SetBinError(i, math.sqrt((error)**2 + (unc*content)**2))
 #         tmpHist.SetBinError(i, math.sqrt((error)**2 + (unc*content)**2 + content))
-    return tmpHist
 
-def IntegralAndError(hist, nbins):
-    unc = 0.0
-    content = 0.0
-    for i in range(0, nbins+1):
-        unc += hist.GetBinError(i)
-        content += hist.GetBinContent(i)
-    return content, unc
+    return tmpHist
 
 def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, max = 1.5, iQCD = 0, WJetSF = 1.0, WJets_L2T = 0.1, WJets_L2T_error = 0, fs = 'et'):
     bkg = r.TH1F('bkg_%s' %deltaName, '', len(bins)-1, bins)
@@ -848,40 +869,19 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
     bkg_err2.SetLineColor(r.kGray+2)
     bkg_err2.SetFillStyle(3344)
 
-    histDict_withUnc = {}
-
     for ikey, icolor in defaultOrder:
         if ikey == 'QCD':
             ikey = 'QCD_%i' %iQCD
         if ikey in histDict.keys():
-            histDict_withUnc[ikey] = r.TH1F('%s_withUnc' %ikey, '', len(bins)-1, bins)
-            histDict_withUnc[ikey].Sumw2()
-
-            if ikey != "Observed" and "ZPrime" not in ikey:
-                histDict_withUnc[ikey].SetFillColor(getColor(ikey))
-                histDict_withUnc[ikey].SetMarkerColor(getColor(ikey))
-                histDict_withUnc[ikey].SetMarkerStyle(21)
-                histDict_withUnc[ikey].SetLineColor(r.kBlack)
             if ikey == 'WJets':
                 if options.looseRegion:
                     tmpHist = setWJetsLooseShape(histDict['WJets_CR'], WJetSF, WJets_L2T, WJets_L2T_error, bins)
                     bkg.Add(addSysUnc(tmpHist, ikey, bins, fs))
-                    histDict_withUnc[ikey].Add(addSysUnc(tmpHist, ikey, bins, fs))
                 else:
                     bkg.Add(addSysUnc(histDict[ikey], ikey, bins, fs), WJetSF)
-                    histDict_withUnc[ikey].Add(addSysUnc(histDict['WJets'], ikey, bins, fs), WJetSF)
             else:
                 bkg.Add(addSysUnc(histDict[ikey], ikey, bins, fs))
-                histDict_withUnc[ikey].Add(addSysUnc(histDict[ikey], ikey, bins, fs))
-    for ikey in histDict.keys():
-        if "ZPrime" in ikey:
-            histDict_withUnc[ikey] = r.TH1F('%s_withUnc' %ikey, '', len(bins)-1, bins)
-            histDict_withUnc[ikey].Sumw2()
-            histDict_withUnc[ikey].SetLineStyle(2)
-            histDict_withUnc[ikey].SetLineColor(r.kBlue)
-            histDict_withUnc[ikey].Add(addSysUnc(histDict[ikey], ikey, bins, fs))
-
-#     histDict['ZPrime_500'].Scale(100)
+#     histDict['ZPrime_1500'].Scale(100)
 
     for i in range(len(bins)-1):
         bkg_err.SetBinContent(i+1, 1.0)
@@ -890,7 +890,7 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
         if bkg.GetBinContent(i+1) != 0:
             bkg_err.SetBinError(i+1, bkg.GetBinError(i+1)/bkg.GetBinContent(i+1))
 #         print i, bkg.GetBinError(i+1), bkg.GetBinContent(i+1)
-#         print i, histDict['ZPrime_500'].GetBinError(i+1), histDict['ZPrime_500'].GetBinContent(i+1)
+#         print i, histDict['ZPrime_1500'].GetBinError(i+1), histDict['ZPrime_1500'].GetBinContent(i+1)
 
 
     if max != 1.5:
@@ -919,16 +919,9 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
 #     delta.Sumw2()
 #     bkg.Sumw2()
 #     delta.Divide(bkg)
-    if varName == 'mt_1':
-        varName = "m_{T}(e, #slash{E}_{T})"
-    if varName == 'mt_2':
-        varName = "m_{T}(#mu, #slash{E}_{T})"
-        
-    delta.GetXaxis().SetTitleOffset(0.9)
-
-    delta.SetTitle('; %s %s; observed/bkg' %(varName, unit))
+    delta.SetTitle('; %s %s; data/MC' %(varName, unit))
     delta.SetMaximum(2.5)
-    delta.SetMinimum(0.0)
+    delta.SetMinimum(0)
 
     delta.GetXaxis().SetLabelSize(0.1)
     delta.GetXaxis().SetTitleSize(0.1)
@@ -938,7 +931,45 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
     delta.GetYaxis().SetTitleOffset(0.43)
     delta.GetYaxis().CenterTitle()
 
-    return delta, result, bkg_err, bkg_err2, histDict_withUnc
+    return delta, result, bkg_err, bkg_err2
+
+def buildRatio(histNum, histDenom):
+    nbins = histNum.GetNbinsX()
+    ratio = histNum.Clone()
+    error = histDenom.Clone()
+    error.SetFillColor(r.TColor.GetColor(250,202,255))
+    error.SetLineColor(r.TColor.GetColor(250,202,255))
+    error.SetFillStyle(3344)
+    error.SetMarkerSize(0.0)
+
+    ratio.SetMarkerStyle(8)
+    ratio.SetMarkerSize(0.5)
+    for i in range(1, nbins+1):
+        denom = histDenom.GetBinContent(i)
+        num = histNum.GetBinContent(i)
+        if denom > 0:
+            ratio.SetBinContent(i, num/denom)
+            ratio.SetBinError(i, histNum.GetBinError(i)/denom)
+            error.SetBinContent(i, 1.0)
+            error.SetBinError(i, histDenom.GetBinError(i)/denom)
+
+    return ratio, error
+
+def setRatioCanvas(hist):
+    fakeHist = r.TH1F('fakeHist', '', hist.GetNbinsX(), hist.GetBinLowEdge(1), hist.GetBinLowEdge(hist.GetNbinsX()+1))
+    fakeHist.SetMaximum(2)
+    fakeHist.SetMinimum(0)
+    secondLeg = '#tau_{h}'
+    fakeHist.SetTitle('; m(#tau_{e}, %s, #slash{E}_{T}) [GeV]; Obs / Bkg' %secondLeg)
+    fakeHist.GetXaxis().SetLabelSize(0.1)
+    fakeHist.GetXaxis().SetTitleSize(0.1)
+    fakeHist.GetYaxis().SetLabelSize(0.1)
+    fakeHist.GetYaxis().SetNdivisions(5,5,0)
+    fakeHist.GetYaxis().SetTitleSize(0.1)
+    fakeHist.GetYaxis().SetTitleOffset(0.43)
+    fakeHist.GetXaxis().SetTitleOffset(0.85)
+    fakeHist.GetYaxis().CenterTitle()
+    return fakeHist
 
 def buildHists(varName, varBins, unit, FS, option, relErrMax):
 
@@ -961,6 +992,13 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
         histDict["QCD_%i" %i].SetMarkerColor(getColor("QCD"))
         histDict["QCD_%i" %i].SetMarkerStyle(21)
         histDict["QCD_%i" %i].SetLineColor(r.kBlack)
+
+        histDict["QCD_OS_%i" %i] = r.TH1F("QCD_OS_%s_%s_%i" %(FS, varName, i), "", len(varBins)-1, varBins)
+        histDict["QCD_OS_%i" %i].Sumw2()
+        histDict["QCD_OS_%i" %i].SetFillColor(r.kBlue)
+        histDict["QCD_OS_%i" %i].SetMarkerColor(r.kBlue)
+        histDict["QCD_OS_%i" %i].SetMarkerStyle(21)
+        histDict["QCD_OS_%i" %i].SetLineColor(r.kBlack)
 
 #     histDict["WJets"] = r.TH1F("WJets_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
     for iName, iSample, iCategory in plots_cfg.sampleList:    
@@ -1003,6 +1041,8 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
                 if not options.diffQCD:
                     scaleFactor = plots_cfg.QCD_scale[FS]                                                                                                                
                     setQCD(histDict['QCD_%i' %j], scaleFactor, plots_cfg.binned, j) 
+                    setQCD(histDict['QCD_OS_%i' %j], scaleFactor, plots_cfg.binned, j) 
+
                 else:
                     setQCD(histDict['QCD_%i' %j], [(1.0, 0.0)]) 
 
@@ -1034,16 +1074,14 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     if WJets_CR_Integral > 0:
         sf = WJets_Integral/WJets_CR_Integral
         sf_error = calcSysUnc(sf, WJets_Integral, WJets_CR_Integral, math.sqrt(getError(histDict['WJets'], 0, endBin)), math.sqrt(getError(histDict['WJets_CR'], 0, endBin)))
-#     sf = 0.146
-#     sf_error = 0.014
 
     for i in range(scanPoints):
         if len(plots_cfg.WJetsScanRange) == 1:
             WJetScale = plots_cfg.WJetsScanRange[0]
         else:
             WJetScale = plots_cfg.WJetsScanRange[i]
-        delta, result, error, error2, histDict_withError = buildDelta('%s_delta_%i' %(varName, i), histDict, varBins, varName, unit, relErrMax, 0.5, 1.5, i, WJetScale, sf, sf_error, FS)
-        deltas.append((delta, result, error, error2, histDict_withError))
+        delta, result, error, error2 = buildDelta('%s_delta_%i' %(varName, i), histDict, varBins, varName, unit, relErrMax, 0.5, 1.5, i, WJetScale, sf, sf_error, FS)
+        deltas.append((delta, result, error, error2))
 
 #     getWJetsScale(histDict, varName, start, end, sf)
 
@@ -1056,7 +1094,7 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
             delta2 = buildDelta('%s_delta_qcd' %varName, histDict, varBins, varName, unit, relErrMax, 0, 0.5, FS)
     for iCat in histDict.keys():
         histDict[iCat].Scale(1, option)
-#     histDict['ZPrime_500'].Scale(1, option)
+#     histDict['ZPrime_1500'].Scale(1, option)
 
     for i in range(scanPoints):
         if len(plots_cfg.WJetsScanRange) == 1:
@@ -1069,7 +1107,7 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     return histDict, bkgStacks, deltas, delta2, scaleFactors
 
 
-def setLegend(position, histDict, histDict2, bins, option = 'width', iQCD = 0):
+def setLegend(position, histDict, bins, option = 'width', iQCD = 0):
     histList = []
     nbins = len(bins)
 
@@ -1086,27 +1124,26 @@ def setLegend(position, histDict, histDict2, bins, option = 'width', iQCD = 0):
             if plots_cfg.addIntegrals:
                 if len(plots_cfg.WJetsScanRange) != 1 and ikey == 'WJets':
                     histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)*plots_cfg.WJetsScanRange[iQCD]), 'f'))
-                elif ikey == 'WJets' and not (plots_cfg.unc):
+                elif ikey == 'WJets':
                     histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)*plots_cfg.WJetsScanRange[0]), 'f'))
-                elif plots_cfg.unc:
-                    integral, unc = IntegralAndError(histDict2[ikey], nbins)
-                    histList.append((histDict2[ikey], '%s (%.2f +/- %.2f)' %(name, integral, unc), 'f'))
+
                 else:
-                    histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
+                    if plots_cfg.unc:
+                        unc = r.Double(0)
+                        integral = histDict[ikey].IntegralAndError(0, nbins+1, unc, option)
+                        histList.append((histDict[ikey], '%s (%.2f +/- %.2f)' %(name, integral, unc), 'f'))
+                    else:
+                        histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
             else:
                 histList.append((histDict[ikey], '%s' %name, 'f'))
     if not (options.antiIso or options.antiEIso or options.antiMIso or options.noIso):
-        signalSampleName = 'ZPrime_500'
         if plots_cfg.addIntegrals:
-            if plots_cfg.unc:
-                integral, unc = IntegralAndError(histDict2[signalSampleName], nbins)
-                histList.append((histDict2[signalSampleName], '%s (%.2f +/- %.2f)' %(signalSampleName, integral, unc), 'l'))
-            else:
-                histList.append((histDict[signalSampleName], '%s (%.2f)' %(signalSampleName, histDict[signalSampleName].Integral(0, nbins+1, option)), 'l'))
+            histList.append((histDict['ZPrime_1500'], 'ZPrime_1500 x 10 (%.2f)' %(histDict['ZPrime_1500'].Integral(0, nbins+1, option)), 'l'))
         else:
-            histList.append((histDict[signalSampleName], signalSampleName, 'l'))
+            histList.append((histDict['ZPrime_1500'], 'ZPrime_1500', 'l'))
 
     return tool.setMyLegend(position, histList)
+
 
 def multiPlots(FS, option):
     print option
@@ -1183,15 +1220,14 @@ def multiPlots(FS, option):
                     if not options.ratio:
                         r.gPad.SetTicky()
                     r.gPad.SetTickx()
-                    
-                    factor = 1.2
+        
                     if options.logY:
                         r.gPad.SetLogy()
-                        factor = 1.2#20
-                    iMax = factor*max(bkgStack.GetMaximum(), histDict["Observed"].GetMaximum())
+
+                    iMax = 1.2*max(bkgStack.GetMaximum(), histDict["Observed"].GetMaximum())
                     bkgStack.SetMaximum(iMax)
+#                     iMin = 0.001
                     iMin = 0.001
-#                     iMin = 0.1#0.01
 
                     bkgStack.SetMinimum(iMin)   
      
@@ -1209,7 +1245,7 @@ def multiPlots(FS, option):
                     if options.unblind or options.unblindPartial:
                         histDict["Observed"].Draw('PE same')
                     if not (options.antiIso or options.antiEIso or options.antiMIso or options.noIso):
-                        histDict["ZPrime_500"].Draw('H same')
+                        histDict["ZPrime_1500"].Draw('H same')
 
                     #final state    
                     latex = r.TLatex()
@@ -1231,18 +1267,17 @@ def multiPlots(FS, option):
                         latex.DrawLatex(iVarBins[7], iMax*0.98, getFinalStateLatex(FS))
                         if options.method == 'LooseRegion' and plots_cfg.showRegion:
                             latex.DrawLatex(iVarBins[7], h0, 'antiIso (%s, %s)' %(str(len(plots_cfg.scanRange[iLower])), str(len(plots_cfg.scanRange[iLower + iUpper + 1]))))
-#                         elif options.method != 'SS' and plots_cfg.showRegion:
-#                             latex.DrawLatex(iVarBins[7], h1, 'antiIso (%s, %s), scale = %.3f +/- %.3f' %(str(plots_cfg.scanRange[iLower]), str(plots_cfg.scanRange[iLower + iUpper + 1]), scaleFactors[iQCD][0], scaleFactors[iQCD][1]))
+                        elif options.method != 'SS' and plots_cfg.showRegion:
+                            latex.DrawLatex(iVarBins[7], h1, 'antiIso (%s, %s), scale = %.3f +/- %.3f' %(str(plots_cfg.scanRange[iLower]), str(plots_cfg.scanRange[iLower + iUpper + 1]), scaleFactors[iQCD][0], scaleFactors[iQCD][1]))
                         if options.chi2:
                             latex.DrawLatex(iVarBins[7], h2, '#chi^{2} = %.3f' %deltas[iQCD][1])
                         if options.KS:
                             latex.DrawLatex(iVarBins[7], h2, 'KS = %.3f' %deltas[iQCD][1])
                         if len(plots_cfg.WJetsScanRange) != 1:
-                            latex.DrawLatex(iVarBins[7], h0, 'WJets Scale = %.2f' %plots_cfg.WJetsScanRange[iQCD])
+                            latex.DrawLatex(iVarBins[7], h3, 'WJets Scale = %.2f' %plots_cfg.WJetsScanRange[iQCD])
 
                     else:
                         position  = (0.6, 0.9 - 0.06*6, 0.87, 0.9)
-#                         latex.DrawLatex(iVarBins[0], iMax*0.98, getFinalStateLatex(FS))
                         latex.DrawLatex(iVarBins[2], iMax*0.98, getFinalStateLatex(FS))
                         print iQCD
                         if options.method == 'LooseRegion' and plots_cfg.showRegion:
@@ -1256,11 +1291,11 @@ def multiPlots(FS, option):
                         if options.KS:
                             latex.DrawLatex(iVarBins[2], h2, 'KS = %.3f' %deltas[iQCD][1])
                         if len(plots_cfg.WJetsScanRange) != 1:
-                            latex.DrawLatex(iVarBins[2], h0, 'WJets Scale = %.2f' %plots_cfg.WJetsScanRange[iQCD])
+                            latex.DrawLatex(iVarBins[2], h3, 'WJets Scale = %.2f' %plots_cfg.WJetsScanRange[iQCD])
 
 
-#                     histDict['ZPrime_500'].Scale(1000)
-                    legends.append(setLegend(position, histDict, deltas[iQCD][4], iVarBins, option, iQCD))
+#                     histDict['ZPrime_1500'].Scale(1000)
+                    legends.append(setLegend(position, histDict, iVarBins, option, iQCD))
                     legends[len(legends)-1].Draw('same')
         
                     if options.ratio:
@@ -1394,6 +1429,52 @@ def multiPlots(FS, option):
 
     print "Plot saved at %s" %(psfile)
     c.Close()
+
+    c2 = r.TCanvas("c2","Test", 600, 800)
+    position  = (0.55, 0.85 - 0.06*2, 0.9, 0.85)
+
+    c_up = r.TPad("c_up","c_up", 0., 1, 1., 0.3)
+    c_low = r.TPad("c_down","c_down", 0.,0.3,1.,0.06)
+    c_up.SetMargin(1, 1, 0, 0.1)
+    c_low.SetMargin(1, 1, 0.2, 0)
+    c_up.Draw()
+    c_low.Draw()
+    c_up.cd()
+    r.gPad.SetTicky()
+    r.gPad.SetTickx()
+
+    r.gPad.SetLogy()
+#     histDict["QCD_0"].Scale(1, 'width')
+#     histDict["QCD_OS_0"].Scale(1, 'width')
+    histDict["QCD_0"].SetMinimum(0.00001)
+
+    histDict["QCD_0"].Draw('E1')
+    histDict["QCD_0"].SetMarkerSize(0.5)
+    histDict["QCD_0"].SetLineColor(r.TColor.GetColor(250,202,255))
+    histDict["QCD_0"].SetMarkerColor(r.TColor.GetColor(250,202,255))
+
+    histDict["QCD_OS_0"].SetLineColor(r.kBlue)
+    histDict["QCD_OS_0"].SetMarkerColor(r.kBlue)
+    histDict["QCD_OS_0"].SetMarkerSize(0.5)
+
+    histDict["QCD_OS_0"].Draw('sameE1')
+    histList = []
+    histList.append((histDict["QCD_OS_0"], 'QCD OS Anti-Isolated', 'lp'))
+    histList.append((histDict["QCD_0"], 'QCD SS Anti-Isolated', 'lp'))
+    legend = tool.setMyLegend(position, histList)
+    legend.Draw('same')
+
+    c_low.cd()
+    r.gPad.SetTicky()
+    r.gPad.SetTickx()
+    ratio, error = buildRatio(histDict["QCD_OS_0"], histDict["QCD_0"])
+    canvas = setRatioCanvas(histDict["QCD_OS_0"])
+    canvas.Draw()
+    error.Draw('E2 same')
+    ratio.Draw('E1 same')
+    c2.Print('QCD_check.pdf')
+    c2.Close()
+
 
 def go():
     for iFS in finalStates:

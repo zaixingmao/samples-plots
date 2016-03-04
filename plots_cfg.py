@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from array import array
+import math
 
 dir = "/nfs_scratch/zmao/13TeV_samples_25ns_Spring15_eletronID2"
 dir = "/user_data/elaird/svSkim-sep18/"
@@ -17,18 +18,24 @@ dir = '/user_data/zmao/miniAODv2/'
 # dir = '/user_data/zmao/miniAODv2_em/'
 dir = '/user_data/zmao/Nov18Prodruction_ntuple_TightTo5/'
 # dir = '/user_data/zmao/Nov18Prodruction_ntuple_noIso/MVANonTrigWP80/'
-# dir = '/user_data/zmao/Nov18Prodruction_ntuple_MVANonTrigWP80_singleEforEMu/'
+dir = '/user_data/zmao/Nov18Prodruction_ntuple_MVANonTrigWP80_singleEforEMu/'
 # dir = '/user_data/zmao/Nov18Prodruction_ntuple_mu/'
-dirMC = '/user_data/zmao/Jan13Production_highMETlowPZeta0B/'
+# dirMC = '/user_data/zmao/Jan13Production_highMETlowPZeta0B/'
 # dirMC = '/user_data/zmao/signalRegionNoCosPhi/'
 # # dirMC = '/user_data/zmao/Jan13Production_jetEC/'
 # dirMC = '/user_data/zmao/signalRegionBTagged/'
 # dirMC = '/user_data/zmao/signalRegionNoMET/'
-dirMC = '/user_data/zmao/Jan13Production_signalRegion/'
-# dirMC = '/user_data/zmao/signalRegion_bScaleDown/'
-# dirMC = '/user_data/zmao/Jan13Production_jetEC/'
-# dirMC = '/user_data/zmao/Jan13Production_tauUp/'
+# dirMC = '/user_data/zmao/signalRegion_nobTagCut/'
+# dir = '/user_data/zmao/Nov18Prodruction_ntuple_TightTo5/'
+# dir = '/user_data/zmao/signalRegion_svFit/'
 
+# dirMC = '/user_data/zmao/Jan13Production_jetBTag/'
+# dirMC = '/user_data/zmao/Jan13Production_tauDown/'
+dirMC = dir
+# dirMC = '/user_data/zmao/signalRegion_bScaleDown/'
+# dirMC = '/user_data/zmao/Jan13Production_jetBTag/'
+# dirMC = '/user_data/zmao/Jan13Production_tauUp/'
+dirMC_DY = '/user_data/zmao/preselection/'
 # 
 # dirMC = '/user_data/zmao/signalRegionNoCosPhi/'
 # dirMC = '/user_data/zmao/signalRegionNoMETreversePZeta/'
@@ -62,11 +69,20 @@ sampleList = [
 #     ('ZTT', '%s/DY-50_all_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
 #     ('ZTT', '%s/DY-50_all_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
 #     ('DY_M-50', '%s/DY-50_LO_all_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
-    ('DY_M-50-H-0to100', '%s/DY-50_LO_HT-0to100_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
-    ('DY_M-50-H-100to200', '%s/DY-50_LO_HT-100to200_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
-    ('DY_M-50-H-200to400', '%s/DY-50_LO_HT-200to400_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
-    ('DY_M-50-H-400to600', '%s/DY-50_LO_HT-400to600_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
-    ('DY_M-50-H-600toInf', '%s/DY-50_LO_HT-600toInf_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-50-H-0to100', '%s/DY-50_LO_HT-0to100_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-50-H-100to200', '%s/DY-50_LO_HT-100to200_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-50-H-200to400', '%s/DY-50_LO_HT-200to400_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-50-H-400to600', '%s/DY-50_LO_HT-400to600_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-50-H-600toInf', '%s/DY-50_LO_HT-600toInf_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
+
+    ('DY_M-50to200', '%s/DY-50to200_all_SYNC_' %dirMC_DY, 'Z#rightarrow#tau#tau'),
+    ('DY_M-200to400', '%s/DY-200to400_all_SYNC_' %dirMC_DY, 'Z#rightarrow#tau#tau'),
+    ('DY_M-400to500', '%s/DY-400to500_all_SYNC_' %dirMC_DY, 'Z#rightarrow#tau#tau'),
+    ('DY_M-500to700', '%s/DY-500to700_all_SYNC_' %dirMC_DY, 'Z#rightarrow#tau#tau'),
+    ('DY_M-700to800', '%s/DY-700to800_all_SYNC_' %dirMC_DY, 'Z#rightarrow#tau#tau'),
+    ('DY_M-800to1000', '%s/DY-800to1000_all_SYNC_' %dirMC_DY, 'Z#rightarrow#tau#tau'),
+    ('DY_M-1000to1500', '%s/DY-1000to1500_all_SYNC_' %dirMC_DY, 'Z#rightarrow#tau#tau'),
+
 
 #     ('DY_10to50', '%s/DY-10to50_all_SYNC_' %dir_dy, 'Z#rightarrow#tau#tau'),
 #     ('ZTT', '%s/DY_all_ZTT_SYNC_' %dir, 'Z#rightarrow#tau#tau'),
@@ -101,13 +117,13 @@ sampleList = [
     ('ST_antiTop_tW', '%s/antiT_all_SYNC_' %dirMC_variation, 't#bar{t}'),
     ('ST_top_tW', '%s/T_all_SYNC_' %dirMC_variation, 't#bar{t}'),
     ('TTJets', '%s/TTJets_LO_all_SYNC_' %dirMC_variation, 't#bar{t}'),
-
+# 
     ('data', '%s/data_all_SYNC_' %dir, 'Observed'),
 #    ('ggH160', '%s/SUSY_all_SYNC_' %dir, 'ggH160'),
     ('ggH', '%s/ggH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
     ('vbfH', '%s/vbfH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
 #     ]
-    ] + [('Zprime_1500', '%s/ZPrime_1500_all_SYNC_' %dirMC, 'ZPrime_1500')]
+    ] + [('Zprime_500', '%s/ZPrime_500_all_SYNC_' %dirMC, 'ZPrime_500')]
 #      ]+ [('Zprime_%d' % m, '%s/ZPrime_%d_all_SYNC_' % (dirMC, m), 'ZPrime_%d' % m) for m in (set(range(500, 5500, 500)))]
 
 
@@ -127,26 +143,30 @@ sampleList = [
 
 nBins = 50
 bins = []
-for i in range(nBins+1):
-    bins.append(-2.5 + (5*i+0.0)/nBins)
+for i in range(50+1):
+    bins.append(-2.5 + 0.1*i)
 bins2 = []
 nBins = 10
 # for i in range(4+1):
 #     bins2.append(-1.0 + (i+0.0)/nBins)
 # for i in range(8):
 #     bins2.append(-0.7 + (i+0.0)/10.)
-for i in range(nBins+1):
-    bins2.append(-0.95 + (2*i+0.0)/nBins)
-
-
+for i in range(5):
+    bins2.append(-1.0 + 0.05*i)
+for i in range(2):
+    bins2.append(-0.7 + 0.1*i)
+for i in range(8):
+    bins2.append(-0.4 + 0.2*i)
 bins3 = []
 nBins = 40
 for i in range(nBins+1):
     bins3.append(0.0 + (2*i+0.0)/nBins)
-vars = [# ("ePt", array('d', range(0, 100, 5)), 'GeV', 0.25),
-# #         ("mPt", array('d', range(0,160,10)), 'GeV', 0.25),
-#         ("tPt", array('d', range(0, 100, 5)), 'GeV', 0.25),
+vars = [# ("ePt", array('d', range(30, 110, 10) + range(125, 225, 25) + range(250, 650, 50)), 'GeV', 100.),
+#         ("mPt", array('d', range(30, 110, 10) + range(125, 225, 25) + range(250, 650, 50)), 'GeV', 100.),
+#         ("tPt", array('d', range(20, 110, 10) + range(125, 225, 25)+ range(250, 450, 50)), 'GeV', 100.),
 #        ("eEta", array('d', bins), 'GeV', 80), 
+#        ("mEta", array('d', bins), 'GeV', 80), 
+
 #        ("mEta", array('d', bins), 'GeV', 80),
 #        ("m_vis", array('d', range(400, 2600, 200)), 'GeV', 0.25),
 #        ("pfmet_svmc_mass", array('d', range(400, 2600, 200)), 'GeV', 0.25),
@@ -162,7 +182,7 @@ vars = [# ("ePt", array('d', range(0, 100, 5)), 'GeV', 0.25),
 #         ("m_withMET", array('d', [0, 50] + range(60, 310, 10) + range(320, 380, 20) + [400]), 'GeV', 0.25), #a
 
 #         ("m_withMET", array('d', [0, 100] + range(125, 300, 25) + [315, 450]), 'GeV', 0.25),
-        ("m_withMET", array('d', [0,100,110,120,130,140,150,160,170,180,190,200,225,250,275,300,400,600,900]), 'GeV', 0.50), #em os hMEtlPZeta
+#         ("m_withMET", array('d', [0,100,110,120,130,140,150,160,170,180,190,200,225,250,275,300,400,600,900]), 'GeV', 100.), #em os hMEtlPZeta
 #         ("m_withMET", array('d', range(50, 470, 20)), 'GeV', 0.25), #em os hMEtlPZeta
 #         ("m_withMET", array('d', range(50, 160, 10)), 'GeV', 0.25), #em os hMEtlPZeta
 
@@ -175,17 +195,20 @@ vars = [# ("ePt", array('d', range(0, 100, 5)), 'GeV', 0.25),
 #         ("m_withMET", array('d', [0, 100] + range(125,300,25) + [350,450]), 'GeV', 0.25), #em ss hMetlPZeta
 
 #         ("m_withMET", array('d', [0, 120] + range(140, 220, 20) + [250, 400]), 'GeV', 0.25),
+#         ("pfmet_svmc_mass", array('d', [0,100,110,120,130,140,150,160,170,180,190,200,225,250,275,300,400,600,900]), 'GeV', 100.), #em os hMEtlPZeta
+#        ("m_withMET", array('d', range(100, 325, 25) + [400,600,900]), 'GeV', 100.),
+#        ("pfmet_svmc_mass", array('d', range(100, 325, 25) + [400,600,900]), 'GeV', 100.),
+#        ("m_vis", array('d', range(0, 325, 25) + [400,600,900]), 'GeV', 100.), 
 
-#        ("pfmet_svmc_mass", array('d', range(0, 1000, 25)), 'GeV', 0.25),
 #        ("m_withMET", array('d', range(0, 5005, 5)), 'GeV', 0.25),
 #        ("pfmet_svmc_mass", array('d', range(0, 5005, 5)), 'GeV', 0.25),
 #         ("m_vis", array('d', range(0, 5005, 5)), 'GeV', 0.25),
 #         ("j1Pt", array('d', range(0, 100, 5)), 'GeV', 0.25),
 
-#        ("pZeta - 3.1pZetaVis", array('d',  range(-210, -60, 30) + range(-60, 100, 10)), '', 0.25),
-#        ("pfMetEt", array('d', range(0, 300, 10)), '', 0.25),
-#        ("nCSVL", array('d', range(0, 10, 1)), '', 0.25),
-#        ("cos_phi_tau1_tau2", array('d', bins2), '', 0.25),
+#        ("pZeta - 3.1pZetaVis", array('d',  range(-150, 0, 50) + range(-30, 120, 20)), '', 100.0),
+#        ("pfMetEt", array('d', range(0, 110, 10) + range(120, 220, 20)), '', 100.),
+#        ("nCSVL", array('d', range(0, 10, 1)), '', 10.0),
+#        ("cos_phi_tau1_tau2", array('d', bins2), '', 10.0),
 
 #        ("mRelIso", array('d', bins3), '', 0.25),
 #        ("eRelIso", array('d', bins3), '', 0.25),
@@ -197,9 +220,11 @@ vars = [# ("ePt", array('d', range(0, 100, 5)), 'GeV', 0.25),
 #        ("m_gen", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
 #        ("genHT", array('d', range(0, 800, 10)), 'GeV', 0.25),
 
-#         ("mt_1", array('d', range(0, 110, 20) + [200]), 'GeV', 12),
+#         ("mt_2", array('d', range(0, 170, 20)), 'GeV', 12),
 #         ("mt_1", array('d', range(0, 130, 10) + [200]), 'GeV', 12),
-#         ("mt_1", array('d', range(20, 140, 10) + [150]), 'GeV', 12),
+#         ("mt_1", array('d', range(0, 160, 10)), 'GeV', 12),
+        ("mt_1", array('d', range(0, 260, 10)), 'GeV', 12),
+        ("mt_2", array('d', range(0, 260, 10)), 'GeV', 12),
 
 #         ("njets", array('d', range(0,6,1)), '', 100),
 #         ("npv", array('d', range(0, 50, 1)), '', 1),
@@ -214,7 +239,8 @@ vars = [# ("ePt", array('d', range(0, 100, 5)), 'GeV', 0.25),
 QCD_scale = {'tt': 1.0,
              'mt': 1.0,
              'et': [# (0.089, 0.008),
-                    (0.128, 0.021),
+                    (0.128, 0.007),
+                    (0.094, 0.014),
                     (0.119, 0.015),
                     (0.120, 0.016),
                     (0.120, 0.018),
@@ -234,7 +260,7 @@ QCD_scale = {'tt': 1.0,
                     (0.131, 0.007),],
              'em': [# (0.174, 0.016), #lowMET
 #                     (0.229, 0.042), #highMETlowPZeta
-                    (0.201, 0.075),
+                    (0.185, 0.042),
 #                     (0.174, 0.031),
 #                         (0.201, 0.075),
 #                     (0.200, 0.040),#                       (0.232, 0.044), #signal region
@@ -246,8 +272,8 @@ QCD_scale = {'tt': 1.0,
                     ]
             }
 
-# QCD_scale_1prong_3prong = (0.119, 0.009)
-QCD_scale_1prong_3prong = (0.128, 0.021)
+# QCD_scale_1prong_3prong = (0.093, 0.014)
+QCD_scale_1prong_3prong = (0.126, 0.021)
 
 
 
@@ -264,7 +290,9 @@ scanRange = ['Tight', 5]
 SF_prong1 = [0.276, 0.111]
 SF_prong3 = [0.132, 0.137]
 WJetsScanRange = [1.15]#, 1.0, 1.1]#, 1.0, 1.15]#, 1.0, 2.0]
-WJetsLoose2Tight = [0.146, 0.014]
+WJetsLoose2Tight = [0.174, 0.005]
+WJetsLoose2Tigh_1prong_3prong = [0.146, 0.014]
+
 # WJetsScanRange = [0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3]#, 1.0, 1.1]#, 1.0, 1.15]#, 1.0, 2.0]
 # for i in range(7):
 #     WJetsScanRange.append((i+0.0)*0.1)
@@ -275,8 +303,9 @@ WJetsLoose2Tight = [0.146, 0.014]
 # scanRange = []
 # for i in range(10):
 #     scanRange.append(i*0.1+0.15)
-# WJetsScanRange = [1.0]
-# scanRange = [0.15, 0.95]
+WJetsScanRange = [1.0]
+WJetsLoose2Tight = [0.073,0.030]
+scanRange = [0.15, 0.95]
 
 # for i in range(3):
 #     WJetsScanRange.append((i+0.0)*0.1+1.2)
@@ -285,12 +314,15 @@ WJetsLoose2Tight = [0.146, 0.014]
 
 sysUnc = {}
 sysUnc['et'] = {'WJets': 0.0,
-                'Z#rightarrow#tau#tau': 0.14,
-                't#bar{t}': 0.18,
+                'Z#rightarrow#tau#tau': math.sqrt(0.14**2 + 0.12**2),
+                't#bar{t}': math.sqrt(0.18**2 + 0.08**2),
+                'Diboson': 0.15,
+
                 }
-sysUnc['em'] = {'WJets': 0.16,
-                'Z#rightarrow#tau#tau': 0.11,
-                't#bar{t}': 0.17,
+sysUnc['em'] = {'WJets': 0.0,
+                'Z#rightarrow#tau#tau': math.sqrt(0.11**2 + 0.12**2),
+                't#bar{t}': math.sqrt(0.17**2 + 0.08**2),
+                'Diboson': 0.15,
                 }
 
 sampleDict = {"WJets": ("WJets_all_SYNC_", 24089991000),
