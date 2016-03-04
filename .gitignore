@@ -1,6 +1,7 @@
 *.so
 *.d
 *.pyc
+*.txt
 *~
 HHKinFit
 *.pdf
