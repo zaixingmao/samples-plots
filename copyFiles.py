@@ -9,7 +9,7 @@ outputDir = '/nfs_scratch/zmao/triggerStudy/MVANonTrig80_mu/'
 outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_singleEforEMu/'
 outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_TightTo5/'
 
-outputDir = '/nfs_scratch/zmao//highMEToB/'
+outputDir = '/nfs_scratch/zmao//signalRegion_jetECDown/'
 # outputDir = '/nfs_scratch/zmao/signalRegion_bScaleUp/'
 
 append_name = 'noIso'
@@ -57,11 +57,11 @@ files = [# 'DY-50_events.root',
 #         'TTJets_events.root',
         'TTJets_LO_events.root',
 #         'DY-10to50_events.root',
-        'DY-50_LO_events.root',
-        'DY-50_LO_HT-100to200_events.root',
-        'DY-50_LO_HT-200to400_events.root',
-        'DY-50_LO_HT-400to600_events.root',
-        'DY-50_LO_HT-600toInf_events.root',
+#         'DY-50_LO_events.root',
+#         'DY-50_LO_HT-100to200_events.root',
+#         'DY-50_LO_HT-200to400_events.root',
+#         'DY-50_LO_HT-400to600_events.root',
+#         'DY-50_LO_HT-600toInf_events.root',
         'WJets_LO_events.root',
         'WJets_LO_HT-100to200_events.root',
         'WJets_LO_HT-200to400_events.root',
@@ -82,6 +82,16 @@ files = [# 'DY-50_events.root',
 #         "DY-5to50_LO_HT-200to400_events.root",
 #         "DY-5to50_LO_HT-400to600_events.root",
 #         "DY-5to50_LO_HT-600toInf_events.root",
+
+
+#         "DY-50_events.root",
+# #         "DY-100to200_events.root",
+#         "DY-200to400_events.root",
+#         "DY-400to500_events.root",
+#         "DY-500to700_events.root",
+#         "DY-700to800_events.root",
+#         "DY-800to1000_events.root",
+#         "DY-1000to1500_events.root",
         ]
 
 
@@ -93,7 +103,7 @@ files = [# 'DY-50_events.root',
 #         print command
 #         os.system(command)
 
-for fs in ['et']:#, 'et', 'mt', 'tt']:
+for fs in ['et']:#['et', 'em']:#, 'et', 'mt', 'tt']:
     for iFile in files:
         command = "cp %s/%s/%s %s/%s_all_SYNC_%s_%s.root" %(inputDir, fs, iFile, outputDir, iFile[:iFile.find("_events")], fs, append_name)
         os.system(command)

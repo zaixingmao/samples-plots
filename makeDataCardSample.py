@@ -10,10 +10,15 @@ import plots_cfg
 import cutSampleTools
 import plots
 import math
+import LUT_et_withPUWeight
+import LUT_em_withPUWeight
+import LUT_et_withPUWeight_signal
+import LUT_em_withPUWeight_signal
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
 r.gStyle.SetOptStat("e")
+vec = r.vector('double')()
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 
@@ -21,6 +26,8 @@ l1 = lvClass()
 l2 = lvClass()
 met = lvClass()
 deltaTauES = lvClass()
+
+list = plots_cfg.list
 
 def expandFinalStates(FS):
     finalStates = [x.strip() for x in FS.split(',')]
@@ -32,8 +39,7 @@ def expandFinalStates(FS):
  
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'eta_1', 'eta_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'pfMEtNoHF', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso', 'mt_1', 'genMass']
-
+    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'eta_1', 'eta_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'pfMEtNoHF', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso', 'mt_1', 'genMass', 'npv']
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
@@ -60,10 +66,38 @@ def opts():
     parser.add_option("--PUWeight", dest="PUWeight", default=False, action="store_true", help="")
     parser.add_option("--method", dest="method", default='SS', help="")
     parser.add_option("--sys", dest="sys", default='', help="")
+    parser.add_option("--pdf", dest="pdf", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
 
     return options
+
+def getBin(value, list):
+    for i in range(1, len(list)):
+        if list[i] > value:
+            return i
+    return len(list)-1
+
+def getPDFWeight(fs, iSample, iCat, variation, m_eff):
+    bin = getBin(m_eff, list)
+    pdfCats = ["WJets", "Z#rightarrow#tau#tau", "t#bar{t}"]
+#     pdfCats = ["WJets", "Z#rightarrow#tau#tau"]
+    weight = 1.0
+    if "Zprime" in iSample:
+        massPoint = int(iSample[7:])
+        if massPoint != 3000 and massPoint != 2500:
+            weight = LUT_et_withPUWeight_signal.luts["DY_M-%ito%i_%s" %(massPoint, massPoint+50, variation)][0]
+        elif massPoint == 2500:
+            weight = LUT_et_withPUWeight_signal.luts["DY_M-%ito%i_%s" %(massPoint-50, massPoint+50, variation)][0]
+        else:
+            weight = LUT_et_withPUWeight_signal.luts["DY_M-%ito%i_%s" %(massPoint-200, massPoint, variation)][0]
+
+    elif iCat in pdfCats and ("ST" not in iSample):
+        if fs == 'et':
+            weight = LUT_et_withPUWeight.luts["%s_%s" %(iSample, variation)][bin-1]
+        if fs == 'em':
+            weight = LUT_em_withPUWeight.luts["%s_%s" %(iSample, variation)][bin-1]
+    return weight
 
 options = opts()
 
@@ -76,9 +110,8 @@ if options.method == 'Loose':
     controlRegionName = 'Loose'
     signalRegionName = 'Tight'
 
-def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS):
+def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS):
     print 'combininig sample [%s] for datacard' %(iSample)
-
     if 'data' in iSample:
         isData = True
     else:
@@ -108,12 +141,13 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
     for iEntry in range(nEntries):
         iTree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'looping over file %s' %(iSample), iEntry-1)
+        uncWeight = 1.0
 
         if options.sys == 'jetECUp' and not isData:
             met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
         elif options.sys == 'jetECDown' and not isData:
             met.SetCoordinates(iTree.pfMet_jesDown_Et, 0.0, iTree.pfMet_jesDown_Phi, 0)
-        elif (options.sys == 'tauECUp' or options.sys == 'tauECDown') and not isData:
+        elif (options.sys == 'tauECUp' or options.sys == 'tauECDown') and (not isData) and iTree.tIsTauh:
             met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
             if iTree.pt_2 - iTree.tPt > 0:
                 deltaTauES.SetCoordinates(abs(iTree.pt_2 - iTree.tPt), 0.0, -iTree.tPhi, 0)
@@ -138,7 +172,6 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
                 continue
             else:
                 charVarsDict['sampleName'][:31] = 'MC' + controlRegionName
-
         elif plots.regionSelection(iTree, iFS, "signal", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
            if isData:
                 charVarsDict['sampleName'][:31] = 'data' + signalRegionName
@@ -152,6 +185,7 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
         floatVarsDict['eta_1'][0] = iTree.eta_1
         floatVarsDict['eta_2'][0] = iTree.eta_2
         floatVarsDict['mt_1'][0] = iTree.mt_1
+
         floatVarsDict['genMass'][0] = 0.0
         if hasattr(iTree, 'X_to_ll'):
             floatVarsDict['genMass'][0] = iTree.X_to_ll
@@ -160,6 +194,7 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
         charVarsDict['Category'][:31] = iFS
 
         floatVarsDict['xs'][0] = iTree.xs
+
         if 'WJets' in iSample:
             floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*plots_cfg.WJetsScanRange[0]
         if "Zprime" in iSample:
@@ -178,12 +213,19 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
         floatVarsDict['m_effective'][0] = (l1 + l2 + met).mass()
         floatVarsDict['m_vis'][0] = (l1 + l2).mass()
 
+        if (options.sys == 'up' or options.sys == 'down') and (not isData):
+            floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*getPDFWeight(iFS, iSample, iCat, options.sys, floatVarsDict['m_effective'][0])
+
         intVarsDict['nCSVL'][0] = plots.getNCSVLJets(iTree, options.sys, isData)
         if iFS == 'et':
             intVarsDict['tauDecayMode'][0] = int(iTree.tDecayMode)
             floatVarsDict['tauTightIso'][0] = iTree.tByTightCombinedIsolationDeltaBetaCorr3Hits
             floatVarsDict['tauMediumIso'][0] = iTree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
             floatVarsDict['tauLooseIso'][0] = iTree.tByLooseCombinedIsolationDeltaBetaCorr3Hits
+            if options.sys == 'tauUncUp':
+                uncWeight += 0.2*iTree.pt_2/1000.
+            if options.sys == 'tauUncDown':
+                uncWeight -= 0.2*iTree.pt_2/1000.
         floatVarsDict['cosDPhi'][0] =  math.cos(iTree.phi_1 - iTree.phi_2)
         floatVarsDict['pZetaCut'][0] =  getattr(iTree, "%s_%s_PZeta" %(iFS[0], iFS[1])) - 3.1*getattr(iTree, "%s_%s_PZetaVis" %(iFS[0], iFS[1]))
         if options.sys == 'jetECUp' and not isData:
@@ -197,13 +239,16 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
 
         if options.PUWeight and not isData:
             floatVarsDict['PUWeight'][0] = cutSampleTools.getPUWeight(iTree.nTruePU)
+            floatVarsDict['npv'][0] = iTree.nTruePU
+
         else:
             floatVarsDict['PUWeight'][0] = 1.0
+            floatVarsDict['npv'][0] = 0
 
         if isData:
             floatVarsDict['genEventWeight'][0] = 1.0
         else:
-            floatVarsDict['genEventWeight'][0] = iTree.genEventWeight
+            floatVarsDict['genEventWeight'][0] = uncWeight*iTree.genEventWeight
 
         oTree.Fill()
         if (charVarsDict['sampleName'][:31] == 'MC' + controlRegionName) and ("WJets" in iSample):
@@ -248,7 +293,7 @@ def go():
             oTree.Branch("%s" %iVar, charVarsDict[iVar], "%s[31]/C" %iVar)
         for iSample, iLocation, iCat in plots_cfg.sampleList:
             iLocation += '%s_noIso.root' %iFS
-            totalQCD += loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS)
+            totalQCD += loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS)
 
         oFile.cd()
         QCDScale = r.TH1F('QCD_%s_to_%s_%s' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)

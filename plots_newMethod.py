@@ -26,7 +26,7 @@ jet = lvClass()
 met = lvClass()
 
 
-lumi = 2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
+lumi = 2153.0#2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
 Lumi = lumi #3000.0
 
 def opts():
@@ -504,7 +504,10 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
         if not passCut(tree, FS, isData, l1, l2, met, options.sys):
             continue
         if not isData:
-            weight = Lumi*tree.xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2/(sumWeights+0.0)
+            xs  = tree.xs
+            if (80.94 < xs < 80.96) or (136.01 < xs < 136.03):
+                xs = xs*0.108*3
+            weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2/(sumWeights+0.0)
             if options.PUWeight:
                 weight = weight*cutSampleTools.getPUWeight(tree.nTruePU)
         if options.diffQCD:
@@ -680,9 +683,9 @@ def buildStackFromDict(histDict, FS, option = 'width', sf = 0.1, sf_error= 0.1):
         else:
             print 'missing samples for %s' %ikey
     if option == 'width':
-        stack.SetTitle('CMS Preliminary 2.09 fb^{-1} (13 TeV); ; events / GeV')
+        stack.SetTitle('CMS Preliminary %.1f fb^{-1} (13 TeV); ; events / GeV' %(lumi/1000.))
     else:
-        stack.SetTitle('CMS Preliminary 2.09 fb^{-1} (13 TeV); ; events')
+        stack.SetTitle('CMS Preliminary %.1f fb^{-1} (13 TeV); ; events' %(lumi/1000.))
     return stack
 
 def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negative

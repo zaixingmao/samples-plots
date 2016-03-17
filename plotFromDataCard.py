@@ -363,6 +363,6 @@ def plot(inputFile, fs, mass = '500'):
     c.Print('%s' %psfile)
 print options.FS
 m = 1500
-plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v3.root" %(options.FS), options.FS, str(m))
+plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v4.root" %(options.FS), options.FS, str(m))
 # for m in range(500, 5500, 500):
 #     plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v2.root" %(options.FS), options.FS, str(m))
