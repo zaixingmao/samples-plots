@@ -94,7 +94,7 @@ tauVarsDict = {'iso_': 'ByCombinedIsolationDeltaBetaCorrRaw3Hits',
 
 eMuVarsDict = {'iso_': 'RelIso'}
 
-def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
+def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys):
     if FS == 'tt':
         if iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits <= iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits:
             object_1 = 't1'
@@ -157,10 +157,19 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['npu'][0] = iChain.nTruePU
 
         for ikey in commonVarsDict.keys():
-            if hasattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey])):
+            if (ikey == 'pt_') and ('t' in FS) and ('tau' in sys):
                 syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey]))
-            if hasattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey])):
-                syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))
+                if sys == 'tauECUp' and iChain.tIsTauh:
+                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, 'ES_up'))
+                elif sys == 'tauECDown' and iChain.tIsTauh:
+                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, 'ES_down'))
+                else:
+                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))
+            else:
+                if hasattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey])):
+                    syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey]))
+                if hasattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey])):
+                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))
 
         if 't' in object_1:
             for ikey in tauVarsDict.keys():
@@ -216,5 +225,10 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS):
         syncVarsDict['jphi_2'][0] = goodJets[1][1].phi()
         syncVarsDict['jmva_2'][0] = goodJets[1][2]
 
+        #trigger weight
+        syncVarsDict['trigweight_1'][0] = 1.0
+        syncVarsDict['trigweight_2'][0] = 1.0
+        if FS == 'et':
+            syncVarsDict['trigweight_1'][0] = eleTrigEff(abs(iChain.eEta))
 
 #         syncVarsDict['puweight'][0] = getPUWeight(iChain.nTruePU)

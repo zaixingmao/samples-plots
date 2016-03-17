@@ -105,9 +105,11 @@ def opts():
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     parser.add_option("--FS", dest="FS", default='tt', help="final state product, et, tt")
     parser.add_option("--inclusive", dest="inclusive", default=False, action="store_true", help="apply inclusive cut")
+    parser.add_option("--cfg", dest="cfg", default=False, action="store_true", help="apply inclusive cut")
     parser.add_option("--antiIso", dest="antiIso", default=False, action="store_true", help="apply inclusive cut")
     parser.add_option("--antiTauIso", dest="antiTauIso", default=False, action="store_true", help="apply inclusive cut")
     parser.add_option("--cat", dest="category", default='all', help="apply category cut")
+    parser.add_option("--sys", dest="sys", default='', help="tauECUp, tauECDown")
 
     options, args = parser.parse_args()
 
@@ -122,12 +124,12 @@ def loop_one_sample(iSample,                    #sample name (DY)
                     location = '',              #output location, will be overwritten if outPutFileName != None
                     pairChoice = enVars.pairChoice,         #pair selection method (iso, pt)
                     nevents = '-1',             #n entries to loop over
+                    sys = enVars.sys,                   #systematics
                     chain = None,               #input TChain
                     outPutFileName = None,      #output file name,
                     histos = None,              #input histograms, preferred to be a list
                     ):
     print 'Ntuplizing sample [%s] for channel [%s]' %(iSample, finalState)
-
     if 'data' in iSample:
         isData = True
     else:
@@ -237,7 +239,7 @@ def loop_one_sample(iSample,                    #sample name (DY)
                 weightedNEvents += 1
 
         passSelection =  passCatSelection(iChain, category, finalState)
-        passCuts, comment = passCut(iChain, finalState, isData)
+        passCuts, comment = passCut(iChain, finalState, isData, sys)
         passCuts = passCuts*passSelection
 
         if comment not in cutCounter.keys():
@@ -259,9 +261,9 @@ def loop_one_sample(iSample,                    #sample name (DY)
             if (iEntry == nEntries - 1): #save last event
                 iChain.LoadTree(bestPair)
                 iChain.GetEntry(bestPair)
-                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData, sys)
                 if passAdditional:
-                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys)
                     oTree.Fill()
                     counter += 1
 
@@ -269,9 +271,9 @@ def loop_one_sample(iSample,                    #sample name (DY)
             #store best pair
             iChain.LoadTree(bestPair)
             iChain.GetEntry(bestPair)
-            passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+            passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData, sys)
             if passAdditional:
-                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys)
                 oTree.Fill()
                 counter += 1
 
@@ -288,9 +290,9 @@ def loop_one_sample(iSample,                    #sample name (DY)
             bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice, finalState)
 
             if (iEntry == nEntries - 1) and passCuts:  #save last event, it's already loaded with the current value
-                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData)
+                passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData, sys)
                 if passAdditional:
-                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState)
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys)
                     oTree.Fill()
                     counter += 1
 
@@ -321,8 +323,11 @@ def go(options):
     if not finalStates:
         return 0
     type = 'baseline'
+    
     if options.inclusive:
         type = 'inclusive'
+    elif options.cfg:
+        type = enVars.type
 
     for iSample, iLocation, xs, fs in enVars.sampleLocations:
 

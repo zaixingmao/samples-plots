@@ -8,11 +8,24 @@ from array import array
 import optparse
 import plots_cfg
 import cutSampleTools
+import plots
+import math
 
 r.gROOT.SetBatch(True)
 r.gErrorIgnoreLevel = 2000
 r.gStyle.SetOptStat("e")
 
+lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
+
+l1 = lvClass()
+l2 = lvClass()
+met = lvClass()
+
+def getMEff(tree):
+    l1.SetCoordinates(tree.pt_1, tree.eta_1, tree.phi_1, tree.m_1)
+    l2.SetCoordinates(tree.pt_2, tree.eta_2, tree.phi_2, tree.m_2)
+    met.SetCoordinates(tree.pfMetEt, 0.0, tree.pfMetPhi, 0)
+    return (l1 + l2 + met).mass()
 
 def expandFinalStates(FS):
     finalStates = [x.strip() for x in FS.split(',')]
@@ -24,15 +37,35 @@ def expandFinalStates(FS):
  
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['m_vis', 'xs', 'pt_1', 'pt_2', 'genEventWeight', 'triggerEff', 'PUWeight']
+    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'pfMEtNoHF', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso']
 
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
 
+def ZSplit(tree, iSample, iFS):
+    if iSample != 'ZTT' and iSample != 'ZL' and iSample != 'ZJ' and iSample != 'ZLL':
+        return True
+    elif iSample == 'ZTT':
+        if 't' in iFS and tree.gen_match_2 == 5:
+            return True
+        elif iFS == 'em' and tree.gen_match_1 > 2 and tree.gen_match_2 > 3:
+            return True
+    elif iSample == 'ZL' and iFS != 'em' and tree.gen_match_2 < 5:
+        return True
+    elif iSample == 'ZJ' and iFS != 'em' and tree.gen_match_2 == 6:
+        return True
+    elif iSample == 'ZLL':
+        if iFS == 'em' and (tree.gen_match_1 < 3 or tree.gen_match_2 < 4):
+            return True
+        elif iFS != 'em' and (tree.gen_match_2 < 5 or tree.gen_match_2 == 6):
+            return True
+    return False
+
+
 def setUpIntVarsDict():
     varDict = {}
-    names = ['initEvents', 'initSumWeights']
+    names = ['initEvents', 'initSumWeights', 'nCSVL', 'tauDecayMode']
     for iName in names:
         varDict[iName] = array('l', [0])
     return varDict
@@ -50,6 +83,7 @@ def opts():
     parser.add_option("--profile", dest="profile", default=False, action="store_true", help="")
     parser.add_option("--FS", dest="FS", default='mt', help="final state product, et, tt")
     parser.add_option("--PUWeight", dest="PUWeight", default=False, action="store_true", help="")
+    parser.add_option("--method", dest="method", default='SS', help="")
 
     options, args = parser.parse_args()
 
@@ -59,7 +93,14 @@ options = opts()
 
 r.gStyle.SetOptStat(0)
 
-def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS, initEvents = 0):
+controlRegionName = 'SS'
+signalRegionName = 'OS'
+
+if options.method == 'Loose':
+    controlRegionName = 'Loose'
+    signalRegionName = 'Tight'
+
+def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS):
     print 'combininig sample [%s] for datacard' %(iSample)
 
     if 'data' in iSample:
@@ -70,7 +111,7 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
         isEmbedded = True
     else:
         isEmbedded = False
-    if ('H2hh' in iSample) or ('ggH' in iSample):
+    if ('H2hh' in iSample) or ('ggH' in iSample) or ('Zprime' in iSample):
         isSignal = True
     else:
         isSignal = False
@@ -81,38 +122,76 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
     iTree.SetBranchStatus("*",1)
     iTree.SetBranchStatus("sampleName",0)
 
+    eventCount = iFile.Get('eventCount')
+    eventCountWeighted = iFile.Get('eventCountWeighted')
+
+    yieldEstimator_OS = 0.0
+    yieldEstimator_SS = 0.0
+    fillcounter=0
     for iEntry in range(nEntries):
         iTree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'looping over file %s' %(iSample), iEntry-1)
 
-        if iTree.q_1 == iTree.q_2:
+        if not plots.passCut(iTree, iFS, isData):
+            continue
+
+        if not ZSplit(iTree, iSample, iFS):
+            continue
+
+        if options.method != 'SS' and iTree.q_1 == iTree.q_2:
+            continue
+
+        if plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
             if isData:
-                charVarsDict['sampleName'][:31] = 'dataSS'
+                charVarsDict['sampleName'][:31] = 'data' + controlRegionName
             elif isSignal:
                 continue
             else:
-                charVarsDict['sampleName'][:31] = 'MCSS'
-        else:
+                if iSample == 'ZLL' and iFS != 'em':
+                    continue
+                charVarsDict['sampleName'][:31] = 'MC' + controlRegionName
+
+        elif plots.regionSelection(iTree, iFS, "signal", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
            if isData:
-                charVarsDict['sampleName'][:31] = 'dataOS'
+                charVarsDict['sampleName'][:31] = 'data' + signalRegionName
            else:
                charVarsDict['sampleName'][:31] = iSample
+        else:
+            continue
 
         charVarsDict['Category'][:31] = iFS
 
-        floatVarsDict['xs'][0] = iTree.xs*1000.0
-        if initEvents != 0 or isData:
-            intVarsDict['initEvents'][0] = initEvents
-        else:
-            if iTree.genEventWeight != 1:
-                intVarsDict['initSumWeights'][0] = iTree.sumWeights
-            else:
-                intVarsDict['initSumWeights'][0] = iTree.initEvents
-            intVarsDict['initEvents'][0] = iTree.initEvents
+        floatVarsDict['xs'][0] = iTree.xs
+        if "Zprime" in iSample:
+            floatVarsDict['xs'][0] = plots.getZPrimeXS(iSample[7:])
+
+        if eventCount:
+            intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
+        else:    
+            intVarsDict['initEvents'][0] = int(iTree.initEvents)
+        if eventCountWeighted:
+            intVarsDict['initSumWeights'][0] = int(eventCountWeighted.GetBinContent(1))
+        else:    
+            intVarsDict['initSumWeights'][0] = int(iTree.initWeightedEvents)
+
+
         floatVarsDict['m_vis'][0] = iTree.m_vis
         floatVarsDict['pt_1'][0] = iTree.pt_1
         floatVarsDict['pt_2'][0] = iTree.pt_2
         floatVarsDict['triggerEff'][0] = 1.0
+#         floatVarsDict['m_svfit'][0] = iTree.pfmet_svmc_mass
+        floatVarsDict['m_effective'][0] = getMEff(iTree)
+        intVarsDict['nCSVL'][0] = plots.getNCSVLJets(iTree)
+        if iFS == 'et':
+            intVarsDict['tauDecayMode'][0] = int(iTree.tDecayMode)
+            floatVarsDict['tauTightIso'][0] = iTree.tByTightCombinedIsolationDeltaBetaCorr3Hits
+            floatVarsDict['tauMediumIso'][0] = iTree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
+            floatVarsDict['tauLooseIso'][0] = iTree.tByLooseCombinedIsolationDeltaBetaCorr3Hits
+        floatVarsDict['cosDPhi'][0] =  math.cos(iTree.phi_1 - iTree.phi_2)
+        floatVarsDict['pZetaCut'][0] =  getattr(iTree, "%s_%s_PZeta" %(iFS[0], iFS[1])) - 3.1*getattr(iTree, "%s_%s_PZetaVis" %(iFS[0], iFS[1]))
+        floatVarsDict['pfMEt'][0] = iTree.pfMetEt
+        floatVarsDict['pfMEtNoHF'][0] = iTree.pfMetNoHFEt
+        floatVarsDict['eleRelIso'][0] = iTree.eRelIso
 
         if options.PUWeight and not isData:
             floatVarsDict['PUWeight'][0] = cutSampleTools.getPUWeight(iTree.nTruePU)
@@ -125,20 +204,29 @@ def loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charV
             floatVarsDict['genEventWeight'][0] = iTree.genEventWeight
 
         oTree.Fill()
-
-    print '  '
-
+        if floatVarsDict['m_vis'][0] >= 350:
+            continue
+        if plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and isData:
+            yieldEstimator_SS += 1.0
+        elif plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and not isData:
+            yieldEstimator_SS -= floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+        elif plots.regionSelection(iTree, iFS, "signal", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and not isData:
+            yieldEstimator_OS += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+            fillcounter += 1
+    print '  :total yield at %.2f/pb = %.2f (OS)' %(plots.lumi, yieldEstimator_OS), fillcounter
+    return yieldEstimator_SS
 
 def go():
     finalStates = expandFinalStates(options.FS)
     floatVarsDict = setUpFloatVarsDict()
     intVarsDict = setUpIntVarsDict()
     charVarsDict = setUpCharVarsDict()
-
     if not finalStates:
         return 0
     for iFS in finalStates:
         tail = ''
+        totalQCD = 0.0
+
         if options.PUWeight:
             tail = '_withPUWeight'
         oFile = r.TFile('%s/combined_%s%s.root' %(options.location, iFS, tail),"recreate")
@@ -151,17 +239,21 @@ def go():
             oTree.Branch("%s" %iVar, intVarsDict[iVar], "%s/L" %iVar)
         for iVar in charVarsDict.keys():
             oTree.Branch("%s" %iVar, charVarsDict[iVar], "%s[31]/C" %iVar)
-        for iSample, iLocation, initEvents in plots_cfg.dataCardSamplesList:
-            iLocation += '_%s_inclusive.root' %iFS
-            loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS, initEvents)
+        for iSample, iLocation, iCat in plots_cfg.sampleList:
+            iLocation += '.root'
+            totalQCD += loop_one_sample(iSample, iLocation, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS)
 
         oFile.cd()
-        QCDScale = r.TH1F('SS_to_OS_%s' %iFS, '', 1, 0, 1)
-
-        QCDScale.Fill(0.5, plots_cfg.QCD_scale[iFS])
+        QCDScale = r.TH1F('%s_to_%s_%s' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
+        QCDScale.Fill(0.5, plots_cfg.QCD_scale[iFS][0][0])
         QCDScale.Write()
+        if iFS == 'et':
+            QCDScale_1prong_3prong = r.TH1F('%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
+            QCDScale_1prong_3prong.Fill(0.5, plots_cfg.QCD_scale_1prong_3prong[0])
+            QCDScale_1prong_3prong.Write()
         oTree.Write()
         oFile.Close()
+        print 'total QCD: %.2f' %(totalQCD*plots_cfg.QCD_scale[iFS][0][0])
 
 
 if __name__ == "__main__":

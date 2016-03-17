@@ -125,8 +125,8 @@ def addVars(iTree, a):
 #             'mvaPhi', iTree.mvametphi, 
 #             'muVeto', getVetoValue(iTree.extramuon_veto),
 #             'iso2', iTree.iso_2, 
-              'cov00', iTree.metcov00,   #var to check
-
+#               'cov00', iTree.metcov00,   #var to check
+            'pt1', iTree.pt_1, 
               'lumi', int(iTree.lumi), 
               'run', iTree.run, 
 
@@ -324,13 +324,15 @@ def checkSyncDev(options):
 
             else:
                 indexNotFound1.append(iKey)
+        elif iKey not in varsDict2:
+            printSingleInfo(name1, varsDict1[iKey])
         counter += 1
     print ''
-    if options.style == 'all' or options.style == 'miss':
-        print 'Extra events in %s **********' %name1
-        for iKey in indexNotFound1:
-            printSingleInfo(name1, varsDict1[iKey])
-        print ' '
+#     if options.style == 'all' or options.style == 'miss':
+#         print 'Extra events in %s **********' %name1
+#         for iKey in indexNotFound1:
+#             printSingleInfo(name1, varsDict1[iKey])
+#         print ' '
 #         print 'Extra events in %s **********' %options.name2
 #         for i_2 in range(total2):
 #             if i_2 not in indexFound2:

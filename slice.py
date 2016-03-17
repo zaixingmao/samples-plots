@@ -89,9 +89,9 @@ class call_out_once(supy.analysisStep):
 
 class slice(supy.analysis):
     def parameters(self):
-        return {"FS": self.vary(dict([("tt", {}),
+        return {"FS": self.vary(dict([#("tt", {}),
                                       ("et", {}),
-                                      ("mt", {}),
+                                      #("mt", {}),
                                       ("em", {}),
                                       #("ee", {}),
                                       #("mm", {}),

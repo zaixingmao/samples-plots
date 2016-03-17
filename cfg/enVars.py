@@ -15,41 +15,57 @@ preFix_data= '/hdfs/store/user/zmao/Lumi1280/'
 preFixHiggs = '/hdfs/store/user/zmao/higgs2TauTau/'
 preFix_data= '/hdfs/store/user/zmao/miniAODv2/'
 
-preFix = '/hdfs/store/user/zmao/miniAODv2_nTruePU/'
+preFix = '/hdfs/store/user/zmao/miniAODv2/'
+preFix_data = '/hdfs/store/user/zmao/miniAODv2_data/'
+preFix = '/hdfs/store/user/zmao/Nov18Prodruction_eleTriggerUpdate/'
+preFix_data = '/hdfs/store/user/zmao/Feb22Production/'
+preFix2 = '/hdfs/store/user/zmao/Mar2Production/'
 
+# preFix = '/hdfs/store/user/zmao/Jan4Prodruction/'
+preFix = '/hdfs/store/user/zmao/Jan19Prodruction_et_tauEC/'
+# preFix = '/hdfs/store/user/zmao/Jan13Prodruction_et_jetEC/'
+preFix = '/hdfs/store/user/zmao/pdfProduction/'
+preFix2 = '/hdfs/store/user/zmao/pdfProduction/'
 
-type = 'noIso'     #selection type (baseline, inclusive)
+type = 'signalRegion'     #selection type (baseline, inclusive)
 category = 'all'       #ZLL splitting (all, ZTT, ZL, ZJ)
 pairChoice = 'iso'     #pair selection method (iso, pt)
 
-fs = 'em'
+fs = ''
+sys = ''
+K_WJets = 61526.7/50690
+K_DY = 6025.2/4895.0
+K_DY_mass = 6025.2/6104.
 
 sampleLocations = [
 #                     ("data_Tau",     "%s/data_Tau_Run2015D-05Oct_PromptReco_25ns" %preFix, 1, 'tt'),
 #                     ("data_Tauv4",     "%s/data_Tau_Run2015DV4_PromptReco_25ns" %preFix, 1, 'tt'),
-#                     ("data_MuonEG",     "%s/data_MuonEG_Run2015D-05Oct_PromptReco_25ns" %preFix_data, 1, 'em'),
-#                     ("data_MuonEGv4",     "%s/data_MuonEG_Run2015DV4_PromptReco_25ns" %preFix_data, 1, 'em'),
-#                     ("data_Electron",     "%s/data_Electron_Run2015D-05Oct_PromptReco_25ns" %preFix_data, 1, 'et'),
-#                     ("data_Electronv4",     "%s/data_Electron_Run2015DV4_PromptReco_25ns" %preFix_data, 1, 'et'),
-#                     ("data_Muon",     "%s/data_Muon_Run2015D-05Oct_PromptReco_25ns" %preFix, 1, 'mt'),
-#                     ("data_Muonv4",     "%s/data_Muon_Run2015DV4_PromptReco_25ns" %preFix, 1, 'mt'),
-
-#                     ("WJets_MLM",     "%s/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 61526.7, fs),
+#                     ("data_MuonEG",     "%s/data_MuonEG_Run2015D-05Oct_PromptReco_25ns" %preFix, 1, 'em'),
+#                     ("data_MuonEGv4",     "%s/data_MuonEG_Run2015DV4_PromptReco_25ns" %preFix, 1, 'em'),
+#                     ("data_Electron",     "%s/data_Electron_Run2015D-05Oct_PromptReco_25ns" %preFix_data, 1, fs),
+#                     ("data_Electronv4",     "%s/data_Electron_Run2015DV4_PromptReco_25ns" %preFix_data, 1, fs),
+#                     ("data_Muon",     "%s/data_Muon_Run2015D-05Oct_PromptReco_25ns" %preFix, 1, 'em'),
+#                     ("data_Muonv4",     "%s/data_Muon_Run2015DV4_PromptReco_25ns" %preFix, 1, 'em'),
 # 
+#                     ("WJets_LO",     "%s/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 61526.7, fs),
+#                     ("WJets_LO_HT-100to200",     "%s/WJetsToLNu_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 1345*K_WJets, fs),
+#                     ("WJets_LO_HT-200to400",     "%s/WJetsToLNu_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 359.7*K_WJets, fs),
+#                     ("WJets_LO_HT-400to600",     "%s/WJetsToLNu_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 48.91*K_WJets, fs),
+#                     ("WJets_LO_HT-600toInf",     "%s/WJetsToLNu_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 18.77*K_WJets, fs),
+
+#                     ("DY-50_LO",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 6025.2, fs),
+#                     ("DY-50_LO_HT-100to200",     "%s/DYJetsToLL_M-50_HT-100to200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 139.4*K_DY, fs),
+#                     ("DY-50_LO_HT-200to400",     "%s/DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 42.75*K_DY, fs),
+#                     ("DY-50_LO_HT-400to600",     "%s/DYJetsToLL_M-50_HT-400to600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 5.497*K_DY, fs),
+#                     ("DY-50_LO_HT-600toInf",     "%s/DYJetsToLL_M-50_HT-600toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 2.21*K_DY, fs),
+
 #                     ('vbfH', "%s/VBFHToTauTau_M125_13TeV_powheg_pythia8" %(preFix), 3.748*0.0632, fs),
 #                     ('ggH',  "%s/GluGluHToTauTau_M125_13TeV_powheg_pythia8" %(preFix), 43.92*0.0632, fs),
-#                     ("DY-50",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 6025, fs),
-#                     ("DY-10to50",     "%s/DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 18610, fs),
-                    ("DY-50_MLM",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 6025, fs),
-
-
-#                     ("TTJets",     "%s/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 831.76, fs),
-#                     ("WJets",     "%s/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 61526.7, fs),
-#                     ("WW",     "%s/WW_TuneCUETP8M1_13TeV-pythia8" %(preFix), 63.21, fs),
-#                     ("WZ",     "%s/WZ_TuneCUETP8M1_13TeV-pythia8" %(preFix), 22.82, fs),
-#                     ("ZZ",     "%s/ZZ_TuneCUETP8M1_13TeV-pythia8" %(preFix), 10.32, fs),
+# 
 #                     ("T",     "%s/ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35.6, fs),
 #                     ("antiT",     "%s/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35.6, fs),
+#                     ("T_t-channel",     "%s/ST_t-channel_top_4f_leptonDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 136.02, fs),
+#                     ("antiT_t-channel",     "%s/ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 80.95, fs),
 # 
 #                     ("ZPrime_500",     "%s/ZprimeToTauTau_M_500_TuneCUETP8M1_tauola_13TeV_pythia8" %(preFix), 1, fs),
 #                     ("ZPrime_1000",     "%s/ZprimeToTauTau_M_1000_TuneCUETP8M1_tauola_13TeV_pythia8" %(preFix), 1, fs),
@@ -61,6 +77,52 @@ sampleLocations = [
 #                     ("ZPrime_4000",     "%s/ZprimeToTauTau_M_4000_TuneCUETP8M1_tauola_13TeV_pythia8" %(preFix), 1, fs),
 #                     ("ZPrime_4500",     "%s/ZprimeToTauTau_M_4500_TuneCUETP8M1_tauola_13TeV_pythia8" %(preFix), 1, fs),
 #                     ("ZPrime_5000",     "%s/ZprimeToTauTau_M_5000_TuneCUETP8M1_tauola_13TeV_pythia8" %(preFix), 1, fs),
+# 
+                    ("TTJets_LO",     "%s/TT_TuneCUETP8M1_13TeV-powheg-pythia8" %(preFix), 831.76, fs),
+#                     ("WZTo1L3Nu",     "%s/WZTo1L3Nu_13TeV_amcatnloFXFX_madspin_pythia8" %(preFix), 3.05, fs),
+#                     ("WWTo1L1Nu2Q",     "%s/WWTo1L1Nu2Q_13TeV_amcatnloFXFX_madspin_pythia8" %(preFix), 49.997, fs),
+#                     ("WZTo1L1Nu2Q",     "%s/WZTo1L1Nu2Q_13TeV_amcatnloFXFX_madspin_pythia8" %(preFix), 10.71 , fs),
+#                     ("WZJets",     "%s/WZJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix), 5.26, fs),
+#                     ("ZZTo2L2Q",     "%s/ZZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8" %(preFix), 3.22, fs),
+#                     ("WZTo2L2Q",     "%s/WZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8" %(preFix), 5.595, fs),
+#                     ("VVTo2L2Nu",     "%s/VVTo2L2Nu_13TeV_amcatnloFXFX_madspin_pythia8" %(preFix), 11.95, fs),
+#                     ("ZZTo4L",     "%s/ZZTo4L_13TeV-amcatnloFXFX-pythia8" %(preFix), 1.212, fs),
+
+#                     ("ZPrime_500",     "/nfs_scratch/zmao/newSignalSamples_500", 1, fs),
+#                     ("ZPrime_750",     "/nfs_scratch/zmao/newSignalSamples_750", 1, fs),
+#                     ("ZPrime_1250",     "/nfs_scratch/zmao/newSignalSamples_1250", 1, fs),
+
+
+#                     ("DY-50",     "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 6025.2, fs),
+# # #                     ("DY-100to200",     "%s/DYJetsToLL_M-100to200_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 226*K_DY_mass, fs),
+#                     ("DY-200to400",     "%s/DYJetsToLL_M-200to400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 7.67*K_DY_mass, fs),
+#                     ("DY-400to500",     "%s/DYJetsToLL_M-400to500_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 0.423*K_DY_mass, fs),
+#                     ("DY-500to700",     "%s/DYJetsToLL_M-500to700_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 0.24*K_DY_mass, fs),
+#                     ("DY-700to800",     "%s/DYJetsToLL_M-700to800_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 0.035*K_DY_mass, fs),
+#                     ("DY-800to1000",     "%s/DYJetsToLL_M-800to1000_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 0.03*K_DY_mass, fs),
+#                     ("DY-1000to1500",     "%s/DYJetsToLL_M-1000to1500_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 0.016*K_DY_mass, fs),
+#                     ("DY-1500to2000",     "%s/DYJetsToLL_M-1500to2000_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 0.002*K_DY_mass, fs),
+#                     ("DY-2000to3000",     "%s/DYJetsToLL_M-2000to3000_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8" %(preFix2), 0.0005*K_DY_mass, fs),
+
+
+#                    ("TTJets_LO",     "%s/TT_TuneCUETP8M1_13TeV-powheg-scaleup-pythia8" %(preFix), 831.76, fs),
+#                     ("T",     "%s/ST_tW_top_5f_scaleup_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35.6, fs),
+#                     ("antiT",     "%s/ST_tW_antitop_5f_scaleup_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35.6, fs),
+
+#                     ("TTJets_LO",     "%s/TT_TuneCUETP8M1_13TeV-powheg-scaledown-pythia8" %(preFix), 831.76, fs),
+#                     ("T",     "%s/ST_tW_top_5f_scaledown_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35.6, fs),
+#                     ("antiT",     "%s/ST_tW_antitop_5f_scaledown_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 35.6, fs),
+
+
+#                     ("DY-5to50_LO",     "%s/DYJetsToLL_M-5to50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 71310, fs),
+#                     ("DY-5to50_LO_HT-100to200",     "%s/DYJetsToLL_M-5to50_HT-100to200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 224.2, fs),
+#                     ("DY-5to50_LO_HT-200to400",     "%s/DYJetsToLL_M-5to50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 37.2, fs),
+#                     ("DY-5to50_LO_HT-400to600",     "%s/DYJetsToLL_M-5to50_HT-400to600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 3.581, fs),
+#                     ("DY-5to50_LO_HT-600toInf",     "%s/DYJetsToLL_M-5to50_HT-600toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8" %(preFix), 1.124, fs),
+
+
+
+
 
 #                      ("SUSY", "%sSUSYGluGluToHToTauTau_M-160_TuneCUETP8M1_13TeV-pythia8"  %(preFix), 1, ''),
 #                      ("T-tchannel",     "%s/ST_t-channel_top_4f_leptonDecays_13TeV-powheg-pythia8_TuneCUETP8M1" %(preFix), 103.02),
@@ -74,6 +136,8 @@ sampleLocations = [
 #                      ("QCD_300toInf",     "%s/QCD_Pt-300toInf_EMEnriched_TuneCUETP8M1_13TeV_pythia8" %(preFix), 9000, 'em'),
 
 #                      ("WR_2700", "/hdfs/store/user/zmao/test/WRToNuTauToTauTau_2700" , 1, 'mt'),
+#                      ("WR_2700", "/hdfs/store/user/zmao/wr1000/WRToNuTauToTauTau_1000" , 1, 'mt'),
+
 #                      ("DY", "%s/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8"  %(preFix5), 1, 'et'),
 
 #                      ("VBF_H",     "/nfs_scratch/zmao/tmp/72x", 1000),
