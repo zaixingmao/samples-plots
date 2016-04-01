@@ -12,8 +12,11 @@ class summed_ini_histos(supy.wrappedChain.calculable):
     def update(self, _):
         self.value = []
         elements = self.source["chain"].GetListOfFiles()
+        histos = ["eventWeights", "eventCountWeighted", "eventCount"]
+#        for i in range(100):
+#            histos.append("eventCountWeightedPDF_%i" %i)
 
-        for hName in ["eventWeights", "eventCountWeighted", "eventCount"]:
+        for hName in histos:#["eventWeights", "eventCountWeighted", "eventCount"]:
             self.value.append(self.histo(elements, self.fs, hName))
 
     def histo(self, elements, hDir, hName):

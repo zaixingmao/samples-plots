@@ -835,6 +835,11 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
                     return 0, 'phi'
                 if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
                     return 0, 'bTag'
+            elif type == 'signalRegionNoZetaNoCosPhi':
+                if met.pt()  <= 30:
+                    return 0, 'met'
+                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
+                    return 0, 'bTag'
             elif type == 'signalRegionNoCosPhi':
                 if met.pt()  <= 30:
                     return 0, 'met'
@@ -1003,6 +1008,11 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
                     return 0, 'met'
                 if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
                     return 0, 'phi'
+                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
+                    return 0, 'bTag'
+            elif type == 'signalRegionNoZetaNoCosPhi':
+                if met.pt()  <= 30:
+                    return 0, 'met'
                 if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
                     return 0, 'bTag'
             if type == 'signalRegionNoCosPhi':
