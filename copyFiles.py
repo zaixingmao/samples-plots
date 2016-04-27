@@ -2,15 +2,9 @@
 import os
 
 
-inputDir = '/nfs_scratch/zmao/supy-output//slice/'
-# outputDir = '/nfs_scratch/zmao/triggerStudy/MVATrigWP80/'
-outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_looseE/'
-outputDir = '/nfs_scratch/zmao/triggerStudy/MVANonTrig80_mu/'
-outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_singleEforEMu/'
-outputDir = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_TightTo5/'
+inputDir = '/uscms/home/zmao/nobackup/supy-output/slice/'
+outputDir = '/uscms/home/zmao/nobackup/0BTag/'
 
-outputDir = '/nfs_scratch/zmao/signalRegion_NoZetaNoCosPhi/'
-# outputDir = '/nfs_scratch/zmao/signalRegion_bScaleUp/'
 
 append_name = 'noIso'
 
@@ -37,12 +31,14 @@ files = [# 'DY-50_events.root',
 #          'WZ_events.root',
 #          'ZZ_events.root',
 # # 
+         'data_Electron_events.root',
+
          'T_events.root',
          'antiT_events.root',
          'T_t-channel_events.root',
          'antiT_t-channel_events.root',
-         'ggH_events.root',
-         'vbfH_events.root',
+#          'ggH_events.root',
+#          'vbfH_events.root',
          'ZPrime_500_events.root',
          'ZPrime_1000_events.root',
          'ZPrime_1500_events.root',
@@ -53,15 +49,9 @@ files = [# 'DY-50_events.root',
          'ZPrime_4000_events.root',
          'ZPrime_4500_events.root',
          'ZPrime_5000_events.root',
-# # # #          'SUSY_events.root',
-# #         'TTJets_events.root',
-#         'TTJets_LO_events.root',
-# #         'DY-10to50_events.root',
-# #         'DY-50_LO_events.root',
-# #         'DY-50_LO_HT-100to200_events.root',
-# #         'DY-50_LO_HT-200to400_events.root',
-# #         'DY-50_LO_HT-400to600_events.root',
-# #         'DY-50_LO_HT-600toInf_events.root',
+
+
+        'TTJets_LO_events.root',
         'WJets_LO_events.root',
         'WJets_LO_HT-100to200_events.root',
         'WJets_LO_HT-200to400_events.root',
@@ -85,14 +75,14 @@ files = [# 'DY-50_events.root',
 
 
         "DY-50_events.root",
-#         "DY-100to200_events.root",
+        "DY-100to200_events.root",
         "DY-200to400_events.root",
         "DY-400to500_events.root",
         "DY-500to700_events.root",
         "DY-700to800_events.root",
         "DY-800to1000_events.root",
         "DY-1000to1500_events.root",
-#         "DY-1500to2000_events.root",
+        "DY-1500to2000_events.root",
 #         "DY-2000to3000_events.root",
 
         ]
@@ -106,7 +96,7 @@ files = [# 'DY-50_events.root',
 #         print command
 #         os.system(command)
 
-for fs in ['et', 'em']:#, 'et', 'mt', 'tt']:
+for fs in ['et', 'em']:#['et', 'em']:#, 'et', 'mt', 'tt']:
     for iFile in files:
         command = "cp %s/%s/%s %s/%s_all_SYNC_%s_%s.root" %(inputDir, fs, iFile, outputDir, iFile[:iFile.find("_events")], fs, append_name)
         os.system(command)
