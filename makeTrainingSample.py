@@ -8,219 +8,131 @@ import os
 from array import array
 import struct
 import makeWholeTools2
-
+import plots
+import plots_cfg
+import cutSampleTools
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
-j1Reg = lvClass()
-j2Reg = lvClass()
+l1 = lvClass()
+l2 = lvClass()
+met = lvClass()
 
-def splitFileNames(inputName):
-    fileNames = []
-    tmpName = ''
-    for i in range(len(inputName)):
-        if inputName[i] != ' ' and inputName[i] != ',':
-            tmpName += inputName[i]
-        elif inputName[i] == ',':
-            fileNames.append(tmpName)
-            tmpName = ''
-    fileNames.append(tmpName)
-    return fileNames
 
-def setUpFloatVarsDict(isEmbed = True):
+def setUpFloatVarsDict():
     varDict = {}
-    names = ['met1', 'iso1_1', 'iso2_1', 'svMass1', 'weight',
-             'weightWithPU','EVENT1','EVENT2','EVENT3', 'EVENT4', 'sampleName2', 'category2']
-    if not isEmbed:
-        names.append("embeddedWeight")
+    names = ['met', 'pZetaCut', 'cosDPhi', 'm_eff', 'weightWithPU']
     for iName in names:
         varDict[iName] = array('f', [0.])
+
     return varDict
 
-def opts():
-    parser = optparse.OptionParser()
-    parser.add_option("--i", dest="inputFile", default = '', help="")
-    parser.add_option("--o", dest="outputFile", default = 'trainSample', help="")
-    parser.add_option("--weightOne", dest="weightOne", default = -1., help="")
-    parser.add_option("--weightTwo", dest="weightTwo", default = -1., help="")
-    parser.add_option("--c", dest="cut", default = 'none', help="")
-    parser.add_option("--iso", dest="isoSelect", default = 'none', help="")
-    parser.add_option("--sign", dest="signSelect", default = 'none', help="")
-    parser.add_option("--relaxRegion", dest="relaxRegion", default = 'none', help="")
-    parser.add_option("--bRegion", dest="bRegion", default = 'none', help="")
-    parser.add_option("--useLooseForShape", dest="useLooseForShape", default = 0, help="")
-    parser.add_option("--pairSelection", dest="pairSelection", default = 'iso', help="")
+def runOneFile(iFS, inputFile, signSelect, isoSelect, output_dir):
+    inputFile = inputFile + "%s_noIso.root" %iFS
+    ifile = r.TFile(inputFile)
+    iTree = ifile.Get("Ntuple")
+    eventCountWeighted = ifile.Get('eventCountWeighted')
 
-    options, args = parser.parse_args()
-    return options
+    oString = signSelect + isoSelect
+    outputFile = "%s_%s.root" %(output_dir+inputFile[inputFile.rfind("/"):inputFile.find(".root")], oString)
+    oFile = r.TFile(outputFile,"recreate")
 
-def passCut(iTree, bTagSelection, bRegion, isData, isEmbed):
-    if bTagSelection == None:
-        return False
-    if isEmbed:
-        if iTree.HLT_Any == 0:
-            return False
-    if iTree.nElectrons > 0 or iTree.nMuons > 0:
-        return False
-    if 'M' in bRegion:
-        if '0M' not in bTagSelection:
-            return True
-    if 'L' in bRegion:
-        if '0L' not in bTagSelection:
-            return True
-    if bRegion == 'none':
-        return True
-    return False
+    iTree.SetBranchStatus("*",1)
 
+    oTree = r.TTree('eventTree','')
+    total = iTree.GetEntries()
 
-def findBCategory(csv1, csv2):
-    CSVL = 0.244
-    if csv1 < CSVL:
-        return -1
-    elif csv2 > CSVL:
-        return 2
-    else:
-        return 1 
+    Lumi = plots.lumi
+    isData = False
+    isSignal = False
 
-options = opts()
-iFile = options.inputFile
-ifile = r.TFile(iFile)
-iTree = ifile.Get("eventTree")
+    floatVarsDict = setUpFloatVarsDict()
 
-oString = options.signSelect + options.isoSelect + options.bRegion
-oFile = r.TFile("%s_%s.root" %(options.outputFile, oString),"recreate")
+    for iVar in floatVarsDict.keys():
+        oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/f" %iVar)
 
-iTree.SetBranchStatus("*",1)
-iTree.SetBranchStatus("tauDecayMode1",0)
-iTree.SetBranchStatus("tauDecayMode2",0)
-iTree.SetBranchStatus("tauLeadPFTrackPhi1",0)
-iTree.SetBranchStatus("tauLeadPFTrackPhi2",0)
-iTree.SetBranchStatus("tauLeadPFTrackEta1",0)
-iTree.SetBranchStatus("tauLeadPFTrackEta2",0)
-iTree.SetBranchStatus("tauLeadPFTrackPt1",0)
-iTree.SetBranchStatus("tauLeadPFTrackPt2",0)
-iTree.SetBranchStatus("leadPFTrackPoint_z",0)
-iTree.SetBranchStatus("leadPFTrackPoint_y",0)
-iTree.SetBranchStatus("leadPFTrackPoint_x",0)
-iTree.SetBranchStatus("PV_x",0)
-iTree.SetBranchStatus("PV_y",0)
-iTree.SetBranchStatus("PV_z",0)
+    isoSelection = 'control'
+    if isoSelect == 'Tight':
+        isoSelection = 'signal'
 
-
-oTree = iTree.CloneTree(0)
-total = iTree.GetEntries()
-
-
-Lumi = 19.7
-isData = False
-isEmbed = False
-isSignal = False
-if 'emb' in iFile:
-    isEmbed = True
-floatVarsDict = setUpFloatVarsDict(isEmbed)
-
-for iVar in floatVarsDict.keys():
-    oTree.Branch("%s" %iVar, floatVarsDict[iVar], "%s/f" %iVar)
-
-#calculate yields
-looseYield_1 = 0.0
-looseYield_2 = 0.0
-mediumYield_1 = 0.0
-mediumYield_2 = 0.0
-
-if int(options.useLooseForShape) != 0:
     for i in range(total):
         r.gStyle.SetOptStat(0)
-        tool.printProcessStatus(iCurrent=i, total=total, processName = 'Looping sample %s, calculating yields' %iFile)
+        tool.printProcessStatus(iCurrent=i, total=total, processName = 'Looping sample %s' %inputFile)
         iTree.GetEntry(i)
+
         if 'data' in iTree.sampleName:
             isData = True
-        signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, options.pairSelection, isData, options.relaxRegion, isEmbed, True)
-        if options.isoSelect != isoSelection and options.isoSelect != 'none':
+        if 'ZPrime' in iTree.sampleName:
+            isSignal = True
+
+        if signSelect == 'OS' and iTree.q_1 == iTree.q_2:
             continue
-        if options.signSelect != signSelection and options.signSelect != 'none':
+        elif signSelect == 'SS' and iTree.q_1 != iTree.q_2:
             continue
-        if passCut(iTree, bTagSelection, 'L', isData, isEmbed):
-            if '1L' in bTagSelection:
-                looseYield_1 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
-            elif '2L' in bTagSelection:
-                looseYield_2 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
-        if passCut(iTree, bTagSelection, 'M', isData, isEmbed):
-            if '1M' in bTagSelection:
-                mediumYield_1 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
-            elif '2M' in bTagSelection:
-                mediumYield_2 += iTree.xs*Lumi*iTree.triggerEff*iTree.PUWeight/(iTree.initEvents)
-    print 'Loose yields: %s (1M)\t  %s (2M)' %(looseYield_1, looseYield_2)
-    print 'Medium yields: %s (1M)\t  %s (2M)' %(mediumYield_1, mediumYield_2)
-
-for i in range(total):
-    r.gStyle.SetOptStat(0)
-    tool.printProcessStatus(iCurrent=i, total=total, processName = 'Looping sample %s' %iFile)
-    iTree.GetEntry(i)
-
-    if 'data' in iTree.sampleName:
-        isData = True
-    if 'emb' in iTree.sampleName:
-        isEmbed = True
-    if 'H2hh' in iTree.sampleName:
-        isSignal = True
-
-    signSelection, isoSelection, bTagSelection = makeWholeTools2.findCategory(iTree, 1.0, options.pairSelection, isData, options.relaxRegion, isEmbed, True)
-    if options.isoSelect != isoSelection and options.isoSelect != 'none':
-        continue
-    if options.signSelect != signSelection and options.signSelect != 'none':
-        continue
-    if passCut(iTree, bTagSelection, options.bRegion, isData, isEmbed):
-        floatVarsDict['category2'][0] = findBCategory(iTree.CSVJ1, iTree.CSVJ2)
-
-        if '_semi' in iTree.sampleName:
-            sampleName = iTree.sampleName[:iTree.sampleName.find('_semi')+5]
-        elif '_' in iTree.sampleName and 'emb' not in iTree.sampleName:
-            sampleName = iTree.sampleName[:iTree.sampleName.find('_')]
-        else:
-            sampleName = iTree.sampleName
-
-        if isEmbed:
+        if plots.regionSelection(iTree, iFS, isoSelection, 'Loose', plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
             if isData:
-                sampleName = 'DY_embed'
-                floatVarsDict['weight'][0] = iTree.triggerEff*iTree.embeddedWeight*iTree.decayModeWeight
-                floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]
+                floatVarsDict['weightWithPU'][0] = 1.0            
             else:
-                sampleName = 'tt_embed'
-                floatVarsDict['weight'][0] = iTree.xs*0.983*Lumi*iTree.triggerEff*iTree.embeddedWeight/(iTree.initEvents)
-                floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]*iTree.PUWeight
-        elif isData:
-            sampleName = 'dataOSRelax_all'
-            if floatVarsDict['category2'][0] == 1:
-                floatVarsDict['weight'][0] = float(options.weightOne)
-                floatVarsDict['weightWithPU'][0] = float(options.weightOne)
-            elif floatVarsDict['category2'][0] == 2:
-                floatVarsDict['weight'][0] = float(options.weightTwo)
-                floatVarsDict['weightWithPU'][0] = float(options.weightTwo)            
-        else:
-            floatVarsDict['weight'][0] = iTree.xs*Lumi*iTree.triggerEff/(iTree.initEvents)
-            if isSignal:
-                floatVarsDict['weight'][0] = floatVarsDict['weight'][0]*iTree.decayModeWeight
-            floatVarsDict['weightWithPU'][0] = floatVarsDict['weight'][0]*iTree.PUWeight
-            if int(options.useLooseForShape) != 0:
-                if floatVarsDict['category2'][0] == 1:
-                    floatVarsDict['weightWithPU'][0] = floatVarsDict['weightWithPU'][0]*mediumYield_1/looseYield_1
-                elif floatVarsDict['category2'][0] == 2:
-                    floatVarsDict['weightWithPU'][0] = floatVarsDict['weightWithPU'][0]*mediumYield_2/looseYield_2
+                floatVarsDict['weightWithPU'][0] = cutSampleTools.getPUWeight(iTree.nTruePU)*iTree.xs*Lumi*iTree.genEventWeight/(int(eventCountWeighted.GetBinContent(1)))
 
-        floatVarsDict['sampleName2'][0] = tool.nameEnDecoder(sampleName, 'encode')
-        rightPair = makeWholeTools2.findRightPair(iTree, options.pairSelection)
-        floatVarsDict['met1'][0] = iTree.met.at(rightPair)
-        floatVarsDict['svMass1'][0] = iTree.svMass.at(rightPair)
-        floatVarsDict['iso1_1'][0] = iTree.iso1.at(rightPair)
-        floatVarsDict['iso2_1'][0] = iTree.iso2.at(rightPair)
+            met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
+            l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
+            l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 
-        oTree.Fill()
+            floatVarsDict['met'][0] = iTree.met
+            floatVarsDict['pZetaCut'][0] = iTree.pZetaCut
+            floatVarsDict['cosDPhi'][0] = iTree.cosDPhi
+            floatVarsDict['m_eff'][0] = iTree.m_eff
+            oTree.Fill()
 
-print ''
+    print ''
 
-oFile.cd()
-oTree.Write()
-# cutFlow.Write()
-nSaved = oTree.GetEntries()
-oFile.Close()
+    oFile.cd()
+    oTree.Write()
+    nSaved = oTree.GetEntries()
+    oFile.Close()
+    print 'saved %i events out of %i at: %s' %(nSaved,total,outputFile)
 
-print 'saved %i events out of %i at: %s_%s.root' %(nSaved,total,options.outputFile, oString)
+
+dir = '/user_data/zmao/NoBTag_7_6_X'
+output_dir = '/user_data/zmao/TMVA/'
+
+fs = 'em'
+listToRun = [(fs, '%s/DY-50to200_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/DY-200to400_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/DY-400to500_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/DY-500to700_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/DY-700to800_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/DY-800to1000_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/DY-1000to1500_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/antiT_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/antiT_t-channel_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/T_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/T_t-channel_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/TTJets_LO_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+
+             (fs, '%s/WZTo1L3Nu_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/WWTo1L1Nu2Q_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/WZTo1L1Nu2Q_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/WZJets_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+
+             (fs, '%s/ZZTo2L2Q_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/WZTo2L2Q_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/VVTo2L2Nu_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZZTo4L_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+
+             (fs, '%s/ZPrime_500_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZPrime_1000_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZPrime_1500_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZPrime_2000_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZPrime_2500_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZPrime_3000_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZPrime_3500_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/ZPrime_4000_all_SYNC_' %dir, 'OS', 'Tight', output_dir),
+             (fs, '%s/data_Electron_all_SYNC_' %dir, 'OS', 'Loose', output_dir),
+            ]
+
+cutSampleTools.setupLumiReWeight()
+for iFS, iSample, iCharge, iIsoRegion, output_dir in listToRun:
+    runOneFile(iFS, iSample, iCharge, iIsoRegion, output_dir)    
+cutSampleTools.freeLumiReWeight()
+
+
