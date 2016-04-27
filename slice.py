@@ -25,7 +25,7 @@ class summed_ini_histos(supy.wrappedChain.calculable):
         hPath = "%s/%s" % (hDir, hName)
         for iElement in range(elements.GetEntries()):
             element = elements.At(iElement)
-            f = r.TFile(element.GetTitle())
+            f = r.TFile.Open(element.GetTitle())
             assert f
             h = f.Get(hPath)
             assert h, "Histogram %s not found." % hPath
@@ -125,7 +125,8 @@ class slice(supy.analysis):
 
     def listOfSampleDictionaries(self):
         h = supy.samples.SampleHolder()
-        uf = 'utils.fileListFromDisk("%s", pruneList=False, isDirectory=True)'
+        uf = 'utils.fileListFromEos("%s", xrootdRedirector="root://cmseos.fnal.gov/", pruneList=False, eos="eos root://cmseos.fnal.gov")'
+#        uf = 'utils.fileListFromDisk("%s", pruneList=False, isDirectory=True)'
         for name, path, xs, fs in enVars.sampleLocations:
             h.add(name, uf % path, xs=xs)
         return [h]

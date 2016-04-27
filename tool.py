@@ -98,6 +98,7 @@ def findFilesInDir(dirName):
 
 def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents = False, blackList = []):
     added = 0.
+    dirName = "root://cmseos.fnal.gov/" + dirName
     totalAmount = len(os.listdir(dirName))
     for iFile in os.listdir(dirName):
         fName = dirName + '/' + iFile
@@ -319,7 +320,7 @@ def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
         fName = dirName + '/' + iFile.GetName()
         if (not iFile.IsDirectory()) and fName.endswith(".root"):
             tmpHist = r.TH1F("tmpHist", " ", nBins, xMin, xMax)
-            ifile = r.TFile(fName)
+            ifile = r.TFile.Open(fName)
             tmpHist = ifile.Get("TT/results")
             firstBinSum+=tmpHist.GetBinContent(1)
             added+=1
@@ -329,6 +330,7 @@ def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
 
 def addHistFromFiles(dirName, histName, hist, xAxisLabels = ['']):
     added=0.
+    dirName = "root://cmseos.fnal.gov/" + dirName
     dir = r.TSystemDirectory(dirName, dirName)
     files = dir.GetListOfFiles()
     totalAmount = files.GetSize() - 2.
@@ -337,7 +339,7 @@ def addHistFromFiles(dirName, histName, hist, xAxisLabels = ['']):
         fName = dirName + '/' + iFile.GetName()
         if (not iFile.IsDirectory()) and fName.endswith(".root"):
             tmpHist = r.TH1F()
-            ifile = r.TFile(fName)
+            ifile = r.TFile.Open(fName)
             if ifile.IsZombie():
                 print 'skipping file: %s' %(fName)
                 continue

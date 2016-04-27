@@ -459,19 +459,19 @@ def getRegVars(j1Name, j2Name, tChain):
 def triggerMatch(iTree, channel = 'tt', isData = False):
     HLTandFilter = {}
     HLTandFilter['tt'] = {'doubleTau': ['t1DiPFTau40', 't2DiPFTau40']}
-
     HLTandFilter['et'] = {# 'eTau': ['eEle22', 'eOverlapEle22', 'tTau20', 'tTauOverlapEle'],
 #                           'singleE': ['eSingleEle'],
 #                           'singleE22': ['eSingleEle22hlt23'],
-                          'singleE27_2p1_WP75': ['eSingleEle27_2p1_WP75'],
-
+#                           'singleE27_2p1_WP75': ['eSingleEle27_2p1_WP75'],
+                          'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
+#                           'singleE23_WPLoose': ['eSingleEle23_WPLoose'],
                          }
 
-    HLTandFilter['et_data'] = {#'eTau_WPLoose': ['eEle22Loose', 'eOverlapEle22Loose', 'tTau20', 'tTauOverlapEleLoose'],
-#                                 'singleETight': ['eSingleEleTight'],
-                                'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
-#                                 'singleE23_WPLoose': ['eSingleEle23_WPLoose'],
-                              }
+#     HLTandFilter['et_data'] = {#'eTau_WPLoose': ['eEle22Loose', 'eOverlapEle22Loose', 'tTau20', 'tTauOverlapEleLoose'],
+# #                                 'singleETight': ['eSingleEleTight'],
+#                                 'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
+# #                                 'singleE23_WPLoose': ['eSingleEle23_WPLoose'],
+#                               }
 
     HLTandFilter['mt'] = {# 'muTau': ['mMuTau', 'mMuTauOverlap', 'tTau20AgainstMuon', 'tTauOverlapMu'],
 #                           'singleMu24': ['mIsoMu24'],
@@ -487,11 +487,11 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
 #                           'Mu17e12': ['mMu17El12', 'eMu17El12'],
 #                           'singleMu17': ['mIsoMu17hlt18'],
 #                           'singleMu27': ['mIsoMu27']
-                          'singleE27_2p1_WP75': ['eSingleEle27_2p1_WP75'],
+                          'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
                           }
-    HLTandFilter['em_data'] = {# 'singleMu18': ['mIsoMu18'],
-                              'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
-                                }
+#     HLTandFilter['em_data'] = {# 'singleMu18': ['mIsoMu18'],
+#                               'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
+#                                 }
 
 #     HLTandFilter['em'] = {'Mu30e30': ['mMu30El30_MC', 'eMu30El30']}
 #     HLTandFilter['em_data'] = {'Mu30e30': ['mMu30El30_data', 'eMu30El30']}
@@ -542,7 +542,6 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
                         if (iTree.e1DoubleE_WPLooseLeg1 and iTree.e2DoubleE_WPLooseLeg2) or (iTree.e1DoubleE_WPLooseLeg2 and iTree.e2DoubleE_WPLooseLeg1):
                             if iTree.e1Pt > 25 and iTree.e2Pt > 25:
                                 return True
-
                     else:
                         return True
 
@@ -584,7 +583,19 @@ def passCut(iTree, FS, isData = False, sys = ''):
         if not (abs(iTree.tdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045):
             return 0, 'dZ'
         if not (abs(iTree.tEta) < 2.1):
-            return 0, 'dZ'
+            return 0, 'tEta'
+        if not (iTree.ePt > 35):
+            return 0, 'ePt'
+        if not (iTree.tDecayModeFindingNewDMs > 0.5):
+            return 0, 'decayModeFinding'
+#         if not (iTree.ePt > 24):
+#             return 0, 'ePt'
+#         if not (abs(iTree.eEta) < 2.1):
+#             return 0, 'eEta'
+#         if not (abs(iTree.tEta) < 2.3):
+#             return 0, 'tEta'
+#         if not (iTree.tDecayModeFinding > 0.5):
+#             return 0, 'decayModeFinding'
         if sys == '' and iTree.tPt <= 20:
             return 0, 'tauPt'
         if sys == 'tauECUp' and (iTree.tES_up <= 20) and iTree.tIsTauh:
@@ -597,8 +608,6 @@ def passCut(iTree, FS, isData = False, sys = ''):
             return 0, 'tauPt'
         if not iTree.eMVANonTrigWP80:
             return 0, 'ID'
-#         if not iTree.eMVATrigWP80:
-#             return 0, 'ID'
 #         if not iTree.eCBIDLoose:
 #             return 0, 'ID'
 #         if not iTree.eCBIDMedium:
@@ -650,11 +659,23 @@ def passCut(iTree, FS, isData = False, sys = ''):
 
 ########et
     elif FS == 'em':
-        if not triggerMatch(iTree, FS, isData):
-            return 0, 'triggerMatch'
+        if not (iTree.ePt > 13):
+            return 0, 'ePt'
+        if not (abs(iTree.eEta) < 2.5):
+            return 0, 'eEta'
+        if not (iTree.mPt > 10):
+            return 0, 'mPt'
+        if not (abs(iTree.mEta) < 2.4):
+            return 0, 'mEta'
+        if not iTree.mIsMediumMuon:
+            return 0, 'muonID'
+        if not (iTree.e_m_DR > 0.3):
+            return 0, 'dR'
         if not iTree.eMVANonTrigWP80:
             return 0, 'ID'
-#         if not iTree.eMVATrigWP80:
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
+#         if not iTree.eMVANTrigWP80:
 #             return 0, 'ID'
 #         if not iTree.ePt > 31:
 #             return 0, 'ePt'
@@ -678,10 +699,7 @@ def passCut(iTree, FS, isData = False, sys = ''):
         if hasattr(iTree, 'ePassConversionVeto'):
             if not iTree.ePassConversionVeto:
                 return 0, 'e_passCov'
-        if not (iTree.e_m_DR > 0.3):
-            return 0, 'dR'
-        if not (iTree.mPt > 10):
-            return 0, 'mPt'
+
 
 
 ########mt
@@ -912,6 +930,9 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
                     return 0, 'pZeta'
                 if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
                     return 0, 'bTag'
+            if type == '0BTag':
+                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
+                    return 0, 'bTag'
 
             if type == 'signalRegionNoMETreversePZeta':
                 if iTree.eCharge == iTree.tCharge:
@@ -934,7 +955,7 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
                     return 0, 'bTag'
 
         if type != 'baseline' and type != 'notInclusive':
-            if not (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
+            if not (iTree.tAgainstElectronTightMVA6 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
                 return 0, 'tauAgainst'
             if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10):
                 return 0, 'iso'
@@ -946,6 +967,8 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
         if type == 'inclusive':
             if (iTree.mRelIso >= 0.15 or iTree.eRelIso >= 0.15):
                 return 0, 'iso'
+        elif type == 'baseline':
+            return 1, 'pass'
         elif type == 'antiIso':
             if (iTree.mRelIso <= 0.2 or iTree.mRelIso >= 1 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
                 return 0, 'antiIso'
@@ -1083,6 +1106,9 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
                 if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
                     return 0, 'pZeta'
                 if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
+                    return 0, 'bTag'
+            if type == '0BTag':
+                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
                     return 0, 'bTag'
         if type != 'baseline' and type != 'notInclusive':
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):

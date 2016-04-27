@@ -81,7 +81,6 @@ tauVarsDict = {'iso_': 'ByCombinedIsolationDeltaBetaCorrRaw3Hits',
               'againstElectronMediumMVA5_': 'AgainstElectronMediumMVA5',
               'againstElectronTightMVA5_': 'AgainstElectronTightMVA5',
               'againstElectronVLooseMVA5_': 'AgainstElectronVLooseMVA5',
-              'againstElectronVTightMVA5_': 'AgainstElectronVTightMVA5',
               'againstMuonLoose3_': 'AgainstMuonLoose3',
               'againstMuonTight3_': 'AgainstMuonTight3',
               'byCombinedIsolationDeltaBetaCorrRaw3Hits_': 'ByCombinedIsolationDeltaBetaCorrRaw3Hits',
@@ -94,7 +93,7 @@ tauVarsDict = {'iso_': 'ByCombinedIsolationDeltaBetaCorrRaw3Hits',
 
 eMuVarsDict = {'iso_': 'RelIso'}
 
-def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys):
+def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, isData):
     if FS == 'tt':
         if iChain.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits <= iChain.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits:
             object_1 = 't1'
@@ -204,7 +203,28 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys):
 
 #         syncVarsDict['mvamet'][0] = iChain.mvametEt
 #         syncVarsDict['mvametphi'][0] = iChain.mvametPhi
-        
+        met = lvClass()
+        met.SetCoordinates(iChain.pfMetEt, 0.0, iChain.pfMetPhi, 0)
+        if FS == 'et':
+            if sys == 'tauECUp' and iChain.tIsTauh:
+                lep2.SetCoordinates(iChain.tES_up, iChain.tEta, iChain.tPhi, iChain.tMass)
+            elif sys == 'tauECDown' and iChain.tIsTauh:
+                lep2.SetCoordinates(iChain.tES_down, iChain.tEta, iChain.tPhi, iChain.tMass)
+            if (sys == 'tauECDown' or sys == 'tauECUp') and (not isData) and iChain.tIsTauh:
+                if lep2.pt() - iChain.tPt > 0:
+                    deltaTauES.SetCoordinates(abs(lep2.pt() - iChain.tPt), 0.0, -iChain.tPhi, 0)
+                else:
+                    deltaTauES.SetCoordinates(abs(lep2.pt() - iChain.tPt), 0.0, iChain.tPhi, 0)
+                met = met + deltaTauES        
+
+        if sys == 'jetECUp' and not isData:
+            met.SetCoordinates(iChain.pfMet_jesUp_Et, 0.0, iChain.pfMet_jesUp_Phi, 0)
+        elif sys == 'jetECDown' and not isData:
+            met.SetCoordinates(iChain.pfMet_jesDown_Et, 0.0, iChain.pfMet_jesDown_Phi, 0)
+
+        floatVarsDict['cosDPhi'][0] = math.cos(lep1.phi() - lep2.phi())
+        floatVarsDict['pZetaCut'][0] = pZetaCut(lep1, lep2, met)
+        floatVarsDict['m_eff'][0] = (lep1 + lep2 + met).mass()
 
         goodJets, pt20jets, pt30jets = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'jet', iChain = iChain)
 

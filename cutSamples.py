@@ -46,7 +46,8 @@ def setUpFloatVarsDict():
     varDict = {}
     names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 
             'bcsv_1','bpt_1','beta_1','bphi_1', 'bmass_1', 'brawf_1','bmva_1','bpfid_1', 'bpuid_1',
-            'bcsv_2','bpt_2','beta_2','bphi_2', 'bmass_2', 'brawf_2','bmva_2','bpfid_2', 'bpuid_2','dRTauTau', 'dRJJ']
+            'bcsv_2','bpt_2','beta_2','bphi_2', 'bmass_2', 'brawf_2','bmva_2','bpfid_2', 'bpuid_2','dRTauTau', 'dRJJ',
+            'pZetaCut', 'm_eff', 'cosDPhi']
 
     for iName in names:
         varDict[iName] = array('f', [0.])
@@ -263,7 +264,7 @@ def loop_one_sample(iSample,                    #sample name (DY)
                 iChain.GetEntry(bestPair)
                 passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData, sys)
                 if passAdditional:
-                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys)
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys, isData)
                     oTree.Fill()
                     counter += 1
 
@@ -273,7 +274,7 @@ def loop_one_sample(iSample,                    #sample name (DY)
             iChain.GetEntry(bestPair)
             passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData, sys)
             if passAdditional:
-                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys)
+                syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys, isData)
                 oTree.Fill()
                 counter += 1
 
@@ -292,7 +293,7 @@ def loop_one_sample(iSample,                    #sample name (DY)
             if (iEntry == nEntries - 1) and passCuts:  #save last event, it's already loaded with the current value
                 passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData, sys)
                 if passAdditional:
-                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys)
+                    syncTools.saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, finalState, sys, isData)
                     oTree.Fill()
                     counter += 1
 
