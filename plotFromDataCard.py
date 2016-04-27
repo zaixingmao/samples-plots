@@ -23,8 +23,8 @@ defaultOrder = {"VV": r.TColor.GetColor(222, 90,106),
 stackOrder = ["VV", "W", 'TT', 'QCD', "ZTT"]
 
 
-variations = {'et': ['_CMS_scale_W_13TeV', '_CMS_scale_btag_13TeV', '_CMS_scale_j_13TeV', '_CMS_scale_t_13TeV'],
-              'em': ['_CMS_scale_btag_13TeV', '_CMS_scale_j_13TeV'],
+variations = {'et': ['_CMS_zp_scale_W_13TeV', '_CMS_zp_scale_btag_13TeV', '_CMS_zp_scale_j_13TeV', '_CMS_zp_scale_t_13TeV', '_CMS_zp_pdf_13TeV'],
+              'em': ['_CMS_zp_scale_btag_13TeV', '_CMS_zp_scale_j_13TeV', '_CMS_zp_pdf_13TeV'],
               'mt': [],
               'tt': [],
 
@@ -130,6 +130,7 @@ def buildHistos(file, fs):
         if len(sumErrSquareUp) == 0:
             sumErrSquareUp = [0.0 for x in range(nBins)]
             sumErrSquareDown = [0.0 for x in range(nBins)]
+
 
         for iBin in range(1, nBins + 1):
             origError = tmpHists[ikey].GetBinError(iBin)
@@ -329,7 +330,7 @@ def plot(inputFile, fs, mass = '500'):
 
     iMax = 1.2*max(stack.GetMaximum(), histos["data_obs"].GetMaximum())
     stack.SetMaximum(iMax)
-    stack.SetMinimum(0.001)
+    stack.SetMinimum(0.01)
 
     if options.logY:
         r.gPad.SetLogy()
@@ -349,7 +350,7 @@ def plot(inputFile, fs, mass = '500'):
 
     latex = r.TLatex()
     latex.SetTextSize(0.05)
-    latex.DrawLatex(30, iMax*0.98, getFinalStateLatex(fs))
+    latex.DrawLatex(120, iMax*0.98, getFinalStateLatex(fs))
 
     c_low.cd()
     r.gPad.SetTicky()
@@ -363,6 +364,7 @@ def plot(inputFile, fs, mass = '500'):
     c.Print('%s' %psfile)
 print options.FS
 m = 1500
-plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v4.root" %(options.FS), options.FS, str(m))
+plot("/home/elaird/CMSSW_7_1_5/src/auxiliaries/shapes/Brown/htt_%s.inputs-Zp-13TeV.root" %(options.FS), options.FS, str(m))
+#plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v4.root" %(options.FS), options.FS, str(m))
 # for m in range(500, 5500, 500):
 #     plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v2.root" %(options.FS), options.FS, str(m))
