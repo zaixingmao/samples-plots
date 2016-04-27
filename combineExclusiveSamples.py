@@ -96,13 +96,13 @@ def combineSamples(location, fileList, method):
                 
 
 
-process = ['WJets_LO', 'DY-50']#, 'DY-50_LO']#]
+process = ['WJets_LO', 'DY-50']#]
 # process = ['DY-50']#, 'WJets_LO']#'DY-50']#, 'DY-50_LO']#]
 
-FS = ['et', 'em']#, 'et', 'tt', 'mt']
+FS = ['et', 'em']#['et', 'em']#, 'et', 'tt', 'mt']
 binned = ['']#, '_HT-100to200', '_HT-200to400', '_HT-600toInf']#'_HT-400to600',
 tail = 'noIso'
-location = '/nfs_scratch/zmao/signalRegion_NoZetaNoCosPhi/'
+location = '/uscms/home/zmao/nobackup/0BTag/'
 #location = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_singleEforEMu/'
 method = 'LO'
 for iProcess in process:
