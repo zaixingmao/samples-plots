@@ -138,7 +138,7 @@ def addVars(iTree, a):
 
 #             'dZ_1', iTree.dZ_1, 
 
-#             'iso1', iTree.byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
+             'iso1', iTree.iso_1,#byCombinedIsolationDeltaBetaCorrRaw3Hits_1, 
 #             'tw_1', iTree.trigweight_1, 
             'pt1', iTree.pt_1, 
             'eta1', iTree.eta_1, 
@@ -146,7 +146,7 @@ def addVars(iTree, a):
 #             'mass1', iTree1.m_1,
             'pt2', iTree.pt_2, 
             'eta2', iTree.eta_2, 
-#             'iso2', iTree.iso_2,
+             'iso2', iTree.iso_2,
 #             'q2', iTree.q_2,  
 #             'iso2', iTree.iso_2, 
 #             'tw_2', iTree.trigweight_2, 
@@ -198,9 +198,9 @@ def addVars(iTree, a):
 #             'bpt_3', iTree.bpt_3,
 #             'beta_3', iTree.beta_3,
 #             'NBTags', iTree.nbtag,
-            'cov00', iTree.metcov00,
-            'cov01', iTree.metcov01,
-            'cov10', iTree.metcov10,
+#            'cov00', iTree.metcov00,
+#            'cov01', iTree.metcov01,
+#            'cov10', iTree.metcov10,
 #             'mJJ', iTree.m_bb,
 #             'svMass', iTree.m_sv
     ]
