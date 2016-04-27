@@ -20,20 +20,26 @@ dir = '/user_data/zmao/Nov18Prodruction_ntuple_TightTo5/'
 # dir = '/user_data/zmao/Nov18Prodruction_ntuple_noIso/MVANonTrigWP80/'
 # dir = '/user_data/zmao/Nov18Prodruction_ntuple_MVANonTrigWP80_singleEforEMu/'
 # dir = '/user_data/zmao/Nov18Prodruction_ntuple_mu/'
-dirMC = '/user_data/zmao/Jan13Production_highMETlowPZeta0B/'
+# dirMC = '/user_data/zmao/Jan13Production_highMETlowPZeta0B/'
 # dirMC = '/user_data/zmao/signalRegionNoCosPhi/'
 # # dirMC = '/user_data/zmao/Jan13Production_jetEC/'
 # dirMC = '/user_data/zmao/signalRegionBTagged/'
 # dirMC = '/user_data/zmao/signalRegionNoMET/'
-# dirMC = '/user_data/zmao/signalRegion_nobTagCut/'
+# dirMC = '/user_data/zmao/highMET0BNotSignal/'
+
 dir = '/user_data/zmao/Jan13Production_signalRegion/'
 dir_pdf = '/user_data/zmao/singalRegion_pdf/'
+dir = '/user_data/zmao/NoBTag_7_6_X/normal'
 
+# 
+# dir = '/user_data/zmao/signalRegion_7_6_X_2/'
+dir_pdf = dir
 # dir = '/user_data/zmao/lowMET0B/'
 # dir = '/user_data/zmao/highMET0BNotSignal/'
 # dirMC = '/user_data/zmao/Jan13Production_jetBTag/'
 # dirMC = '/user_data/zmao/Jan13Production_tauDown/'
 dirMC = dir#'/user_data/zmao/signalRegion_tauECUp2/'
+
 
 # dirMC = '/user_data/zmao/Jan13Production_jetBTag/'
 # dirMC = '/user_data/zmao/Jan13Production_tauUp/'
@@ -72,15 +78,15 @@ sampleList = [
     ('DY_M-1000to1500', '%s/DY-1000to1500_all_SYNC_' %dir_pdf, 'Z#rightarrow#tau#tau'),
 # 
 # #     ('DY_M-450to500', '%s/DY-450to500_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-500to550', '%s/DY-500to550_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-950to1000', '%s/DY-950to1000_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-1000to1050', '%s/DY-1000to1050_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-1450to1500', '%s/DY-1450to1500_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-1500to1550', '%s/DY-1500to1550_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-1950to2000', '%s/DY-1950to2000_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-2000to2050', '%s/DY-2000to2050_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-2450to2550', '%s/DY-2450to2550_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
-# #     ('DY_M-2950to3000', '%s/DY-2950to3000_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-500to550', '%s/DY-500to550_all_SYNC_' %dir_pdf, 'Z#rightarrow#tau#tau'),
+# # #     ('DY_M-950to1000', '%s/DY-950to1000_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-1000to1050', '%s/DY-1000to1050_all_SYNC_' %dir_pdf, 'Z#rightarrow#tau#tau'),
+# # #     ('DY_M-1450to1500', '%s/DY-1450to1500_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-1500to1550', '%s/DY-1500to1550_all_SYNC_' %dir_pdf, 'Z#rightarrow#tau#tau'),
+# # #     ('DY_M-1950to2000', '%s/DY-1950to2000_all_SYNC_' %dirMC2, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-2000to2050', '%s/DY-2000to2050_all_SYNC_' %dir_pdf, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-2450to2550', '%s/DY-2450to2550_all_SYNC_' %dir_pdf, 'Z#rightarrow#tau#tau'),
+#     ('DY_M-2800to3000', '%s/DY-2800to3000_all_SYNC_' %dir_pdf, 'Z#rightarrow#tau#tau'),
 # 
 # 
 # #     ('DY_M-50', '%s/DY-50_LO_all_SYNC_' %dirMC, 'Z#rightarrow#tau#tau'),
@@ -100,7 +106,7 @@ sampleList = [
 # #     ('WW', '%s/WW_all_SYNC_' %dir, 'Diboson'),
 # #     ('WZ', '%s/WZ_all_SYNC_' %dir, 'Diboson'),
 # #     ('ZZ', '%s/ZZ_all_SYNC_' %dir, 'Diboson'),
-# 
+
     ('WZTo1L3Nu', '%s/WZTo1L3Nu_all_SYNC_' %dirMC, 'Diboson'),
     ('WWTo1L1Nu2Q', '%s/WWTo1L1Nu2Q_all_SYNC_' %dirMC, 'Diboson'),
     ('WZTo1L1Nu2Q', '%s/WZTo1L1Nu2Q_all_SYNC_' %dirMC, 'Diboson'),
@@ -123,13 +129,13 @@ sampleList = [
     ('ST_antiTop_tW', '%s/antiT_all_SYNC_' %dirMC, 't#bar{t}'),
     ('ST_top_tW', '%s/T_all_SYNC_' %dirMC, 't#bar{t}'),
     ('TTJets', '%s/TTJets_LO_all_SYNC_' %dir_pdf, 't#bar{t}'),
-# # # 
-    ('data', '%s/data_all_SYNC_new_' %dir, 'Observed'),
+# # 
+    ('data', '%s/data_Electron_all_SYNC_' %dir, 'Observed'),
 #    ('ggH160', '%s/SUSY_all_SYNC_' %dir, 'ggH160'),
-    ('ggH', '%s/ggH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
-    ('vbfH', '%s/vbfH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
+#     ('ggH', '%s/ggH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
+#     ('vbfH', '%s/vbfH_all_SYNC_' %dirMC, 'h125#rightarrow#tau#tau'),
 #     ]
-#     ] + [('Zprime_500', '%s/ZPrime_500_all_SYNC_' %dirMC, 'ZPrime_500')]
+#     ] + [('Zprime_1000', '%s/ZPrime_1000_all_SYNC_' %dirMC, 'ZPrime_1000')]
      ]+ [('Zprime_%d' % m, '%s/ZPrime_%d_all_SYNC_' % (dirMC, m), 'ZPrime_%d' % m) for m in (set(range(500, 3500, 500)))]
 
 # selection = '_antiIso'
@@ -151,6 +157,7 @@ bins = []
 for i in range(12+1):
     bins.append(-2.4 + 0.4*i)
 bins2 = []
+BDT_bins = []
 nBins = 10
 # for i in range(4+1):
 #     bins2.append(-1.0 + (i+0.0)/nBins)
@@ -162,6 +169,8 @@ for i in range(2):
     bins2.append(-0.7 + 0.1*i)
 for i in range(8):
     bins2.append(-0.4 + 0.2*i)
+for i in range(20):
+    BDT_bins.append(-1.0 + 0.1*i)
 bins3 = []
 nBins = 40
 for i in range(nBins+1):
@@ -181,13 +190,16 @@ vars = [# ("ePt", array('d', range(30, 110, 10) + range(125, 225, 25) + range(25
 #        ("m_vis", array('d', range(0, 300, 50) + [300, 400, 600, 800, 1200]), 'GeV', 0.25), 
 #        ("pfmet_svmc_mass", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
 #        ("m_vis", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
-#        ("m_withMET", array('d', range(0, 200, 20) + range(200, 400, 50) + range(400, 2600, 200)), 'GeV', 0.25),
+#        ("m_withMET", array('d', range(0, 220, 20)), 'GeV', 100.),
 #         ("m_vis", array('d', range(0, 550, 50)), 'GeV', 0.25),
 #         ("m_vis", array('d', range(0, 300, 25) + [315, 450]), 'GeV', 0.25),
 #         ("m_withMET", array('d', [0, 50] + range(60, 310, 10) + range(320, 380, 20) + [400]), 'GeV', 0.25), #a
 
 #         ("m_withMET", array('d', [0, 100] + range(125, 300, 25) + [315, 450]), 'GeV', 0.25),
-        ("m_withMET", array('d', [0,100,110,120,130,140,150,160,170,180,190,200,225,250,275,300,400,600,900]), 'GeV', 100.), #em os hMEtlPZeta
+#         ("m_withMET", array('d', [85,100,110,120,130,140,150,160,170,180,190,200,225,250,275,300,400,600,900]), 'GeV', 100.), #em os hMEtlPZeta
+#         ("m_withMET", array('d', [0,75] + range(100, 475, 25)), 'GeV', 100.), #em os hMEtlPZeta
+        ("BDT_both", array('d', BDT_bins), 'GeV', 100.), #em os hMEtlPZeta
+
 #         ("m_withMET", array('d', [0,100,120,140,160,180,200,225,250,275,300,400,600,900]), 'GeV', 100.), #em os hMEtlPZeta
 
 #         ("m_withMET", array('d', range(50, 470, 20)), 'GeV', 0.25), #em os hMEtlPZeta
@@ -229,7 +241,7 @@ vars = [# ("ePt", array('d', range(30, 110, 10) + range(125, 225, 25) + range(25
 #        ("genHT", array('d', range(0, 800, 10)), 'GeV', 0.25),
 
 #         ("mt_2", array('d', range(0, 170, 20)), 'GeV', 12),
-#         ("mt_1", array('d', range(0, 130, 10) + [200]), 'GeV', 12),
+#         ("mt_1", array('d', range(20, 140, 10) + [150]), 'GeV', 12),
 #         ("mt_1", array('d', range(0, 165, 15)), 'GeV', 12),
 
 #         ("mt_1", array('d', range(0, 215, 15)), 'GeV', 12),
@@ -248,7 +260,15 @@ vars = [# ("ePt", array('d', range(30, 110, 10) + range(125, 225, 25) + range(25
 QCD_scale = {'tt': 1.0,
              'mt': 1.0,
              'et': [# (0.089, 0.008),
-                    (0.122, 0.017),
+#                     (0.100, 0.019),
+                    (0.127, 0.022),
+                    (0.408, 0.055),
+                    (0.127, 0.022),
+                    (0.126, 0.024),
+                    (0.118, 0.021),
+                    (0.100, 0.019),
+                    (0.128, 0.022),
+                    (0.069, 0.019),
                     (0.090, 0.014),
                     (0.119, 0.015),
                     (0.120, 0.016),
@@ -269,7 +289,10 @@ QCD_scale = {'tt': 1.0,
                     (0.131, 0.007),],
              'em': [# (0.174, 0.016), #lowMET
 #                     (0.229, 0.042), #highMETlowPZeta
-                    (0.142, 0.079),
+#                     (0.149, 0.081),
+                    (0.161, 0.037),
+                    (0.149, 0.081),
+#                     (0.142, 0.079),
 #                     (0.174, 0.031),
 #                         (0.201, 0.075),
 #                     (0.200, 0.040),#                       (0.232, 0.044), #signal region
@@ -282,14 +305,14 @@ QCD_scale = {'tt': 1.0,
             }
 
 # QCD_scale_1prong_3prong = (0.093, 0.014)
-QCD_scale_1prong_3prong = (0.128, 0.022)
+QCD_scale_1prong_3prong = (0.127, 0.022)#(0.100, 0.019)#(0.128, 0.022)
 
 
 
 addIntegrals = True
 showRegion = True
 binned = False
-unc = False
+unc = True
 
 scanRange = ['Tight','Medium', 'Loose']
 for i in range(9):
@@ -300,7 +323,7 @@ SF_prong1 = [0.276, 0.111]
 SF_prong3 = [0.132, 0.137]
 WJetsScanRange = [1.15]#, 1.0, 1.1]#, 1.0, 1.15]#, 1.0, 2.0]
 WJetsLoose2Tight = [0.171, 0.005]
-WJetsLoose2Tigh_1prong_3prong = [0.146, 0.014]
+WJetsLoose2Tigh_1prong_3prong = [0.14635, 0.01391]#[0.145, 0.012]#[0.146, 0.014]
 
 # WJetsScanRange = [0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3]#, 1.0, 1.1]#, 1.0, 1.15]#, 1.0, 2.0]
 # for i in range(7):
@@ -312,9 +335,9 @@ WJetsLoose2Tigh_1prong_3prong = [0.146, 0.014]
 # scanRange = []
 # for i in range(10):
 #     scanRange.append(i*0.1+0.15)
-# WJetsScanRange = [1.0]
-# WJetsLoose2Tight = [0.074, 0.030]
-# scanRange = [0.15, 0.95]
+WJetsScanRange = [1.0]
+WJetsLoose2Tight = [0.38278, 0.05325]#[0.074, 0.030]
+scanRange = [0.15, 0.95]
 
 # for i in range(3):
 #     WJetsScanRange.append((i+0.0)*0.1+1.2)
