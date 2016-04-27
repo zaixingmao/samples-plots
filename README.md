@@ -39,7 +39,8 @@ supy slice.py
 
 ####BDT training
 ```bash
-cd CMSSW_5_3_15/src/TMVA-v4.2.0/test/
+cp CMSSW_X_X_X/src/samples-plots/TMVA_test/* CMSSW_X_X_X/src/TMVA-v4.2.0/test/
+cd CMSSW_X_X_X/src/TMVA-v4.2.0/test/
 source setup.sh
 ```
 
@@ -49,11 +50,8 @@ source setup.sh
     2. python runRegression.py
 
 2) make training samples with regression:
-    1. for MC bkg
-        python makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c tightoppositebTag
-    2. for QCD bkg
-        python makeTrainingSample.py --i INPUTFILE --o OUTPUTFILE --c relaxedsamebTag
-    or use wrapper for all samples, need to specify locations: makeTrainingSamples.py
+    1. update makeTrainingSample.py
+    2. python makeTrainingSample.py
 
 3) train BDT:
     1. specify sample location in TMVA-v4.2.0/test/TMVAClassification_both.py
