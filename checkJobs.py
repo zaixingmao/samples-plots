@@ -16,18 +16,20 @@ def trueSize(sizeofFile):
         return None
 
 def get_hdfs_location(location):
-    hdfs_location = '/hdfs/store/user/'
+    data_location = '/store/user/'
+    log_location = '/uscms_data/d3/'
     if location.find('/submit') > 0:
-        hdfs_location += location[len('/nfs_scratch/'):location.find('/submit')]
+        data_location += location[len(log_location):location.find('/submit')]
     else:
-        hdfs_location += location[len('/nfs_scratch/'):]
-    return hdfs_location
+        data_location += location[len(log_location):]
+    print location
+    return data_location
 
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("--l", dest="location", default='currentLocation', help="location for dump file")
     parser.add_option("--threshold", dest="threshold", default=4, help="threshold for dir size")
-    parser.add_option("--fileType", dest="fileType", default='make_ntuples_cfg', help="prefix of dir name")
+    parser.add_option("--fileType", dest="fileType", default='-', help="prefix of dir name")
     options, args = parser.parse_args()
     return options
 
@@ -41,9 +43,21 @@ def checkJobs(opt):
         os.chdir(location)
     print 'In %s' %location
 
-    os.system("ls %s | wc > check.txt" %get_hdfs_location(location))
+#    os.system("eos root://cmseos.fnal.gov ls %s | wc > check.txt" %get_hdfs_location(location))
+    os.system("eos root://cmseos.fnal.gov ls -lhtr %s  > check.txt" %get_hdfs_location(location))
+
     lines2 = open(location + '/check.txt', "r").readlines()
-    finishedFiles = lines2[0].split()[0]
+    finishedFiles = 0
+    smallestLine = ""
+    smallestFile = 99999999
+    for iLine in lines2:
+        currentFileSize = int(iLine.split()[4])
+        if currentFileSize > 1000:
+            finishedFiles += 1
+            if smallestFile > currentFileSize:
+                smallestFile = currentFileSize
+                smallestLine = iLine.split()[8]
+
     os.system("rm check.txt")
 
     os.system("du -lh > check.txt")
@@ -82,7 +96,7 @@ def checkJobs(opt):
         print 'No file with *%s* found' %opt.fileType
 
     print 'Found %s root files out of %i jobs' %(finishedFiles, foundCompleteJobs+foundIncompleteJobs)
-
+    print 'Smallest output file is %s with size %i' %(smallestLine, smallestFile)
     os.system("rm check.txt")
 
 if __name__ == "__main__":
