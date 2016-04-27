@@ -39,7 +39,7 @@ def expandFinalStates(FS):
  
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'eta_1', 'eta_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'pfMEtNoHF', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso', 'mt_1', 'genMass', 'npv']
+    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'eta_1', 'eta_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso', 'mt_1', 'genMass', 'npv', 'BDT']
     for iName in names:
         varDict[iName] = array('f', [0.])
     return varDict
@@ -67,6 +67,7 @@ def opts():
     parser.add_option("--method", dest="method", default='SS', help="")
     parser.add_option("--sys", dest="sys", default='', help="")
     parser.add_option("--pdf", dest="pdf", default=False, action="store_true", help="")
+    parser.add_option("--trainnedMass", dest="trainnedMass", default="", help="")
 
     options, args = parser.parse_args()
 
@@ -190,6 +191,11 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict,
         if hasattr(iTree, 'X_to_ll'):
             floatVarsDict['genMass'][0] = iTree.X_to_ll
 
+        if hasattr(iTree, 'BDT_both'):
+            floatVarsDict['BDT'][0] = iTree.BDT_both
+        else:
+            floatVarsDict['BDT'][0] = -999
+
         floatVarsDict['triggerEff'][0] = iTree.trigweight_1*iTree.trigweight_2
         charVarsDict['Category'][:31] = iFS
 
@@ -234,7 +240,6 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict,
             floatVarsDict['pfMEt'][0] = iTree.pfMet_jesDown_Et
         else:
             floatVarsDict['pfMEt'][0] = iTree.pfMetEt
-        floatVarsDict['pfMEtNoHF'][0] = iTree.pfMetNoHFEt
         floatVarsDict['eleRelIso'][0] = iTree.eRelIso
 
         if options.PUWeight and not isData:
@@ -281,6 +286,9 @@ def go():
             tail = '_withPUWeight'
         if options.sys:
             tail += "_%s" %options.sys
+        if options.trainnedMass != "":
+            tail += "_%s" %options.trainnedMass
+
         oFile = r.TFile('%s/combined_%s%s.root' %(options.location, iFS, tail),"recreate")
         
         print 'creating datacard for final state: %s >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>' %iFS
@@ -293,6 +301,9 @@ def go():
             oTree.Branch("%s" %iVar, charVarsDict[iVar], "%s[31]/C" %iVar)
         for iSample, iLocation, iCat in plots_cfg.sampleList:
             iLocation += '%s_noIso.root' %iFS
+            if options.trainnedMass != "":
+                iLocation = "%s/%s/%s" %(iLocation[:iLocation.find("normal") + 6], options.trainnedMass, iLocation[iLocation.find("normal") + 6:])
+                print iLocation
             totalQCD += loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS)
 
         oFile.cd()
