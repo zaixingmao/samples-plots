@@ -10,7 +10,6 @@ cd samples-plots
 
 ####make samples from ntuples
 * Specify samples location, name in `cfg/enVars.py`
-* `./cutSamples.py -l LOCATIONOFOUTPUTFILE --sync --FS=tt,et`
 * cutSamples currently supports [tt, et, mt, em]
 * cuts defined in cutSampleTools.py consists of two stage:
 * 1) passCuts --- always applied 
@@ -24,7 +23,13 @@ cd -
 mv fnal_cmsJob.sh supy/sites/
 mv __init__.py supy/sites/
 source env.sh
+
+#running locally
+supy slice.py --loop 1 --slices 10
+
+#running batch
 supy slice.py --loop 1 --slices 10 --batch
+
 # after jobs are complete:
 supy slice.py
 ```
