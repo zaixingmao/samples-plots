@@ -1,6 +1,6 @@
 ####setup
 ```bash
-cd CMSSW_5_3_15/src
+cd CMSSW_7_6_3/src
 cmsenv
 
 git clone https://github.com/zaixingmao/samples-plots.git
