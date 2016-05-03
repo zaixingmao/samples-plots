@@ -5,7 +5,7 @@ cmsenv
 
 git clone https://github.com/zaixingmao/samples-plots.git
 cd samples-plots
-
+git checkout fnal
 ```
 
 ####make samples from ntuples
@@ -33,13 +33,6 @@ supy slice.py --loop 1 --slices 10 --batch
 # after jobs are complete:
 supy slice.py
 ```
-
-######to combined data, since we have A, B, C, D
-1. generate A, B, C, D separately in the same location
- (with no other sample in that directory)
-2. specify that location in `cfg/enVars.py`
-3. `python cutSamples.py -a True -l LOCATIONOFOUTPUTFILE`
- (the option -a tells cutSample to simply add the files with mine format)
 
 ####BDT training
 ```bash
