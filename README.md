@@ -6,26 +6,25 @@ cmsenv
 git clone https://github.com/zaixingmao/samples-plots.git
 cd samples-plots
 
-git clone https://github.com/bvormwald/HHKinFit.git
-cd HHKinFit
-git checkout v1.1
-./compile.sh
-cd ..
 ```
 
 ####make samples from ntuples
 * Specify samples location, name in `cfg/enVars.py`
 * `./cutSamples.py -l LOCATIONOFOUTPUTFILE --sync --FS=tt,et`
 * cutSamples currently supports [tt, et, mt, em]
+* cuts defined in cutSampleTools.py consists of two stage:
+* 1) passCuts --- always applied 
+* 2) passAdditionalCuts --- additional cuts 
 
 ```bash
 git clone https://github.com/elaird/supy.git
 cd supy
-git checkout empty-samples
-git apply ../supy.patch
+git checkout tweaks
 cd -
+mv fnal_cmsJob.sh supy/sites/
+mv __init__.py supy/sites/
 source env.sh
-supy slice.py --loop 4 --slices 10 --batch
+supy slice.py --loop 1 --slices 10 --batch
 # after jobs are complete:
 supy slice.py
 ```
