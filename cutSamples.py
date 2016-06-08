@@ -259,7 +259,7 @@ def loop_one_sample(iSample,                    #sample name (DY)
             if passCuts:
                 bestPair, isoValue_1, isoValue, ptValue_1, ptValue = findRightPair(iChain, iEntry, bestPair, isoValue_1, isoValue, ptValue_1, ptValue, pairChoice, finalState)
 
-            if (iEntry == nEntries - 1): #save last event
+            if (iEntry == nEntries - 1) and bestPair != -1: #save last event
                 iChain.LoadTree(bestPair)
                 iChain.GetEntry(bestPair)
                 passAdditional, comments = passAdditionalCuts(iChain, finalState, type, isData, sys)
