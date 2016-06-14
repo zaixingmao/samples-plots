@@ -23,8 +23,8 @@ defaultOrder = {"VV": r.TColor.GetColor(222, 90,106),
 stackOrder = ["VV", "W", 'TT', 'QCD', "ZTT"]
 
 
-variations = {'et': ['_CMS_zp_scale_W_13TeV', '_CMS_zp_scale_btag_13TeV', '_CMS_zp_scale_j_13TeV', '_CMS_zp_scale_t_13TeV', '_CMS_zp_pdf_13TeV'],
-              'em': ['_CMS_zp_scale_btag_13TeV', '_CMS_zp_scale_j_13TeV', '_CMS_zp_pdf_13TeV'],
+variations = {'et': ['_CMS_zp_scale_btag_13TeV', '_CMS_zp_scale_j_13TeV', '_CMS_zp_scale_t_13TeV', '_CMS_zp_pdf_13TeV'],
+              'em': ['_CMS_zp_scale_btag_13TeV', '_CMS_zp_scale_j_13TeV', '_CMS_zp_pdf_13TeV', '_CMS_zp_topPt_13TeV'],
               'mt': [],
               'tt': [],
 
@@ -38,11 +38,11 @@ additionalUnc = {'et': {'W': 0.014/0.146, 'QCD': 0.021/0.128, 'TT': 0.1, 'ZTT': 
 
 def getLatex(name):
     if name == 't':
-        return '#tau'
+        return '#tau_{h}'
     elif name == 'm':
-        return '#mu'
+        return '#tau_{#mu}'
     elif name == 'e':
-        return 'e'
+        return '#tau_{e}'
     else:
         return '%s, not supported' %name
 
@@ -52,7 +52,7 @@ def getFinalStateLatex(FS):
 def getZPrimeXS(mass):
     xs = {'500': (9.33, 1),
           '1000': (0.468, 10),
-          '1500': (0.0723, 10),
+          '1500': (0.0723*1.3, 10),
           '2000': (0.0173, 100),
           '2500': (0.00554, 100),
           '3000': (0.00129, 1000),
@@ -64,11 +64,11 @@ def getZPrimeXS(mass):
     return xs[mass]
 
 def getName(key):
-    names = {"VV": 'Diboson',
-             "W": 'WJets',
+    names = {"VV": 'VV',
+             "W": 'W+Jets',
              "TT": 't#bar{t}',
              "QCD": 'QCD',
-             "ZTT": 'DY'}
+             "ZTT": 'Z/#gamma*#rightarrow#it{ll}'}
     return names[key]
 
 def opts():
@@ -77,6 +77,7 @@ def opts():
     parser.add_option("--width", dest="width", default=False, action="store_true", help="")
     parser.add_option("--unblind", dest="unblind", default=False, action="store_true", help="")
     parser.add_option("--addRateUnc", dest="addRateUnc", default=False, action="store_true", help="")
+    parser.add_option("--showIntegral", dest="showIntegral", default=False, action="store_true", help="")
     parser.add_option("--FS", dest="FS", default='et', help="")
 
     options, args = parser.parse_args()
@@ -106,7 +107,8 @@ def buildHistos(file, fs):
 
     tmpHists["data_obs"] = file.Get(dir+'data_obs').Clone()
     tmpHists["data_obs"].SetMarkerStyle(8)
-    tmpHists["data_obs"].SetMarkerSize(0.9)
+    tmpHists["data_obs"].SetMarkerSize(0.7)
+    tmpHists["data_obs"].SetLineColor(r.kBlack)
 
     for m in range(500, 3500, 500):
         tmpHists['ggH'+str(m)] = file.Get(dir+'ggH'+str(m)).Clone()
@@ -141,21 +143,21 @@ def buildHistos(file, fs):
             if options.addRateUnc:
                 sumErrSquareUp[iBin-1] += origContent
                 sumErrSquareDown[iBin-1] += origContent
+            if ikey != "QCD" and ikey != 'W':
+                for iVariation in variations[fs]:
+                    tmpVarHistUp = file.Get(dir+ikey+iVariation+'Up').Clone()
+                    tmpVarHistDown = file.Get(dir+ikey+iVariation+'Down').Clone()
+                    varUpDiff = tmpVarHistUp.GetBinContent(iBin) - origContent
+                    varDownDiff = tmpVarHistDown.GetBinContent(iBin) - origContent
 
-            for iVariation in variations[fs]:
-                tmpVarHistUp = file.Get(dir+ikey+iVariation+'Up').Clone()
-                tmpVarHistDown = file.Get(dir+ikey+iVariation+'Down').Clone()
-                varUpDiff = tmpVarHistUp.GetBinContent(iBin) - origContent
-                varDownDiff = tmpVarHistDown.GetBinContent(iBin) - origContent
-
-                if varUpDiff*varDownDiff > 0: #if they're the same direction
-                    if varUpDiff > 0: #they both vary upwards
-                        sumErrSquareUp[iBin-1] += varUpDiff > varDownDiff and varUpDiff**2 or varDownDiff**2
-                    else: #they both vary downards:
-                        sumErrSquareDown[iBin-1] += varUpDiff > varDownDiff and varDownDiff**2 or varUpDiff**2
-                else:   #different direction
-                    sumErrSquareUp[iBin-1] += varUpDiff > 0 and varUpDiff**2 or varDownDiff**2
-                    sumErrSquareDown[iBin-1] += varDownDiff < 0 and varDownDiff**2 or varUpDiff**2
+                    if varUpDiff*varDownDiff > 0: #if they're the same direction
+                        if varUpDiff > 0: #they both vary upwards
+                            sumErrSquareUp[iBin-1] += varUpDiff > varDownDiff and varUpDiff**2 or varDownDiff**2
+                        else: #they both vary downards:
+                            sumErrSquareDown[iBin-1] += varUpDiff > varDownDiff and varDownDiff**2 or varUpDiff**2
+                    else:   #different direction
+                        sumErrSquareUp[iBin-1] += varUpDiff > 0 and varUpDiff**2 or varDownDiff**2
+                        sumErrSquareDown[iBin-1] += varDownDiff < 0 and varDownDiff**2 or varUpDiff**2
     return tmpHists, sumErrSquareUp, sumErrSquareDown
 
 
@@ -214,26 +216,37 @@ def buildUnc(inputHist, sumErrSquareUp, sumErrSquareDown):
 
 def setRatioCanvas(hist, fs):
     fakeHist = r.TH1F('fakeHist', '', hist.GetNbinsX(), hist.GetBinLowEdge(1), hist.GetBinLowEdge(hist.GetNbinsX()+1))
-    fakeHist.SetMaximum(3)
+    fakeHist.SetMaximum(2.99)
     fakeHist.SetMinimum(0)
     secondLeg = '#tau_{h}'
     if fs == 'em':
         secondLeg = '#tau_{#mu}'
-    if fs == 'mt':
-        fakeHist.SetTitle('; m(#tau_{#mu}, %s, #slash{E}_{T}) [GeV]; Obs / Bkg' %secondLeg)
-    elif fs == 'et':
-        fakeHist.SetTitle('; m(#tau_{e}, %s, #slash{E}_{T}) [GeV]; Obs / Bkg' %secondLeg)
-    else:
-        fakeHist.SetTitle('; m(#tau_{h}, #tau_{h}, #slash{E}_{T}) [GeV]; Obs / Bkg')
+        fakeHist.SetTitle(' ;m(#tau_{e}, %s, #slash{E}_{T}) [GeV]; Obs / Bkg' %secondLeg)
 
-    fakeHist.GetXaxis().SetLabelSize(0.1)
-    fakeHist.GetXaxis().SetTitleSize(0.1)
-    fakeHist.GetYaxis().SetLabelSize(0.1)
+    elif fs == 'mt':
+        fakeHist.SetTitle(' ;m(#tau_{#mu}, %s, #slash{E}_{T}) [GeV]; Obs / Bkg' %secondLeg)
+    elif fs == 'et':
+        fakeHist.SetTitle(' ;m(#tau_{e}, %s, #slash{E}_{T}) [GeV]; Obs / Bkg' %secondLeg)
+    else:
+        fakeHist.SetTitle(' ;m(#tau_{h} #tau_{h}, #slash{E}_{T}) [GeV]; Obs / Bkg')
+
+    fakeHist.GetXaxis().SetLabelFont(42)
+    fakeHist.GetXaxis().SetTitleFont(42)
+    fakeHist.GetXaxis().SetLabelSize(0.11)
+    fakeHist.GetXaxis().SetTitleSize(0.12)
+    fakeHist.GetXaxis().SetTitleOffset(0.9)
+    fakeHist.GetXaxis().SetLabelOffset(0.007)
+
+    fakeHist.GetYaxis().SetTitleFont(42)
+    fakeHist.GetYaxis().SetLabelFont(42)
+    fakeHist.GetYaxis().SetLabelSize(0.11)
     fakeHist.GetYaxis().SetNdivisions(5,5,0)
-    fakeHist.GetYaxis().SetTitleSize(0.1)
-    fakeHist.GetYaxis().SetTitleOffset(0.43)
-    fakeHist.GetXaxis().SetTitleOffset(0.85)
+    fakeHist.GetYaxis().SetTitleSize(0.13)
+    fakeHist.GetYaxis().SetTitleOffset(0.44)
+    fakeHist.GetYaxis().SetLabelOffset(0.012)
+
     fakeHist.GetYaxis().CenterTitle()
+
     return fakeHist
 
 def buildStack(histos):
@@ -248,7 +261,8 @@ def buildRatio(histDict):
     nbins = histDict['data_obs'].GetNbinsX()
     ratio = histDict['data_obs'].Clone()
     ratio.SetMarkerStyle(8)
-    ratio.SetMarkerSize(0.5)
+    ratio.SetMarkerSize(0.7)
+    ratio.SetLineColor(r.kBlack)
     for i in range(1, nbins+1):
         sum_b = histDict['sum_b'].GetBinContent(i)
         data_obs = histDict['data_obs'].GetBinContent(i)
@@ -275,18 +289,29 @@ def setLegend(position, histDict, option = 'width', mass = '500'):
     nbins = histDict['data_obs'].GetNbinsX()
 
     if options.unblind:
-        histList.append((histDict['data_obs'], 'Observed (%.2f)' %histDict['data_obs'].Integral(0, nbins+1, option), 'lep'))
+        if options.showIntegral:
+            histList.append((histDict['data_obs'], 'Observed (%.2f)' %histDict['data_obs'].Integral(0, nbins+1, option), 'lep'))
+        else:
+            histList.append((histDict['data_obs'], 'Observed', 'lep'))
     else:
         histList.append((histDict['data_obs'], 'Observed', 'lep'))
 
     for ikey in reversed(stackOrder):
         name = getName(ikey)
-        histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
+        if options.showIntegral:
+            histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
+        else:
+            histList.append((histDict[ikey], '%s' %(name), 'f'))
+
     integral = histDict['ggH%s' %mass].Integral(0, nbins+1, option)
     multiplication = ''
     if getZPrimeXS(str(mass))[1] > 1:
         multiplication = '%i x ' %getZPrimeXS(str(mass))[1]
-    histList.append((histDict['ggH%s' %mass], '%sZPrime_%s (%.2f)' %(multiplication, mass, integral), 'l'))
+    
+    if options.showIntegral:
+        histList.append((histDict['ggH%s' %mass], '%sZPrime_%s (%.2f)' %(multiplication, mass, integral), 'l'))
+    else:
+        histList.append((histDict['ggH%s' %mass], "%sZ'(%s)#rightarrow #tau#tau" %(multiplication, mass), 'l'))
 
     return tool.setMyLegend(position, histList)
 
@@ -304,67 +329,177 @@ def plot(inputFile, fs, mass = '500'):
 
     uncShape, uncShape_rel = buildUnc(histos['sum_b'], sumErrSquareUp, sumErrSquareDown)
     stack = buildStack(histos)
-    stack.SetTitle('CMS Preliminary 2.2 fb^{-1} (13 TeV); ; Events')
+    stack.SetTitle(';  ;Events')
 
     option = ''
     if options.width:
         option = 'width'
-        stack.SetTitle('CMS Preliminary 2.2 fb^{-1} (13 TeV); ; Events / GeV')
+        stack.SetTitle(';  ;Events / GeV')
         histos['data_obs'].Scale(1, 'width')
         histos['ggH%s' %mass].Scale(1, 'width')
 
     psfile = 'bkgTemplate_ZPrime%s_%s.pdf' %(mass, fs)
     if options.addRateUnc:
         psfile = psfile[:psfile.rfind('.')] + '_withRateUnc.pdf'
-    c = r.TCanvas("c","Test", 600, 800)
+#     c = r.TCanvas("c","Test", 600, 800)
 
-    c_up = r.TPad("c_up","c_up", 0., 1, 1., 0.3)
-    c_low = r.TPad("c_down","c_down", 0.,0.3,1.,0.06)
-    c_up.SetMargin(1, 1, 0, 0.1)
-    c_low.SetMargin(1, 1, 0.2, 0)
+#     c_up = r.TPad("c_up","c_up", 0., 1, 1., 0.3)
+#     c_low = r.TPad("c_down","c_down", 0.,0.3,1.,0.06)
+# 
+#     c_up.SetMargin(1, 1, 0, 0.1)
+#     c_low.SetMargin(1, 1, 0.2, 0)
+#################
+    c = r.TCanvas("c","Test",600, 600)
+    c.Range(0,0,1,1)
+    c.SetFillColor(0)
+
+    c.SetBorderMode(0)
+    c.SetBorderSize(3)
+    c.SetTickx(1)
+    c.SetTicky(1)
+    c.SetLeftMargin(0.15)
+    c.SetRightMargin(0.05)
+    c.SetTopMargin(0.05)
+    c.SetBottomMargin(0.15)
+    c.SetFrameFillStyle(0)
+    c.SetFrameBorderMode(0)
+
+    c_low = r.TPad("c1_1", "newpad",0.01,0,0.99,0.32)
+    c_low.Range(-200,-2.720435,1133.333,3.047681)
+    c_low.SetFillColor(0)
+    c_low.SetFillStyle(4000)
+    c_low.SetBorderMode(0)
+    c_low.SetBorderSize(2)
+    c_low.SetTickx(1)
+    c_low.SetTicky(1)
+    c_low.SetLeftMargin(0.15)
+    c_low.SetTopMargin(0.01)
+    c_low.SetBottomMargin(0.3)
+    c_low.SetFrameFillStyle(0)
+    c_low.SetFrameBorderMode(0)
+    c_low.SetFrameFillStyle(0)
+    c_low.SetFrameBorderMode(0)
+
+
+    c_up = r.TPad("c1_2", "newpad",0.01,0.33,0.99,0.99)
+    c_up.Range(-200,-13.87376,1133.333,1389.866)
+    c_up.SetFillColor(0)
+    c_up.SetBorderMode(0)
+    c_up.SetBorderSize(2)
+    c_up.SetTickx(1)
+    c_up.SetTicky(1)
+    c_up.SetLeftMargin(0.15)
+    c_up.SetBottomMargin(0.01)
+    c_up.SetFrameFillStyle(0)
+    c_up.SetFrameBorderMode(0)
+    c_up.SetFrameFillStyle(0)
+    c_up.SetFrameBorderMode(0)
+
+
+#################
     c_up.Draw()
     c_low.Draw()
     c_up.cd()
     r.gPad.SetTicky()
     r.gPad.SetTickx()
-
-    iMax = 1.2*max(stack.GetMaximum(), histos["data_obs"].GetMaximum())
-    stack.SetMaximum(iMax)
-    stack.SetMinimum(0.01)
-
     if options.logY:
         r.gPad.SetLogy()
+
+    iMax = 100#= 1.2*max(stack.GetMaximum(), histos["data_obs"].GetMaximum())
+    iMin = 0.005
+    iMax = iMax/(1+0.2*r.TMath.Log10(iMax/iMin))
+    iMin = iMin/(1+0.5*r.TMath.Log10(iMax/iMin))
+    stack.SetMaximum(iMax)
+    stack.SetMinimum(iMin)
+
     stack.Draw('hist H')
+
+    stack.GetYaxis().SetLabelFont(42)
+    stack.GetYaxis().SetLabelOffset(0.007)
+
     stack.GetYaxis().SetNdivisions(510)
-    stack.GetYaxis().SetTitleOffset(1.2)
-    stack.GetYaxis().SetLabelSize(0.035)
+    stack.GetYaxis().SetTitleOffset(0.8)
+    stack.GetYaxis().SetTitleSize(0.075)
+    stack.GetYaxis().SetLabelSize(0.05)
+    stack.GetXaxis().SetNdivisions(510)
+    stack.GetXaxis().SetLabelOffset(10)
+
+
     uncShape.Draw('2 same')
-    histos['ggH%s' %mass].Draw('same H')    
+    histos['ggH%s' %mass].Draw('same hist')    
     if options.unblind:
-        histos['data_obs'].Draw('same')    
+        histos['data_obs'].Draw('same e1p')    
+
+
+    cmsText     = "CMS";
+    cmsTextFont   = 61  
+    extraText   = ''#"Preliminary"
+    extraTextFont = 52 
+    lumiText = "2.2 fb^{-1} (13 TeV)"
+    lumiTextSize     = 0.6
+    lumiTextOffset   = 0.2
+    cmsTextSize      = 0.75
+    cmsTextOffset    = 0.1
+    relPosX    = 0.045
+    relPosY    = 0.035
+    relExtraDY = 1.2
+    t = c_up.GetTopMargin()
+    l = c_up.GetLeftMargin()
+    ri = c_up.GetRightMargin()
+    b = c_up.GetBottomMargin()
+
+    extraOverCmsTextSize  = 0.76
+    latex = r.TLatex()
+    latex.SetNDC()
+    latex.SetTextAngle(0)
+    latex.SetTextColor(r.kBlack)    
+    extraTextSize = extraOverCmsTextSize*cmsTextSize
+
+    latex.SetTextFont(42)
+    latex.SetTextAlign(31) 
+    latex.SetTextSize(lumiTextSize*t)    
+    latex.DrawLatex(1-ri,1-t+lumiTextOffset*t,lumiText)
+    latex.SetTextFont(cmsTextFont)
+    latex.SetTextAlign(11) 
+    latex.SetTextSize(cmsTextSize*t)   
+    latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText)
+    posX_ =  l +  relPosX*(2.7-l-ri)
+    posY_ = 1-t+lumiTextOffset*t
+    align_ = 11
+    latex.SetTextFont(extraTextFont)
+    latex.SetTextSize(extraTextSize*t)
+    latex.SetTextAlign(align_)
+    latex.DrawLatex(posX_, posY_, extraText)  
+
 
     #Draw Legend
-    position  = (0.55, 0.9 - 0.06*6, 0.87, 0.9)
+    position  = (0.55, 0.85 - 0.06*6, 0.87, 0.85)
     legends = setLegend(position, histos, option, mass)
     legends.Draw('same')
 
     latex = r.TLatex()
     latex.SetTextSize(0.05)
-    latex.DrawLatex(120, iMax*0.98, getFinalStateLatex(fs))
+    latex.DrawLatex(180, iMax*0.98, getFinalStateLatex(fs))
 
     c_low.cd()
     r.gPad.SetTicky()
     r.gPad.SetTickx()
     fakeHist = setRatioCanvas(histos["data_obs"], fs)
     fakeHist.Draw()
-    c_low.SetGridy(1)
+    
+    line = r.TLine(histos["data_obs"].GetBinLowEdge(1), 1.0, histos["data_obs"].GetBinLowEdge(histos["data_obs"].GetNbinsX()+1), 1)
+    line.Draw('same')
+    line.SetLineColor(r.kRed)
+
+#     c_low.SetGridy(1)
     uncShape_rel.Draw('2')
     if options.unblind:
-        ratio.Draw('same')
+        ratio.Draw('same e1p')
     c.Print('%s' %psfile)
 print options.FS
 m = 1500
+# plot("/home/zmao/CMSSW_7_2_4/src/samples-plots/htt_%s.inputs-Zp-13TeV.root" %(options.FS), options.FS, str(m))
+
 plot("/home/elaird/CMSSW_7_1_5/src/auxiliaries/shapes/Brown/htt_%s.inputs-Zp-13TeV.root" %(options.FS), options.FS, str(m))
-#plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v4.root" %(options.FS), options.FS, str(m))
 # for m in range(500, 5500, 500):
 #     plot("/home/elaird/htt_%s.inputs-Zp-13TeV_v2.root" %(options.FS), options.FS, str(m))

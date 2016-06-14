@@ -28,13 +28,14 @@ def combineSamples(location, fileList, method):
             oName = iFile[:iFile.find("_all")] + '_HT-0to100' + iFile[iFile.find("_all"):]
             iName = iFile
         if 'LO' not in iFile:
-            oName = iFile[:iFile.find("-50")] + '-50to200' + iFile[iFile.find("-50")+3:]
+            oName = iFile[:iFile.find("2000")] + '2500' + iFile[iFile.find("2000")+4:]
             iName = iFile
     ifile = r.TFile("%s/%s" %(location, iName))    
     iTree = ifile.Get("Ntuple")
     eventWeights = ifile.Get("eventWeights")
     eventCountWeighted = ifile.Get("eventCountWeighted")
     eventCount = ifile.Get("eventCount")
+    pdfInits = []
     oFile = r.TFile("%s/%s" %(location, oName), 'recreate')
     oTree = iTree.CloneTree(0)
     iTree.SetBranchStatus("*",1)
@@ -44,12 +45,16 @@ def combineSamples(location, fileList, method):
         if iTree.genHT < 100 and 'LO' in iFile:
             oTree.Fill()
         if 'LO' not in iFile:
-            if iTree.X_to_ll < 200:
+            if iTree.X_to_ll > 2500:
                 oTree.Fill()
     oFile.cd()
     eventWeights.Write()
     eventCountWeighted.Write()
     eventCount.Write()
+    for i in range(100):                                                                                                                                                       
+        pdfInits.append(ifile.Get("eventCountWeightedPDF_%i" %i))                                                                                                              
+        pdfInits[i].Write()                                                                                                                                                    
+
     oTree.Write()
     oFile.Close()
 
@@ -88,11 +93,11 @@ def combineSamples(location, fileList, method):
                 
 
 
-process = ['DY-50']#'DY-50']#, 'DY-50_LO']#, 'WJets_LO']
+process = ['DY-2000to3000']#'DY-50']#, 'DY-50_LO']#, 'WJets_LO']
 FS = ['et']#, 'et', 'tt', 'mt']
 binned = ['']#, '_HT-100to200', '_HT-200to400', '_HT-600toInf']#'_HT-400to600',
 tail = 'noIso'
-location = '/nfs_scratch/zmao/highMET0BNotSignal/'
+location = '/user_data/zmao/signalRegion_pdf/'
 #location = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_singleEforEMu/'
 method = 'LO'
 for iProcess in process:

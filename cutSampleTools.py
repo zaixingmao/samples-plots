@@ -42,12 +42,12 @@ def setupLumiReWeight():
     location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
 #     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
-    reWeight = r.edm.LumiReWeighting("%sMC_Fall15_PU25_V1.root" %location,"%sData_Pileup_2015D_Feb02.root" %location,"pileup","pileup")
-#     reWeight = r.edm.LumiReWeighting("%sMC_50bins.root" %location,"%sdata_50bins.root" %location,"pileup","pileup")
+#     reWeight = r.edm.LumiReWeighting("%sMC_Fall15_PU25_V1.root" %location,"%sData_Pileup_2015D_Feb02.root" %location,"pileup","pileup")
+    reWeight = r.edm.LumiReWeighting("%sMC_50bins.root" %location,"%sdata_50bins.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
-#     if npu < 5:
-#         npu = 5
+#    if npu < 6:
+#        npu = 6
     return reWeight.weight(npu)
 
 def freeLumiReWeight():

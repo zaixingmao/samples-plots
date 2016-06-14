@@ -25,7 +25,7 @@ l_2 = lvClass()
 jet = lvClass()
 met = lvClass()
 
-lumi = 2246.258005#2153.0#2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
+lumi = 2153.0#2246.258005#2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
 Lumi = lumi #3000.0
 
 def opts():
@@ -64,6 +64,8 @@ def opts():
     parser.add_option("--prong1_3", dest="prong1_3", default=False, action="store_true", help="")
     parser.add_option("--sys", dest="sys", default="", help=", tauECUp, tauECDown, jetECUp, jetECDown, bScaleUp, bScaleDown")
     parser.add_option("--diffQCD", dest="diffQCD", default=False, action="store_true", help="")
+    parser.add_option("--diffWJets", dest="diffWJets", default=False, action="store_true", help="")
+
     parser.add_option("--looseRegion", dest="looseRegion", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
@@ -160,7 +162,7 @@ def passBound(tree, FS, bound, side):
         if bound == 'VTight':
             value = tree.tByVTightIsolationMVArun2v1DBnewDMwLT
         elif bound == 'Tight':
-#             value = tree.tByTightIsolationMVArun2v1DBnewDMwLT
+#            value = tree.tByTightIsolationMVArun2v1DBnewDMwLT
             value = tree.tByTightCombinedIsolationDeltaBetaCorr3Hits
         elif bound == 'Medium':
             value = tree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
@@ -185,6 +187,9 @@ def passBound(tree, FS, bound, side):
 
 def regionSelection(tree, FS, region, method, lowerBound = 0, upperBound = 1):
     if method == 'SS':
+#         if not (passBound(tree, FS, lowerBound, 'upper') and (tree.eRelIso < 0.15)):
+        if not (passBound(tree, FS, lowerBound, 'lower') and passBound(tree, FS, upperBound, 'upper') and (tree.eRelIso < 0.15)):
+            return False
         if tree.q_1 == tree.q_2 and region == 'control':
             return True
         if tree.q_1 == -tree.q_2 and region == 'signal':
@@ -263,17 +268,20 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
         elif options.signalRegion:
-#             if (l1 + l2 + met).mass() <= 300:
-#                 return False
-#             if met.pt()  <= 30:
-#                 return False
+            if met.pt()  <= 30:
+                return False
 #             if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
 #                 return False
 #             if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
 #                 return False
+            if (pZetaCut(l1, l2, met) > -50) and (math.cos(tree.phi_1 - tree.phi_2) < -0.95):
+                return False
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
-
+#             if tree.tEta > 1.479 or tree.tEta < -1.479:
+#                 return False
+#             if abs(tree.tEta) < 1.479:
+#                 return False
 
         elif options.signalRegionReverseCosPhi:
             if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
@@ -332,11 +340,11 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
                 return False
             elif (not options.OS) and tree.q_1 != tree.q_2:
                 return False
-        else:
-            if FS == 'et' and (tree.eRelIso >= 0.15 or tree.tByTightCombinedIsolationDeltaBetaCorr3Hits < 0.5):
-                return False
-            if FS == 'em' and (tree.eRelIso >= 0.15 or tree.mRelIso >= 0.15):
-                return False
+#         else:
+#             if FS == 'et' and (tree.eRelIso >= 0.15 or tree.tByTightCombinedIsolationDeltaBetaCorr3Hits < 0.5):
+#                 return False
+#             if FS == 'em' and (tree.eRelIso >= 0.15 or tree.mRelIso >= 0.15):
+#                 return False
     #     if tree.mPt < 28:
     #         return False
     # 
@@ -363,12 +371,12 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
         if hasattr(tree, "tDecayMode"):
             if 4 < tree.tDecayMode < 8:
                 return False
-#         if pZetaCut(l1, l2, met) <= -50:# and tree.pfMetEt >= 30:
-#             return False
-#         if met.pt() <= 30:
-#             return False
-#         if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
-#             return False
+        if pZetaCut(l1, l2, met) <= -50:# and tree.pfMetEt >= 30:
+            return False
+        if met.pt() <= 30:
+            return False
+        if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
+            return False
         if getNCSVLJets(tree, sys, isData) >= 1:
             return False
 
@@ -408,6 +416,7 @@ def fixNegativBins(hist):
     nBins = hist.GetNbinsX()
     for i in range(1, nBins+1):
         if hist.GetBinContent(i) < 0:
+            hist.SetBinError(i, abs(hist.GetBinContent(i)) + hist.GetBinError(i))
             hist.SetBinContent(i, 0.0)
     return hist
 
@@ -500,9 +509,13 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
     eventCount = file.Get('eventCount')
     eventCountWeighted = file.Get('eventCountWeighted')
 
+    sumPtWeights = -1.0
+    if "TTJets" in iSample and options.sys == 'topPt':
+        sumPtWeights = file.Get('eventCountPtWeighted').GetBinContent(1)
     nEntries = tree.GetEntries()
-#     if nEntries > 100:
-#         nEntries = 100
+#     if not ("WJets" in iSample):
+#         if nEntries > 100:
+#             nEntries = 100
     
     tmpHist = r.TH1F("tmp_%s_%s" %(iCategory, varName), '', len(varBins)-1, varBins)
     tmpHist.Sumw2()
@@ -544,20 +557,38 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
             sumWeights = eventCountWeighted.GetBinContent(1)
         else:    
             sumWeights = tree.initWeightedEvents
+
         if not passCut(tree, FS, isData, l1, l2, met, options.sys):
             continue
         if not isData:
             xs  = tree.xs
             if (80.94 < xs < 80.96) or (136.01 < xs < 136.03):
                 xs = xs*0.108*3
-            weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2/(sumWeights+0.0)
+            if options.sys == 'topPt' and sumPtWeights != -1.0:
+                sumWeights = sumPtWeights
+                weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2*tree.topPtWeight/(sumWeights+0.0)
+            else:
+                weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2/(sumWeights+0.0)
             if options.PUWeight:
                 weight = weight*cutSampleTools.getPUWeight(tree.nTruePU)
+
+#             if tree.tEta < -1.479:
+#                 weight = weight*1.5*1.2
+#             if tree.tEta > 1.479:
+#                 weight = weight*1.3*1.2
+        WJets_weight = 1.0
         if options.diffQCD:
-            if tree.tDecayMode < 4:
-                QCD_weight = plots_cfg.SF_prong1[0]
-            elif tree.tDecayMode > 8:
-                QCD_weight = plots_cfg.SF_prong3[0]
+            if abs(tree.tEta) > 1.479:
+                QCD_weight = plots_cfg.SF_endcap[0]
+                WJets_weight = plots_cfg.SF_WJets_endcap[0]
+            else:
+                QCD_weight = plots_cfg.SF_barrel[0]
+                WJets_weight = plots_cfg.SF_WJets_barrel[0]
+        
+#             if tree.tDecayMode < 4:
+#                 QCD_weight = plots_cfg.SF_prong1[0]
+#             elif tree.tDecayMode > 8:
+#                 QCD_weight = plots_cfg.SF_prong3[0]
 
         if 'WJets' in iSample:
             weight = 1.0*weight
@@ -615,7 +646,7 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
                     if regionSelection(tree, FS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
                         if not isData:
                             if iCategory == 'WJets':
-                                histDict['WJets_CR'].Fill(value, weight)
+                                histDict['WJets_CR'].Fill(value, weight*WJets_weight)
                                 tmpHist_qcds[iWJetScan].Fill(value, -weight*plots_cfg.WJetsScanRange[iWJetScan]*QCD_weight)
                             else:
                                 tmpHist_qcds[iWJetScan].Fill(value, -weight*QCD_weight)
@@ -628,7 +659,7 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
                         if regionSelection(tree, FS, "control", options.method, plots_cfg.scanRange[iLower], plots_cfg.scanRange[iLower + iUpper + 1]):
                             if not isData:
                                 if iCategory == 'WJets':
-                                    histDict['WJets_CR'].Fill(value, weight)
+                                    histDict['WJets_CR'].Fill(value, weight*WJets_weight)
                                     tmpHist_qcds[iScanPoint].Fill(value, -weight*plots_cfg.WJetsScanRange[0]*QCD_weight)
                                 else:
                                     tmpHist_qcds[iScanPoint].Fill(value, -weight*QCD_weight)
@@ -775,7 +806,10 @@ def buildStackFromDict(histDict, FS, option = 'width', iQCD = 0, SF_WJ = 1.0, sf
                     histDict['WJets_CR'].SetMarkerStyle(21)
                     histDict['WJets_CR'].SetLineColor(r.kBlack)
                     tmpHist = histDict['WJets_CR'].Clone()
-                    tmpHist.Scale(SF_WJ*sf)
+                    if not options.diffWJets:
+                        tmpHist.Scale(SF_WJ*sf)
+                    else:
+                        tmpHist.Scale(SF_WJ)
                     stack.Add(tmpHist)
 
                 else:
@@ -796,7 +830,6 @@ def buildStackFromDict(histDict, FS, option = 'width', iQCD = 0, SF_WJ = 1.0, sf
 
 def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negative
 #     print scale
-
     if binned:
         print "hist.GetNbinsX()", hist.GetNbinsX()
         for i in range(1, hist.GetNbinsX()+2):
@@ -808,8 +841,8 @@ def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negat
                 hist.SetBinContent(i, 0)
                 hist.SetBinError(i, iScale*error)
             else:
-                hist.SetBinContent(i, iScale*content)
                 hist.SetBinError(i, math.sqrt((iScale*error)**2 + (scale[i][1]*content)**2))
+                hist.SetBinContent(i, iScale*content)
                 print 'binned', iScale, iScale*content
                 
     else:
@@ -824,11 +857,15 @@ def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negat
                 hist.SetBinContent(i, 0)
                 hist.SetBinError(i, error)
             else:
-                hist.SetBinError(i, math.sqrt(error*error + scale[j][1]*content*scale[j][1]*content))
+                scaleUnc = scale[j][1]/scale[j][0]
+                hist.SetBinError(i, math.sqrt(error*error))
 
 def setWJetsLooseShape(hist, WJetSF, WJets_L2T, WJets_L2T_error, bins):
     tmpHist = hist.Clone()
     tmpHist.Sumw2()
+    if options.diffWJets:
+        WJets_L2T = 1.0
+        WJets_L2T_error = 0.0
     tmpHist.Scale(WJets_L2T)
     for i in range(1, len(bins)):
         error1 = tmpHist.GetBinError(i)
@@ -855,8 +892,10 @@ def IntegralAndError(hist, nbins):
     unc = 0.0
     content = 0.0
     for i in range(0, nbins+1):
-        unc += hist.GetBinError(i)
+        unc += hist.GetBinError(i)*hist.GetBinError(i)
         content += hist.GetBinContent(i)
+#     unc += content
+    unc = math.sqrt(unc)
     return content, unc
 
 def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, max = 1.5, iQCD = 0, WJetSF = 1.0, WJets_L2T = 0.1, WJets_L2T_error = 0, fs = 'et'):
@@ -955,7 +994,7 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
     delta.GetXaxis().SetTitleOffset(0.9)
 
     delta.SetTitle('; %s %s; observed/bkg' %(varName, unit))
-    delta.SetMaximum(2.5)
+    delta.SetMaximum(2.49)
     delta.SetMinimum(0.0)
 
     delta.GetXaxis().SetLabelSize(0.1)
@@ -1061,11 +1100,11 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     print 'WJets Anti-Isolated: %.3f +/- %.3f (%i)' %(WJets_CR_Integral,  math.sqrt(getError(histDict['WJets_CR'], 0, endBin)), histDict['WJets_CR'].GetEntries())
     sf = 1.0
     sf_error = 0
-    if WJets_CR_Integral > 0:
+    if WJets_CR_Integral > 0 and not options.diffWJets:
         sf = WJets_Integral/WJets_CR_Integral
         sf_error = calcSysUnc(sf, WJets_Integral, WJets_CR_Integral, math.sqrt(getError(histDict['WJets'], 0, endBin)), math.sqrt(getError(histDict['WJets_CR'], 0, endBin)))
-#     sf = 0.146
-#     sf_error = 0.014
+#     sf = 0.07314
+#     sf_error = 0.03038
 
     for i in range(scanPoints):
         if len(plots_cfg.WJetsScanRange) == 1:
@@ -1225,7 +1264,7 @@ def multiPlots(FS, option):
                         factor = 1.2#20
                     iMax = factor*max(bkgStack.GetMaximum(), histDict["Observed"].GetMaximum())
                     bkgStack.SetMaximum(iMax)
-                    iMin = 0.01#0.1
+                    iMin = 0.0005#0.1
 #                     iMin = 0.1#0.01
 
                     bkgStack.SetMinimum(iMin)   
@@ -1277,6 +1316,8 @@ def multiPlots(FS, option):
                             latex.DrawLatex(iVarBins[7], h0, 'WJets Scale = %.2f' %plots_cfg.WJetsScanRange[iQCD])
 
                     else:
+#                         position  = (0.2, 0.9 - 0.06*6, 0.47, 0.9)
+
                         position  = (0.6, 0.9 - 0.06*6, 0.87, 0.9)
 #                         latex.DrawLatex(iVarBins[0], iMax*0.98, getFinalStateLatex(FS))
                         latex.DrawLatex(iVarBins[2], iMax*0.98, getFinalStateLatex(FS))

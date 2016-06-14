@@ -66,9 +66,6 @@ def opts():
     parser.add_option("--sys", dest="sys", default="", help=", tauECUp, tauECDown, jetECUp, jetECDown, bScaleUp, bScaleDown")
     parser.add_option("--diffQCD", dest="diffQCD", default=False, action="store_true", help="")
     parser.add_option("--looseRegion", dest="looseRegion", default=False, action="store_true", help="")
-    parser.add_option("--getWJetsSF", dest="getWJetsSF", default=False, action="store_true", help="")
-    parser.add_option("--dynamicQCDSF", dest="dynamicQCDSF", default=False, action="store_true", help="")
-    parser.add_option("--addRateUnc", dest="addRateUnc", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
     return options
@@ -174,7 +171,11 @@ def passBound(tree, FS, bound, side):
     else:
         return False
 
-def regionSelection(tree, FS, region, lowerBound = 0, upperBound = 1):
+def regionSelection(tree, FS, region, lowerBound = 0, upperBound = 1, highMT = False):
+    if highMT and tree.mt_1 < 70:
+        return False
+    if not highMT and tree.mt_1 > 70:
+        return False
     if 'SS' in region and (tree.q_1 != tree.q_2):
         return False
     if 'OS' in region and (tree.q_1 == tree.q_2):
@@ -240,7 +241,7 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
         elif options.signalRegion:
-#             if not ( 300 < (l1 + l2 + met).mass()):
+#             if not ( 300 < (l1 + l2 + met).mass() < 600):
 #                 return False
             if met.pt()  <= 30:
                 return False
@@ -370,7 +371,6 @@ def fixNegativBins(hist):
     nBins = hist.GetNbinsX()
     for i in range(1, nBins+1):
         if hist.GetBinContent(i) < 0:
-            hist.SetBinError(i, abs(hist.GetBinContent(i)) + hist.GetBinError(i))
             hist.SetBinContent(i, 0.0)
     return hist
 
@@ -519,7 +519,7 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
                 QCD_weight = plots_cfg.SF_prong3[0]
 
         if 'WJets' in iSample:
-            weight = 0.8*weight
+            weight = 1.0*weight
         if 'ZPrime' in iSample:
             weight = getZPrimeXS(iCategory[7:])*weight
             isSignal =  True
@@ -582,10 +582,12 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
             if regionSelection(tree, FS, "OScontrol", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
                 if not isData:
                     histDict['QCD_C'].Fill(value, -weight*QCD_weight)
+                    histDict['QCD_C_for_A'].Fill(value, -weight*QCD_weight)
                     if iCategory != 'WJets':
                         histDict['WJets_OScontrol'].Fill(value, -weight)  
                 else:
                     histDict['QCD_C'].Fill(value, weight*QCD_weight)
+                    histDict['QCD_C_for_A'].Fill(value, weight*QCD_weight)
                     histDict['WJets_OScontrol'].Fill(value, weight)
             #region D
             if regionSelection(tree, FS, "SScontrol", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
@@ -597,7 +599,22 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
                     histDict['QCD_D'].Fill(value, weight*QCD_weight)
                     histDict['QCD_D_for_C'].Fill(value, weight*QCD_weight)
                     histDict['QCD_D_for_A'].Fill(value, weight*QCD_weight)
+            #highMT signal region 
+            if regionSelection(tree, FS, "OSsignal", plots_cfg.scanRange[0], plots_cfg.scanRange[1], True):
+                if not isData:
+                    if iCategory != 'WJets':
+                        histDict['WJets_A_'].Fill(value, -weight)
+                    else:
+                        histDict['WJets_MC_A_'].Fill(value, weight)
+                else:
+                    histDict['WJets_A_'].Fill(value, weight)
 
+            #highMT C region 
+            if regionSelection(tree, FS, "OScontrol", plots_cfg.scanRange[0], plots_cfg.scanRange[1], True):
+                if not isData:
+                    histDict['QCD_C_for_A_'].Fill(value, -weight*QCD_weight)
+                else:
+                    histDict['QCD_C_for_A_'].Fill(value, weight*QCD_weight)
 
     print iCategory, tmpHist.Integral(0, len(varBins)+1)
     histDict[iCategory].Add(tmpHist)            
@@ -630,9 +647,9 @@ def getQCDScale(histDict, varBins, method):
     QCD_C_err = getError(histDict['QCD_C'], 0, len(varBins)+1)
     QCD_D_err = getError(histDict['QCD_D'], 0, len(varBins)+1)
 
-    print 'QCD_B: %.2f +/- %.2f' %(QCD_B, math.sqrt(QCD_B_err))
-    print 'QCD_C: %.2f +/- %.2f' %(QCD_C, math.sqrt(QCD_C_err))
-    print 'QCD_D: %.2f +/- %.2f' %(QCD_D, math.sqrt(QCD_D_err))
+    print 'QCD_B: %.2f' %QCD_B
+    print 'QCD_C: %.2f' %QCD_C
+    print 'QCD_D: %.2f' %QCD_D
 
     if QCD_B > 0 and QCD_C > 0 and QCD_D > 0:
         if options.dynamicQCDSF:
@@ -641,10 +658,6 @@ def getQCDScale(histDict, varBins, method):
         else:
             unc_CD = 0.05   
             SStoOS = 1.07
-#             unc_CD = 0.21
-#             SStoOS = 1.64
-            unc_CD = 0.14
-            SStoOS = 1.34
 #             SStoOS = 0.891   
 #             unc_CD = 0.111
 #             SStoOS = 1.002 
@@ -655,13 +668,11 @@ def getQCDScale(histDict, varBins, method):
         unc_BD = calcSysUnc(QCD_B/QCD_D, QCD_B, QCD_D, math.sqrt(QCD_B_err), math.sqrt(QCD_D_err))
         unc = calcSysUnc((SStoOS*QCD_B)/QCD_D, SStoOS, QCD_B/QCD_D, unc_CD, unc_BD)
 
-    
         if method == 'CD':
             result.append((SStoOS, unc_CD))
             print 'QCD CD                    (%.3f, %.3f),' %(SStoOS, unc_CD)
         else:
-#             result.append((0.165, 0.030))            
-            result.append(((SStoOS*QCD_B)/QCD_D, unc))
+            result.append((QCD_C*QCD_B/(QCD_D*QCD_D), unc))
             print 'QCD SR                    (%.3f, %.3f),' %((SStoOS*QCD_B)/QCD_D, unc)
     else:
         print 'QCD %s                    (0, 0),' %method
@@ -674,18 +685,16 @@ def buildStackFromDict(histDict, FS, option = 'width', sf = 0.1, sf_error= 0.1):
     stack = r.THStack()
     for ikey, iColor in defaultOrder:
         if ikey == 'QCD':
-            ikey = 'QCD_D_for_A'
+            ikey = 'QCD_C_for_A'
         if ikey in histDict.keys():
             if ikey == 'WJets':
-                integral, unc = IntegralAndError(histDict['WJets_OScontrol'], histDict[ikey].GetNbinsX()+2, 'WJets', 'et')
-                print '%s with %.1f +/- %.1f events' %(ikey, integral, unc)
                 print '%s with %.2f events' %(ikey, histDict[ikey].Integral(0, histDict[ikey].GetNbinsX()+2, option))
                 print 'WJets loose2tight = %.3f +/ %.3f' %(sf, sf_error)
-                histDict['WJets_OScontrol'].SetFillColor(iColor)
-                histDict['WJets_OScontrol'].SetMarkerColor(iColor)
-                histDict['WJets_OScontrol'].SetMarkerStyle(21)
-                histDict['WJets_OScontrol'].SetLineColor(r.kBlack)
-                tmpHist = histDict['WJets_OScontrol'].Clone()
+                histDict['WJets_A_'].SetFillColor(iColor)
+                histDict['WJets_A_'].SetMarkerColor(iColor)
+                histDict['WJets_A_'].SetMarkerStyle(21)
+                histDict['WJets_A_'].SetLineColor(r.kBlack)
+                tmpHist = histDict['WJets_A_'].Clone()
                 stack.Add(tmpHist)
             else:
                 print '%s with %.2f events' %(ikey, histDict[ikey].Integral(0, histDict[ikey].GetNbinsX()+2, option))
@@ -758,20 +767,12 @@ def addSysUnc(hist, sampleName, bins, fs):
 #         tmpHist.SetBinError(i, math.sqrt((error)**2 + (unc*content)**2 + content))
     return tmpHist
 
-
-def IntegralAndError(hist, nbins, sampleName, fs):
+def IntegralAndError(hist, nbins):
     unc = 0.0
     content = 0.0
     for i in range(0, nbins+1):
-        unc += hist.GetBinError(i)*hist.GetBinError(i)
+        unc += hist.GetBinError(i)
         content += hist.GetBinContent(i)
-    if options.addRateUnc:
-        unc += content
-    unc_addition = 0.0
-#     if sampleName == 'Z#rightarrow#tau#tau' or sampleName == 't#bar{t}' or sampleName == 'WJets' or sampleName == 'Diboson':
-#         unc_addition = plots_cfg.sysUnc[fs][sampleName]
-    unc += (unc_addition*content)**2
-    unc = math.sqrt(unc)
     return content, unc
 
 def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, max = 1.5,  WJets_L2T = 0.1, WJets_L2T_error = 0, fs = 'et'):
@@ -795,7 +796,7 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
 
     for ikey, icolor in defaultOrder:
         if ikey == 'QCD':
-            ikey = 'QCD_D_for_A'
+            ikey = 'QCD_C_for_A'
         if ikey in histDict.keys():
             histDict_withUnc[ikey] = r.TH1F('%s_withUnc' %ikey, '', len(bins)-1, bins)
             histDict_withUnc[ikey].Sumw2()
@@ -806,11 +807,7 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
                 histDict_withUnc[ikey].SetMarkerStyle(21)
                 histDict_withUnc[ikey].SetLineColor(r.kBlack)
             if ikey == 'WJets':
-                tmpHist = setWJetsLooseShape(histDict['WJets_OScontrol'], WJets_L2T, WJets_L2T_error, bins)
-                integral, unc = IntegralAndError(tmpHist, len(bins), ikey, fs)
-                print "Data-driven WJets: %.3f +/- %.3f" %(integral, unc)
-                integral, unc = IntegralAndError(histDict['WJets'], len(bins), ikey, fs)
-                print "MC WJets: %.3f +/- %.3f" %(integral, unc)
+                tmpHist = setWJetsLooseShape(histDict['WJets_A_'], WJets_L2T, WJets_L2T_error, bins)
                 bkg.Add(addSysUnc(tmpHist, ikey, bins, fs))
                 histDict_withUnc[ikey].Add(addSysUnc(tmpHist, ikey, bins, fs))
             else:
@@ -868,6 +865,11 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     histDict["WJets_OScontrol"].Sumw2()
     histDict["WJets_OSsignal"] = r.TH1F("WJets_signal_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
     histDict["WJets_OSsignal"].Sumw2()
+    histDict["WJets_A_"] = r.TH1F("WJets_A_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
+    histDict["WJets_A_"].Sumw2()
+    histDict["WJets_MC_A_"] = r.TH1F("WJets_MC_A_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
+    histDict["WJets_MC_A_"].Sumw2()
+
     histDict["QCD_B"] = r.TH1F("QCD_%s_%s_B" %(FS, varName), "", len(varBins)-1, varBins)
     histDict["QCD_B"].Sumw2()
     histDict["QCD_C"] = r.TH1F("QCD_%s_%s_C" %(FS, varName), "", len(varBins)-1, varBins)
@@ -876,12 +878,17 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     histDict["QCD_D"].Sumw2()
     histDict["QCD_D_for_C"] = r.TH1F("QCD_%s_%s_D_for_B" %(FS, varName), "", len(varBins)-1, varBins)
     histDict["QCD_D_for_C"].Sumw2()
+    histDict["QCD_C_for_A"] = r.TH1F("QCD_%s_%s_C_for_A" %(FS, varName), "", len(varBins)-1, varBins)
+    histDict["QCD_C_for_A"].Sumw2()
+    histDict["QCD_C_for_A_"] = r.TH1F("QCD_%s_%s_C_for_A_" %(FS, varName), "", len(varBins)-1, varBins)
+    histDict["QCD_C_for_A_"].Sumw2()
     histDict["QCD_D_for_A"] = r.TH1F("QCD_%s_%s_D_for_A" %(FS, varName), "", len(varBins)-1, varBins)
     histDict["QCD_D_for_A"].Sumw2()
-    histDict["QCD_D_for_A"].SetFillColor(getColor("QCD"))
-    histDict["QCD_D_for_A"].SetMarkerColor(getColor("QCD"))
-    histDict["QCD_D_for_A"].SetMarkerStyle(21)
-    histDict["QCD_D_for_A"].SetLineColor(r.kBlack)
+    histDict["QCD_C_for_A"].SetFillColor(getColor("QCD"))
+    histDict["QCD_C_for_A"].SetMarkerColor(getColor("QCD"))
+    histDict["QCD_C_for_A"].SetMarkerStyle(21)
+    histDict["QCD_C_for_A"].SetLineColor(r.kBlack)
+
 
 #     histDict["WJets"] = r.TH1F("WJets_%s_%s" %(FS, varName), "", len(varBins)-1, varBins)
     for iName, iSample, iCategory in plots_cfg.sampleList:    
@@ -905,30 +912,17 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
         histDict['Observed'].Sumw2()
 
 
-    qcd_scale_B_D = getQCDScale(histDict, varBins, "CD")
-    qcd_scale_SR = getQCDScale(histDict, varBins, "SR")
-    print "before scale QCD_D_for_A: %.3f" %histDict['QCD_D_for_A'].Integral()
+#     qcd_scale_B_D = getQCDScale(histDict, varBins, "CD")
+#     qcd_scale_SR = getQCDScale(histDict, varBins, "SR")
+    setQCD(histDict['QCD_C_for_A_'], [(0.128, 0.022)])
+    setQCD(histDict['QCD_C_for_A'], [(0.128, 0.022)])
 
-    setQCD(histDict['QCD_D_for_C'], qcd_scale_B_D)
-    setQCD(histDict['QCD_D_for_A'], qcd_scale_SR)
-    print "after scale QCD_D_for_A: %.3f" %histDict['QCD_D_for_A'].Integral()
+    histDict['WJets_A_'].Add(histDict['QCD_C_for_A_'], -1.0)
 
-    print "WJets_OScontrol before QCD subtraction: %.2f" %histDict['WJets_OScontrol'].Integral()
-    print "WJets_OSsignal before QCD subtraction: %.2f" %histDict['WJets_OSsignal'].Integral()
+    wjets_scale = getWJetsSF(histDict['WJets'], histDict['WJets_MC_A_'], varBins)
+    print "WJets SF: ", wjets_scale
 
-
-    histDict['WJets_OScontrol'].Add(histDict['QCD_D_for_C'], -1.0)
-    histDict['WJets_OSsignal'].Add(histDict['QCD_D_for_A'], -1.0)
-    print "WJets_OScontrol after QCD subtraction: %.2f" %histDict['WJets_OScontrol'].Integral()
-    print "WJets_OSsignal after QCD subtraction: %.2f" %histDict['WJets_OSsignal'].Integral()
-
-    if options.getWJetsSF:
-         wjets_scale = getWJetsSF(histDict['WJets_OSsignal'], histDict['WJets_OScontrol'], varBins)
-    else:
-        wjets_scale = [(plots_cfg.WJetsLoose2Tight[0], plots_cfg.WJetsLoose2Tight[1])]
-    print "WJets_OScontrol with SF: %.2f" %(histDict['WJets_OScontrol'].Integral()*wjets_scale[0][0])
-
-    fixNegativBins(histDict['WJets_OScontrol'])
+    fixNegativBins(histDict['WJets_A_'])
 
     deltas = []
 
@@ -957,32 +951,24 @@ def setLegend(position, histDict, histDict2, bins, option = 'width'):
     for ikey, iColor in reversed(defaultOrder):
         name = ikey
         if ikey == 'QCD':
-            ikey = 'QCD_D_for_A'
+            ikey = 'QCD_C_for_A'
         if ikey in histDict.keys():
             if plots_cfg.addIntegrals:
                 if ikey == 'WJets':
-                    if plots_cfg.unc:
-                        integral, unc = IntegralAndError(histDict['WJets_OScontrol'], nbins, ikey, 'et')
-                        histList.append((histDict[ikey], '%s (%.1f +/- %.1f)' %(name, integral, unc), 'f'))
-                    else:
-                        histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict['WJets_OScontrol'].Integral(0, nbins+1, option)), 'f'))
+                    histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict['WJets_A_'].Integral(0, nbins+1, option)), 'f'))
 #                 if plots_cfg.unc:
 #                     integral, unc = IntegralAndError(histDict2[ikey], nbins)
 #                     histList.append((histDict2[ikey], '%s (%.2f +/- %.2f)' %(name, integral, unc), 'f'))
                 else:
-                    if plots_cfg.unc:
-                        integral, unc = IntegralAndError(histDict2[ikey], nbins, ikey, 'et')
-                        histList.append((histDict2[ikey], '%s (%.1f +/- %.1f)' %(ikey, integral, unc), 'f'))
-                    else:
-                        histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
+                    histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
             else:
                 histList.append((histDict[ikey], '%s' %name, 'f'))
     if not (options.antiIso or options.antiEIso or options.antiMIso or options.noIso):
         signalSampleName = 'ZPrime_500'
         if plots_cfg.addIntegrals:
             if plots_cfg.unc:
-                integral, unc = IntegralAndError(histDict2[signalSampleName], nbins, ikey, 'et')
-                histList.append((histDict2[signalSampleName], '%s (%.1f +/- %.1f)' %(signalSampleName, integral, unc), 'l'))
+                integral, unc = IntegralAndError(histDict2[signalSampleName], nbins)
+                histList.append((histDict2[signalSampleName], '%s (%.2f +/- %.2f)' %(signalSampleName, integral, unc), 'l'))
             else:
                 histList.append((histDict[signalSampleName], '%s (%.2f)' %(signalSampleName, histDict[signalSampleName].Integral(0, nbins+1, option)), 'l'))
         else:

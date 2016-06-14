@@ -58,6 +58,36 @@ def setUpCharVarsDict():
         varDict[iName] = bytearray(30)
     return varDict
 
+def printYield(yieldDict, WJets_SF, QCD_SF):
+    cats = {"VV": ("ZZTo2L2Q", "VVTo2L2Nu", "WZTo1L1Nu2Q", "WZTo1L3Nu", "ZZTo4L", "WWTo1L1Nu2Q", "WZTo2L2Q", "WZJets"),
+            "TT": ("ST_antiTop_tW", "ST_top_tW", "ST_t-channel_antiTop_tW", "ST_t-channel_top_tW", "TTJets"),
+            "WJets": ("WJetsLoose",),
+            "DYJets": ("DY_M-50to200", "DY_M-200to400", "DY_M-400to500", "DY_M-500to700", "DY_M-700to800", "DY_M-800to1000", "DY_M-1000to1500"),
+            "QCD": ("dataLoose", "-MCLoose"),
+            "Observed": ("dataTight",),
+            }
+    for ikey in yieldDict.keys():
+        print ikey, yieldDict[ikey]
+
+    print "***************************"
+
+    for ikey in cats:
+        tmp_yield = 0.0
+        for iSample in cats[ikey]:
+            sign = 1.0
+            if iSample[0] == '-':
+                sign = -1.0
+                iSample = iSample[1:]
+            if iSample not in yieldDict.keys():
+                print "missing sample", iSample
+            else:
+                tmp_yield += sign*yieldDict[iSample]
+        if ikey == 'WJets':
+            tmp_yield = tmp_yield*WJets_SF
+        elif ikey == "QCD":
+            tmp_yield = tmp_yield*QCD_SF
+        print "%s: %.2f" %(ikey, tmp_yield)
+
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("-l", dest="location", default="/scratch/%s" % os.environ["USER"], help="location to be saved")
@@ -68,6 +98,7 @@ def opts():
     parser.add_option("--sys", dest="sys", default='', help="")
     parser.add_option("--pdf", dest="pdf", default=False, action="store_true", help="")
     parser.add_option("--trainnedMass", dest="trainnedMass", default="", help="")
+    parser.add_option("--dataDrivenWJets", dest="dataDrivenWJets", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
 
@@ -107,11 +138,14 @@ r.gStyle.SetOptStat(0)
 controlRegionName = 'SS'
 signalRegionName = 'OS'
 
+QCD_SStoOS = 1.34
+
+
 if options.method == 'Loose':
     controlRegionName = 'Loose'
     signalRegionName = 'Tight'
 
-def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS):
+def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS, yieldDict):
     print 'combininig sample [%s] for datacard' %(iSample)
     if 'data' in iSample:
         isData = True
@@ -135,6 +169,10 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict,
     eventCount = iFile.Get('eventCount')
     eventCountWeighted = iFile.Get('eventCountWeighted')
 
+    sumPtWeights = -1.0
+#     if "TTJets" in iSample:
+#         sumPtWeights = iFile.Get('eventCountPtWeighted').GetBinContent(1)
+
     yieldEstimator_OS = 0.0
     yieldEstimator_SS = 0.0
     fillcounter=0
@@ -143,7 +181,7 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict,
         iTree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'looping over file %s' %(iSample), iEntry-1)
         uncWeight = 1.0
-
+        region = 'none'
         if options.sys == 'jetECUp' and not isData:
             met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
         elif options.sys == 'jetECDown' and not isData:
@@ -163,21 +201,43 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict,
 
         if not plots.passCut(iTree, iFS, isData, l1, l2, met, options.sys):
             continue
-        if options.method != 'SS' and iTree.q_1 == iTree.q_2:
+        if options.method != 'SS' and iTree.q_1 == iTree.q_2 and (not options.dataDrivenWJets):
             continue
 
-        if plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
-            if isData:
-                charVarsDict['sampleName'][:31] = 'data' + controlRegionName
-            elif isSignal:
+        if plots.regionSelection(iTree, iFS, "signal", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
+            if iTree.q_1 == iTree.q_2: #we don't need region B
                 continue
-            else:
-                charVarsDict['sampleName'][:31] = 'MC' + controlRegionName
-        elif plots.regionSelection(iTree, iFS, "signal", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
-           if isData:
+            if isData:
                 charVarsDict['sampleName'][:31] = 'data' + signalRegionName
-           else:
-               charVarsDict['sampleName'][:31] = iSample
+            else:
+                charVarsDict['sampleName'][:31] = iSample
+            region = 'A'
+
+        elif plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
+            if isSignal:
+                continue
+            if options.dataDrivenWJets and iTree.q_1 == iTree.q_2: #D region
+                if isData:
+                    charVarsDict['sampleName'][:31] = 'data' + controlRegionName
+                else:
+                    charVarsDict['sampleName'][:31] = 'MC' + controlRegionName
+                region = 'D'
+
+            elif options.dataDrivenWJets and iTree.q_1 == -iTree.q_2: #C region
+                charVarsDict['sampleName'][:31] = 'WJets' + controlRegionName
+                if "WJets" in iSample:
+                    continue
+                region = 'C'
+
+            elif (not options.dataDrivenWJets) and iTree.q_1 == -iTree.q_2: #C region
+                if isData:
+                    charVarsDict['sampleName'][:31] = 'data' + controlRegionName
+                else:
+                    charVarsDict['sampleName'][:31] = 'MC' + controlRegionName
+
+                region = 'C'
+            else:
+                continue
         else:
             continue
 
@@ -200,6 +260,9 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict,
         charVarsDict['Category'][:31] = iFS
 
         floatVarsDict['xs'][0] = iTree.xs
+
+        if (80.94 < iTree.xs < 80.96) or (136.01 < iTree.xs < 136.03):
+            floatVarsDict['xs'][0] = iTree.xs*0.108*3
 
         if 'WJets' in iSample:
             floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*plots_cfg.WJetsScanRange[0]
@@ -252,30 +315,79 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict,
 
         if isData:
             floatVarsDict['genEventWeight'][0] = 1.0
+            intVarsDict['initSumWeights'][0] = 1
+            floatVarsDict['xs'][0] = 1.0/plots.lumi
+            floatVarsDict['triggerEff'][0] = 1.0
         else:
             floatVarsDict['genEventWeight'][0] = uncWeight*iTree.genEventWeight
+            if options.sys == 'topPt' and sumPtWeights != -1.0:
+                intVarsDict['initSumWeights'][0] = int(sumPtWeights)
+                floatVarsDict['genEventWeight'][0] = iTree.topPtWeight*floatVarsDict['genEventWeight'][0]
 
-        oTree.Fill()
-        if (charVarsDict['sampleName'][:31] == 'MC' + controlRegionName) and ("WJets" in iSample):
-            charVarsDict['sampleName'][:31] = 'WJets' + controlRegionName
+        if region == 'none':
+            print "ERROR!!!!!"
+
+        if region == "A":
+            if charVarsDict['sampleName'][:31] in yieldDict.keys():
+                yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+            else:
+                yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
             oTree.Fill()
-            
+        if options.dataDrivenWJets and region == "D": #get QCD in C region
+            oTree.Fill()
+            if charVarsDict['sampleName'][:31] in yieldDict.keys():
+                yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+            else:
+                yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
 
-        if plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and isData:
-            yieldEstimator_SS += 1.0
-        elif plots.regionSelection(iTree, iFS, "control", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and not isData:
-            yieldEstimator_SS -= floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
-        elif plots.regionSelection(iTree, iFS, "signal", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and not isData:
+            charVarsDict['sampleName'][:31] = 'WJets' + controlRegionName
+            if isData:
+                floatVarsDict['xs'][0] = QCD_SStoOS*floatVarsDict['xs'][0]
+                floatVarsDict['genEventWeight'][0] = -1.0
+            else:
+                floatVarsDict['xs'][0] = QCD_SStoOS*floatVarsDict['xs'][0]
+            oTree.Fill()
+            if charVarsDict['sampleName'][:31] in yieldDict.keys():
+                yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+            else:
+                yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+
+        elif options.dataDrivenWJets and region == "C":
+            if not isData:
+                floatVarsDict['genEventWeight'][0] = -1.0*floatVarsDict['genEventWeight'][0]
+            oTree.Fill()
+            if charVarsDict['sampleName'][:31] in yieldDict.keys():
+                yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+            else:
+                yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+
+        elif (not options.dataDrivenWJets) and (region == 'C'):
+            oTree.Fill()
+            if charVarsDict['sampleName'][:31] in yieldDict.keys():
+                yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+            else:
+                yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+            if "WJets" in iSample:
+                charVarsDict['sampleName'][:31] = 'WJets' + controlRegionName
+                oTree.Fill()
+                if charVarsDict['sampleName'][:31] in yieldDict.keys():
+                    yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+                else:
+                    yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+
+
+        if plots.regionSelection(iTree, iFS, "signal", options.method, plots_cfg.scanRange[0], plots_cfg.scanRange[1]) and not isData:
             yieldEstimator_OS += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
             fillcounter += 1
     print '  :total yield at %.2f/pb = %.2f (OS)' %(plots.lumi, yieldEstimator_OS), fillcounter
-    return yieldEstimator_SS
+    return yieldDict
 
 def go():
     finalStates = expandFinalStates(options.FS)
     floatVarsDict = setUpFloatVarsDict()
     intVarsDict = setUpIntVarsDict()
     charVarsDict = setUpCharVarsDict()
+    yieldDict = {}
     if not finalStates:
         return 0
     for iFS in finalStates:
@@ -304,33 +416,38 @@ def go():
             if options.trainnedMass != "":
                 iLocation = "%s/%s/%s" %(iLocation[:iLocation.find("normal") + 6], options.trainnedMass, iLocation[iLocation.find("normal") + 6:])
                 print iLocation
-            totalQCD += loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS)
+            yieldDict = loop_one_sample(iSample, iLocation, iCat, oTree, floatVarsDict, intVarsDict, charVarsDict, iFS, yieldDict)
 
         oFile.cd()
         QCDScale = r.TH1F('QCD_%s_to_%s_%s' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
         QCDScale.Fill(0.5, plots_cfg.QCD_scale[iFS][0][0])
         QCDScale.SetBinError(1, plots_cfg.QCD_scale[iFS][0][1])
         QCDScale.Write()
-        if iFS == 'et':
-            QCDScale_1prong_3prong = r.TH1F('QCD_%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
-            QCDScale_1prong_3prong.Fill(0.5, plots_cfg.QCD_scale_1prong_3prong[0])
-            QCDScale_1prong_3prong.SetBinError(1, plots_cfg.QCD_scale_1prong_3prong[1])
-            QCDScale_1prong_3prong.Write()
-            WJetsLoose2Tight_1prong_3prong = r.TH1F('WJets_%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
-            WJetsLoose2Tight_1prong_3prong.Fill(0.5, plots_cfg.WJetsLoose2Tigh_1prong_3prong[0])
-            WJetsLoose2Tight_1prong_3prong.SetBinError(1, plots_cfg.WJetsLoose2Tigh_1prong_3prong[1])
-            WJetsLoose2Tight_1prong_3prong.Write()
+        QCD_SF = plots_cfg.QCD_scale[iFS][0][0]
         WJetsLoose2Tight = r.TH1F('WJets_%s_to_%s_%s' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
         WJetsLoose2Tight.Fill(0.5, plots_cfg.WJetsLoose2Tight[0])
         WJetsLoose2Tight.SetBinError(1, plots_cfg.WJetsLoose2Tight[1])
         WJetsLoose2Tight.Write()
         WJetsScale = r.TH1F('WJetsScale', '', 1, 0, 1)
         WJetsScale.Fill(0.5, plots_cfg.WJetsScanRange[0])
+        WJets_SF = plots_cfg.WJetsLoose2Tight[0]
+
+        if iFS == 'et':
+            QCDScale_1prong_3prong = r.TH1F('QCD_%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
+            QCDScale_1prong_3prong.Fill(0.5, plots_cfg.QCD_scale_1prong_3prong[0])
+            QCDScale_1prong_3prong.SetBinError(1, plots_cfg.QCD_scale_1prong_3prong[1])
+            QCDScale_1prong_3prong.Write()
+            QCD_SF = plots_cfg.QCD_scale_1prong_3prong[0]
+            WJetsLoose2Tight_1prong_3prong = r.TH1F('WJets_%s_to_%s_%s_1prong_3prong' %(controlRegionName, signalRegionName, iFS), '', 1, 0, 1)
+            WJetsLoose2Tight_1prong_3prong.Fill(0.5, plots_cfg.WJetsLoose2Tigh_1prong_3prong[0])
+            WJetsLoose2Tight_1prong_3prong.SetBinError(1, plots_cfg.WJetsLoose2Tigh_1prong_3prong[1])
+            WJetsLoose2Tight_1prong_3prong.Write()
+            WJets_SF = plots_cfg.WJetsLoose2Tigh_1prong_3prong[0]
         WJetsScale.Write()
 
         oTree.Write()
         oFile.Close()
-        print 'total QCD: %.2f' %(totalQCD*plots_cfg.QCD_scale[iFS][0][0])
+        printYield(yieldDict, WJets_SF, QCD_SF)
 
 
 if __name__ == "__main__":

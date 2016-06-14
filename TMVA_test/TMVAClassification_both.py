@@ -147,7 +147,6 @@ def main():
     # front of the "Silent" argument in the option string
     factory = TMVA.Factory( "TMVAClassification", outputFile, 
                             "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" )
-
     # Set verbosity
     factory.SetVerbose( verbose )
     
@@ -172,14 +171,14 @@ def main():
     # You can add so-called "Spectator variables", which are not used in the MVA training, 
     # but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the 
     # input variables, the response values of all trained MVAs, and the spectator variables
+    print "here"
 
     massPoint = infname
     preFix = varsList.preFix
-    infname = "ZPrime_%s_all_SYNC_%s_noIso_OSTight.root" %(massPoint, varsList.fs)
+    infname = "ZPrime_%s_all_SYNC_%s_noIso%s" %(massPoint, varsList.fs, varsList.tail)
     iFileSig = TFile.Open(preFix+infname)
-    sigChain = iFileSig.Get("eventTree")
-    signalWeight = 1
-    factory.AddSignalTree(sigChain, signalWeight)
+    sigChain = iFileSig.Get("eventTree_train")
+    factory.AddSignalTree(sigChain)
 
     bkg_list = []
     bkg_trees_list = []
@@ -235,7 +234,8 @@ def main():
     # "SplitMode=Random" means that the input events are randomly shuffled before
     # splitting them into training and test samples
     factory.PrepareTrainingAndTestTree( mycutSig, mycutBkg,
-                                        "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V" )
+                                        "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=1:nTest_Background=1:SplitMode=Block:NormMode=NumEvents:!V" )
+#                                         "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V" )
 
     # --------------------------------------------------------------------------------------------------
 
@@ -274,9 +274,9 @@ def main():
 
     # Save the output.
     outputFile.Close()
-    
-    print "=== wrote root file %s\n" % outfname
-    print "=== TMVAClassification is done!\n"
+#     
+#     print "=== wrote root file %s\n" % outfname
+#     print "=== TMVAClassification is done!\n"
     
     # open the GUI for the result macros    
 #     gROOT.ProcessLine( "TMVAGui(\"%s\")" % outfname )
