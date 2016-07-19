@@ -6,6 +6,8 @@ from cutSampleTools import *
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
 lep1 = lvClass()
 lep2 = lvClass()
+l1 = lvClass()
+l2 = lvClass()
 J1 = lvClass()
 J2 = lvClass()
 J3 = lvClass()
@@ -178,25 +180,6 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
             for ikey in eMuVarsDict.keys():
                 syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, eMuVarsDict[ikey]))
 
-        if FS[0] == FS[1]:
-            syncVarsDict['m_vis'][0] = getattr(iChain, '%s1_%s2_Mass' %(FS[0], FS[0]))
-#             syncVarsDict['m_sv'][0] = getattr(iChain, 't1_t2_SVfit').Pt()
-#             syncVarsDict['pt_sv'][0] = getattr(iChain, 't1_t2_SVfit').Eta()
-#             syncVarsDict['eta_sv'][0] = getattr(iChain, 't1_t2_SVfit').Phi()
-#             syncVarsDict['phi_sv'][0] = getattr(iChain, 't1_t2_SVfit').M()
-
-        else:
-            syncVarsDict['m_vis'][0] = getattr(iChain, '%s_%s_Mass' %(object_1, object_2))
-
-        syncVarsDict['met'][0] = iChain.pfMetEt
-        syncVarsDict['metphi'][0] = iChain.pfMetPhi
-        syncVarsDict['metcov00'][0] = iChain.pfmetCovariance_00
-        syncVarsDict['metcov01'][0] = iChain.pfmetCovariance_01
-        syncVarsDict['metcov10'][0] = iChain.pfmetCovariance_10
-        syncVarsDict['metcov11'][0] = iChain.pfmetCovariance_11
-
-#         syncVarsDict['mvamet'][0] = iChain.mvametEt
-#         syncVarsDict['mvametphi'][0] = iChain.mvametPhi
         met = lvClass()
         met.SetCoordinates(iChain.pfMetEt, 0.0, iChain.pfMetPhi, 0)
         if FS == 'et':
@@ -216,9 +199,12 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
         elif sys == 'jetECDown' and not isData:
             met.SetCoordinates(iChain.pfMet_jesDown_Et, 0.0, iChain.pfMet_jesDown_Phi, 0)
 
-        floatVarsDict['cosDPhi'][0] = math.cos(lep1.phi() - lep2.phi())
-        floatVarsDict['pZetaCut'][0] = pZetaCut(lep1, lep2, met)
-        floatVarsDict['m_eff'][0] = (lep1 + lep2 + met).mass()
+        syncVarsDict['met'][0] = met.pt()
+        syncVarsDict['metphi'][0] = met.phi()
+        syncVarsDict['metcov00'][0] = iChain.pfmetCovariance_00
+        syncVarsDict['metcov01'][0] = iChain.pfmetCovariance_01
+        syncVarsDict['metcov10'][0] = iChain.pfmetCovariance_10
+        syncVarsDict['metcov11'][0] = iChain.pfmetCovariance_11
 
         goodJets, pt20jets, pt30jets = getCrossCleanJets(jetsList = jetsList, lepList = [lep1, lep2], type = 'jet', iChain = iChain)
 
@@ -240,9 +226,14 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
         syncVarsDict['jmva_2'][0] = goodJets[1][2]
 
         #trigger weight
-        syncVarsDict['trigweight_1'][0] = 1.0
-        syncVarsDict['trigweight_2'][0] = 1.0
-        if FS == 'et':
-            syncVarsDict['trigweight_1'][0] = eleTrigEff(abs(iChain.eEta))
+        syncVarsDict['trigweight_1'][0] = trigEff(FS, syncVarsDict['pt_1'][0], syncVarsDict['eta_1'][0], isData)
+        syncVarsDict['trigweight_2'][0] = 1.0#trigEff(FS, syncVarsDict['pt_2'][0], syncVarsDict['eta_2'][0], isData)
+
+        l1.SetCoordinates(syncVarsDict['pt_1'][0], syncVarsDict['eta_1'][0], syncVarsDict['phi_1'][0], syncVarsDict['m_1'][0])
+        l2.SetCoordinates(syncVarsDict['pt_2'][0], syncVarsDict['eta_2'][0], syncVarsDict['phi_2'][0], syncVarsDict['m_2'][0])
+        syncVarsDict['m_vis'][0] = (l1 + l2).mass()
+        floatVarsDict['m_eff'][0] = (l1 + l2 + met).mass()
+        floatVarsDict['ZetaCut'][0] = pZetaCut(l1, l2, met)
+        floatVarsDict['nCSVL'][0] = getNCSVLJets(iChain, sys, isData, l1, l2)
 
 #         syncVarsDict['puweight'][0] = getPUWeight(iChain.nTruePU)

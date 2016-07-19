@@ -51,12 +51,23 @@ def checkJobs(opt):
     smallestLine = ""
     smallestFile = 99999999
     for iLine in lines2:
-        currentFileSize = int(iLine.split()[4])
-        if currentFileSize > 1000:
+        finished = False
+        currentFileSize = 0
+        if iLine.split()[5] == "M":
+            currentFileSize = float(iLine.split()[4])*1000
+        elif iLine.split()[5] == "G":
+            currentFileSize = float(iLine.split()[4])*1000000
+        elif iLine.split()[5] == "k":
+            currentFileSize = float(iLine.split()[4])
+        else:
+            currentFileSize = float(iLine.split()[4])/1000
+        if currentFileSize > 5:
             finishedFiles += 1
             if smallestFile > currentFileSize:
                 smallestFile = currentFileSize
-                smallestLine = iLine.split()[8]
+                smallestLine = iLine.split()[9]
+        else:
+            print "failed: ", currentFileSize, iLine.split()[8]
 
     os.system("rm check.txt")
 
@@ -96,7 +107,7 @@ def checkJobs(opt):
         print 'No file with *%s* found' %opt.fileType
 
     print 'Found %s root files out of %i jobs' %(finishedFiles, foundCompleteJobs+foundIncompleteJobs)
-    print 'Smallest output file is %s with size %i' %(smallestLine, smallestFile)
+    print 'Smallest output file is %s with size %.2fK' %(smallestLine, smallestFile)
     os.system("rm check.txt")
 
 if __name__ == "__main__":

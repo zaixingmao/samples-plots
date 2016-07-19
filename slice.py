@@ -12,7 +12,8 @@ class summed_ini_histos(supy.wrappedChain.calculable):
     def update(self, _):
         self.value = []
         elements = self.source["chain"].GetListOfFiles()
-        histos = ["eventWeights", "eventCountWeighted", "eventCount"]
+        histos = ["eventWeights", "eventCountWeighted", "eventCount"]#, "eventCountPtWeighted"]
+
 #        for i in range(100):
 #            histos.append("eventCountWeightedPDF_%i" %i)
 
@@ -94,7 +95,7 @@ class slice(supy.analysis):
     def parameters(self):
         return {"FS": self.vary(dict([#("tt", {}),
                                       ("et", {}),
-                                      #("mt", {}),
+                                      ("mt", {}),
                                       ("em", {}),
                                       #("ee", {}),
                                       #("mm", {}),

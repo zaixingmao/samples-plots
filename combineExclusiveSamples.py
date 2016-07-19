@@ -24,11 +24,11 @@ def combineSamples(location, fileList, method):
     #store HT-0to100
     oName = ''
     for iFile in fileList:
-        if 'HT' not in iFile and 'LO' in iFile:
+        if 'HT' not in iFile and 'WJets' in iFile:
             oName = iFile[:iFile.find("_all")] + '_HT-0to100' + iFile[iFile.find("_all"):]
             iName = iFile
-        if 'LO' not in iFile:
-            oName = iFile[:iFile.find("-50")] + '-50to200' + iFile[iFile.find("-50")+3:]
+#         if 'LO' not in iFile:
+#             oName = iFile[:iFile.find("-50")] + '-50to200' + iFile[iFile.find("-50")+3:]
 
             iName = iFile
     ifile = r.TFile("%s/%s" %(location, iName))    
@@ -44,12 +44,12 @@ def combineSamples(location, fileList, method):
     nEntries = iTree.GetEntries()
     for i in range(nEntries):
         iTree.GetEntry(i)
-        if iTree.genHT < 100 and 'LO' in iFile:
+        if iTree.genHT < 100:# and 'LO' in iFile:
             oTree.Fill()
-        if 'LO' not in iFile:
-            if iTree.X_to_ll < 200:
+#         if 'LO' not in iFile:
+#             if iTree.X_to_ll < 200:
 #             if 2800 < iTree.X_to_ll < 3000:
-                oTree.Fill()
+#                 oTree.Fill()
     oFile.cd()
     eventWeights.Write()
     eventCountWeighted.Write()
@@ -96,13 +96,13 @@ def combineSamples(location, fileList, method):
                 
 
 
-process = ['WJets_LO', 'DY-50']#]
+process = ['WJets']#]
 # process = ['DY-50']#, 'WJets_LO']#'DY-50']#, 'DY-50_LO']#]
 
-FS = ['et', 'em']#['et', 'em']#, 'et', 'tt', 'mt']
+FS = ['mt']#['et', 'em']#, 'et', 'tt', 'mt']
 binned = ['']#, '_HT-100to200', '_HT-200to400', '_HT-600toInf']#'_HT-400to600',
 tail = 'noIso'
-location = '/uscms/home/zmao/nobackup/0BTag/'
+location = '/uscms/home/zmao/nobackup/2016_highMET0B_noIso_Jul18/'
 #location = '/nfs_scratch/zmao/Nov18Prodruction_ntuple/MVANonTrigWP80_singleEforEMu/'
 method = 'LO'
 for iProcess in process:
