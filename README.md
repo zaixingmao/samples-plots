@@ -24,6 +24,9 @@ mv fnal_cmsJob.sh supy/sites/
 mv __init__.py supy/sites/
 source env.sh
 
+#running without supy (for fast tests, use -n to indicate how many events you want to run over)
+python cutSamples.py --FS et -l /uscms/home/zmao/nobackup/ -n 10
+
 #running locally
 supy slice.py --loop 1 --slices 10
 
