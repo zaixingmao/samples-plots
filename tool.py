@@ -98,14 +98,11 @@ def findFilesInDir(dirName):
 
 def addFiles(ch, dirName, knownEventNumber, maxFileNumber=-1, printTotalEvents = False, blackList = []):
     added = 0.
-    dirName = "root://cmseos.fnal.gov/" + dirName
-    totalAmount = len(os.listdir(dirName))
-    for iFile in os.listdir(dirName):
-        fName = dirName + '/' + iFile
-        if fName in blackList:
-            continue
-        if fName.endswith(".root"):
-            ch.Add(fName, knownEventNumber)
+    fileList = getListOfFilesAtFNAL("root://cmseos.fnal.gov/", dirName)
+    totalAmount = len(fileList)
+    for iFile in fileList:
+        if iFile.endswith(".root"):
+            ch.Add(iFile, knownEventNumber)
             added+=1
             if maxFileNumber-added == 0:
                 break
@@ -328,16 +325,25 @@ def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
     print ""
     return firstBinSum
 
+def getListOfFilesAtFNAL(pre, dir):
+    list = []
+    os.system("eos root://cmseos.fnal.gov ls %s > tmpList.txt" %dir)
+    f = open("tmpList.txt",'r')    
+    for line in f.readlines():
+        if line.rfind("\n") != -1:
+            line = line[:line.rfind("\n")]
+        list.append(pre+dir+"/"+line)
+    os.system("rm tmpList.txt")
+    return list
+
 def addHistFromFiles(dirName, histName, hist, xAxisLabels = ['']):
     added=0.
-    dirName = "root://cmseos.fnal.gov/" + dirName
-    dir = r.TSystemDirectory(dirName, dirName)
-    files = dir.GetListOfFiles()
-    totalAmount = files.GetSize() - 2.
+    files = getListOfFilesAtFNAL("root://cmseos.fnal.gov/", dirName)
+    totalAmount = len(files)
     isFirstFile = True
     for iFile in files:
-        fName = dirName + '/' + iFile.GetName()
-        if (not iFile.IsDirectory()) and fName.endswith(".root"):
+        fName = iFile
+        if fName.endswith(".root"):
             tmpHist = r.TH1F()
             ifile = r.TFile.Open(fName)
             if ifile.IsZombie():
