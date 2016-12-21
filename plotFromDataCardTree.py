@@ -5,7 +5,7 @@ import math
 from array import array
 
 
-lumi = 12891.5
+lumi = 36220
 
 def getCat(sampleName):
     cats = {"VV": ("ZZTo2L2Q", "VVTo2L2Nu", "WZTo1L1Nu2Q", "WZTo1L3Nu", "ZZTo4L", "WWTo1L1Nu2Q", "WZTo2L2Q", "WZTo3LNu"),
@@ -13,13 +13,23 @@ def getCat(sampleName):
             "WJets": ("WJetsLoose",),
             "DYJets": ("DY_M-50to150", "DY_M-150"),
             "QCD": ("QCDLoose",),
+            "SMHiggs": ("vbfH","ggH"),
             "Observed": ("dataTight",),
             }
     for iKey in cats.keys():
         for iSample in cats[iKey]:
             if iSample in sampleName:
                 return iKey
-    return ""
+    return ''
+
+def cleanEmptyBin(hist):
+    nBins = hist.GetNbinsX()
+    for i in range(1, nBins+1):
+        content = hist.GetBinContent(i)
+        error = hist.GetBinError(i)
+        if content < 0:
+            hist.SetBinContent(i, 0)
+            hist.SetBinError(i, math.sqrt(content**2 + error**2))
 
 
 def scaleHist(hist, SF, SF_unc):
@@ -30,13 +40,13 @@ def scaleHist(hist, SF, SF_unc):
         hist.SetBinError(i, math.sqrt(bin_unc**2 + add_unc**2))
 
 def setUpHistDict(bins):
-    cats = ["VV", "TT", "WJets", "DYJets", "QCD", "Observed"]
+    cats = ["VV", "TT", "WJets", "DYJets", "QCD", "Observed", "SMHiggs"]
     histDict = {}
     for i in cats:
         histDict[i] = r.TH1F(i, "", len(bins)-1, bins)
     return histDict
 
-def run(inputFile, FS, varName):
+def run(inputFile, FS, sys, varName):
     iFile = r.TFile(inputFile)
     QCD_SF_name = "QCD_Loose_to_Tight"
     WJets_SF_name = "WJets_Loose_to_Tight"
@@ -56,11 +66,11 @@ def run(inputFile, FS, varName):
     nEntries = tree.GetEntries()
     
     bins = array('d', range(0, 5000, 5))
+    bins = array('d', [85,100,110,120,130,140,150,160,170,180,190,200,225,250,275,300,400,600, 900, 1200, 1700])
 
     histDict = setUpHistDict(bins)
     totalBKG = r.TH1F('total_bkg', "", len(bins)-1, bins)
-
-    oFile = r.TFile("datacard_2016_%s_%s.root" %(varName, FS), 'recreate')
+    oFile = r.TFile("/user_data/zmao/datacard_histo_2016/datacard_2016_%s_%s%s.root" %(varName, FS, sys), 'recreate')
 
     for i in range(nEntries):
         tree.GetEntry(i)
@@ -68,11 +78,13 @@ def run(inputFile, FS, varName):
         value = getattr(tree, varName)
         if value >= bins[len(bins)-1]:
             value = (bins[len(bins)-1] + bins[len(bins)-2])/2.
+        if value < bins[0]:
+            value = (bins[0] + bins[1])/2.
         sampleName = getCat(tree.sampleName)
         if sampleName != '':
             histDict[sampleName].Fill(value, weight)
-        elif "Z'" in tree.sampleName:
-            sampleName = (tree.sampleName)[:tree.sampleName.rfind(")")+1]
+        elif "Zprime" in tree.sampleName:
+            sampleName = (tree.sampleName)[:tree.sampleName.rfind("0")+1]
             if sampleName not in histDict.keys():
                 histDict[sampleName] = r.TH1F(sampleName, "", len(bins)-1, bins)
             histDict[sampleName].Fill(value, weight)
@@ -81,14 +93,19 @@ def run(inputFile, FS, varName):
 
     oFile.cd()
     for ikey in histDict.keys():
+        cleanEmptyBin(histDict[ikey])
         if ikey != "Observed":
-            if "Z'" not in ikey:
+            if "Zprime" not in ikey:
                 totalBKG.Add(histDict[ikey])
             print "%s: %.2f" %(ikey, histDict[ikey].Integral()) 
             histDict[ikey].Write()
     totalBKG.Write()
     oFile.Close()    
 
-FS = 'et'
-# run("/user_data/zmao/datacard_2016/combined_%s_withPUWeight.root" %FS, FS, 'm_effective')
-run("/user_data/zmao/datacard_2016/combined_%s_withPUWeight.root" %FS, FS, 'm_svfit') 
+sys = '_jetECUp'
+
+FS = ['et', 'mt', 'em']
+vars = ['m_svfit','m_effective', 'm_tt']
+for iFS in FS:
+    for iVar in vars:
+        run("/user_data/zmao/datacard_2016/Lumi36p22_noBTagSF/combined_%s_withPUWeight%s.root" %(iFS,sys), iFS, sys, iVar) 

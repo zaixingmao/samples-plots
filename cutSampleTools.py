@@ -42,8 +42,7 @@ def setupLumiReWeight():
     location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
 #     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
-#     reWeight = r.edm.LumiReWeighting("%sMC_Fall15_PU25_V1.root" %location,"%sData_Pileup_2015D_Feb02.root" %location,"pileup","pileup")
-    reWeight = r.edm.LumiReWeighting("%sMC_50bins.root" %location,"%sdata_50bins.root" %location,"pileup","pileup")
+    reWeight = r.edm.LumiReWeighting("%sMC_50bins.root" %location,"%sdataBCDEFGH_69200.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
 #    if npu < 6:
@@ -549,7 +548,8 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
                 return 0, 'antiTauIso'
 
         if type != 'baseline':
-            if not (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
+#             if not (iTree.tAgainstElectronTightMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
+            if not (iTree.tAgainstElectronVLooseMVA5 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
                 return 0, 'tauAgainst'
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
                 return 0, '3rdLepton'
@@ -578,7 +578,8 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False):
             if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso >= 0.1):
                 return 0, 'antiTauIso'
         if type != 'baseline':
-            if (iTree.tAgainstElectronVLooseMVA5 == 0 or iTree.tAgainstMuonTight3 == 0):
+#             if (iTree.tAgainstElectronVLooseMVA5 == 0 or iTree.tAgainstMuonTight3 == 0):
+            if (iTree.tAgainstElectronVLooseMVA5 == 0 or iTree.tAgainstMuonLoose3 == 0):
                 return 0, 'tauAgainst'
             if ((iTree.extraelec_veto > 0) or (iTree.extramuon_veto > 1) or (iTree.diMuon_veto > 0)):
                 return 0, '3rdLepton'

@@ -164,7 +164,7 @@ def getPDFWeight(fs, iSample, iCat, variation, m_eff):
             weight = LUT_et_withPUWeight_signal.luts["DY_M-%ito%i_%s" %(massPoint-200, massPoint, variation)][0]
 
     elif iCat in pdfCats and ("ST" not in iSample):
-        if fs == 'et':
+        if fs == 'et' or fs == 'mt':
             weight = LUT_et_withPUWeight.luts["%s_%s" %(iSample, variation)][bin-1]
         if fs == 'em':
             weight = LUT_em_withPUWeight.luts["%s_%s" %(iSample, variation)][bin-1]
@@ -196,7 +196,7 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
         isEmbedded = True
     else:
         isEmbedded = False
-    if ('H2hh' in iSample) or ('ggH' in iSample) or ("Z'" in iSample):
+    if ("Z'" in iSample):
         isSignal = True
     else:
         isSignal = False
@@ -223,19 +223,7 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
         tool.printProcessStatus(iEntry, nEntries, 'looping over file %s' %(iSample), iEntry-1)
         uncWeight = 1.0
         region = 'none'
-        if options.sys == 'jetECUp' and not isData:
-            met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
-        elif options.sys == 'jetECDown' and not isData:
-            met.SetCoordinates(iTree.pfMet_jesDown_Et, 0.0, iTree.pfMet_jesDown_Phi, 0)
-        elif (options.sys == 'tauECUp' or options.sys == 'tauECDown') and (not isData) and iTree.tIsTauh:
-            met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
-            if iTree.pt_2 - iTree.tPt > 0:
-                deltaTauES.SetCoordinates(abs(iTree.pt_2 - iTree.tPt), 0.0, -iTree.tPhi, 0)
-            else:
-                deltaTauES.SetCoordinates(abs(iTree.pt_2 - iTree.tPt), 0.0, iTree.tPhi, 0)
-            met = met + deltaTauES
-        else:
-            met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
+        met.SetCoordinates(iTree.met, 0.0, iTree.metphi, 0)
 
         l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
         l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
@@ -248,6 +236,8 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
                 charVarsDict['sampleName'][:31] = 'data' + signalRegionName
             else:
                 charVarsDict['sampleName'][:31] = iSample
+                if isSignal:
+                    charVarsDict['sampleName'][:31] = "Zprime_%s" %iSample[iSample.find("(")+1: iSample.find(")")]
             if iTree.q_1 != iTree.q_2:
                 region = 'A'
             else:
@@ -328,8 +318,8 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
         if (options.sys == 'up' or options.sys == 'down') and (not isData):
             floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*getPDFWeight(iFS, iSample, iCat, options.sys, floatVarsDict['m_effective'][0])
 
-        intVarsDict['nCSVL'][0] = plots.getNCSVLJets(iTree, options.sys, isData)
-        if iFS == 'et':
+        intVarsDict['nCSVL'][0] = int(iTree.nCSVL)
+        if iFS == 'et' or iFS == "mt":
             intVarsDict['tauDecayMode'][0] = int(iTree.tDecayMode)
             floatVarsDict['tauTightIso'][0] = iTree.tByTightCombinedIsolationDeltaBetaCorr3Hits
             floatVarsDict['tauMediumIso'][0] = iTree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
@@ -340,12 +330,8 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
                 uncWeight -= 0.2*iTree.pt_2/1000.
         floatVarsDict['cosDPhi'][0] =  math.cos(iTree.phi_1 - iTree.phi_2)
         floatVarsDict['pZetaCut'][0] =  getattr(iTree, "%s_%s_PZeta" %(iFS[0], iFS[1])) - 3.1*getattr(iTree, "%s_%s_PZetaVis" %(iFS[0], iFS[1]))
-        if options.sys == 'jetECUp' and not isData:
-            floatVarsDict['pfMEt'][0] = iTree.pfMet_jesUp_Et
-        elif options.sys == 'jetECDown' and not isData:
-            floatVarsDict['pfMEt'][0] = iTree.pfMet_jesDown_Et
-        else:
-            floatVarsDict['pfMEt'][0] = iTree.pfMetEt
+
+        floatVarsDict['pfMEt'][0] = iTree.met
 #         floatVarsDict['eleRelIso'][0] = iTree.eRelIso
 
         if options.PUWeight and not isData:

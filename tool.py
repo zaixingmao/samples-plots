@@ -336,6 +336,7 @@ def addHistFirstBinFromFiles(dirName, nBins=15, xMin=0, xMax=14):
 def addHistFromFiles(dirName, histName, hist, xAxisLabels = ['']):
     added=0.
     dir = r.TSystemDirectory(dirName, dirName)
+    print dirName
     files = dir.GetListOfFiles()
     totalAmount = files.GetSize() - 2.
     isFirstFile = True

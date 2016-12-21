@@ -9,15 +9,6 @@ r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 def opts():
     parser = optparse.OptionParser()
     parser.add_option("--logY", dest="logY", default=False, action="store_true", help="")
-    parser.add_option("--file1", dest="file1", default='', help="input file location 1")
-    parser.add_option("--hist1", dest="hist1", default='', help="histo name of file 1")
-    parser.add_option("--legend1", dest="legend1", default='', help="legend name of file 1")
-    parser.add_option("--file2", dest="file2", default='', help="input file location 2")
-    parser.add_option("--hist2", dest="hist2", default='', help="histo name of file 2")
-    parser.add_option("--legend2", dest="legend2", default='', help="legend name of file 2")
-    parser.add_option("--file3", dest="file3", default='', help="input file location 3")
-    parser.add_option("--hist3", dest="hist3", default='', help="histo name of file 3")
-    parser.add_option("--legend3", dest="legend3", default='', help="legend name of file 3")
     options, args = parser.parse_args()
     return options
 
@@ -29,31 +20,48 @@ def getColor(i):
 # set the position of the legend
 position = (0.7, 0.9 - 0.05*3, 0.9, 0.9)
 
-# set the title
-title = ""#"title; x-axis title; y-axis title"
+def getLatex(name):
+    if name == 't':
+        return '#tau'
+    elif name == 'm':
+        return '#mu'
+    elif name == 'e':
+        return 'e'
+    else:
+        return '%s, not supported' %name
 
-def go():
+def getFinalStateLatex(FS):
+    return (getLatex(FS[0]) + getLatex(FS[1]))
+
+
+def go(fs, files, varName, bins):
     options = opts()
     histList = []
     fileList = []
     i = 1
-    while hasattr(options, "file%i" %i):
-        if getattr(options, "file%i" %i) != '':
-            if getattr(options, "hist%i" %i) == '':
-                print "ERROR!!! Missing info for hist%i" %i
-            elif getattr(options, "legend%i" %i) == '':
-                print "ERROR!!! Missing info for legend%i" %i
-            else:
-                fileList.append(r.TFile(getattr(options, "file%i" %i)))
-                histList.append((getattr(options, "legend%i" %i), fileList[i-1].Get(getattr(options, "hist%i" %i))))
+    # set the title
+    title = "comparison in %s channel; %s; A.U" %(getFinalStateLatex(fs), varName)#"title; x-axis title; y-axis title"
+
+
+    for iName, iFile in files:
+        fileList.append(r.TFile("%s_%s_noIso.root" %(iFile, fs)))
+        legendName = iName
+        histName = "%s_%i" %(varName, i)
+        histList.append((legendName, r.TH1F(histName, "", bins[0], bins[1], bins[2])))
+        histList[i-1][1].Sumw2()
+        if not hasattr(fileList[i-1].Get("Ntuple"), varName):
+            return 0
+        fileList[i-1].Get("Ntuple").Draw("%s>>%s" %(varName, histName))
         i+=1
+
     iMax = -999
     iMin = 999
     legend = r.TLegend(position[0], position[1], position[2], position[3])
     legend.SetFillStyle(0)
     legend.SetBorderSize(0)
 
-    pdf_fileName = "compare"
+    pdf_fileName = "compare_%s_%s.pdf" %(fs, varName)
+
     c = r.TCanvas("c","Test", 800, 800)
     firstKey = ""
     factor = 1.2
@@ -61,10 +69,13 @@ def go():
         r.gPad.SetLogy()
         factor = 5
     for i in range(len(histList)):
-        pdf_fileName += "_%s" %histList[i][0]
+        histList[i][1].Scale(1./histList[i][1].Integral())
+
         if i == 0:
             histList[i][1].Draw()
             histList[i][1].SetTitle(title)
+            histList[i][1].GetYaxis().SetTitleOffset(1.4)
+
         else:
             histList[i][1].Draw("same")
         if histList[i][1].GetMaximum() > iMax:
@@ -76,6 +87,39 @@ def go():
     legend.Draw('same')
     histList[0][1].SetMaximum(iMax*factor)
     histList[0][1].SetMinimum(iMin)
-    c.Print('%s.pdf' %pdf_fileName)
+    c.Print(pdf_fileName)
 
-go()
+files = [# ("7_6_X", "ZPrime_2000_7_6_X_all_SYNC"),
+#          ("8_0_X", "ZPrime_2000_all_SYNC"),
+#          ("Anirban", "ZPrime_2000_test_all_SYNC")
+
+           ("inclusive", "DY-50_LO_all_SYNC"),
+         ("HT-0to100", "DY-50_LO_HT-0to100_all_SYNC"),
+         ("HT-100to200", "DY-50_LO_HT-100to200_all_SYNC"),
+         ("HT-200to400", "DY-50_LO_HT-200to400_all_SYNC"),
+         ("HT-400to600", "DY-50_LO_HT-400to600_all_SYNC"),
+         ("HT-600toInf", "DY-50_LO_HT-600toInf_all_SYNC"),
+
+]
+vars = [
+        ("m_eff", [30, 0 ,3000]),
+#         ("m_vis", [20, 0 ,2000]),
+#         ("met", [15, 0 ,300]),
+#         ("nCSVL", [4, 0 ,4]),
+# 
+#         ("mPt", [10, 0 ,500]),
+#         ("ePt", [10, 0 ,500]),
+#         ("tPt", [20, 0 ,800]),
+#         ("t1Pt", [20, 0 ,1000]),
+#         ("t2Pt", [20, 0 ,1000]),
+#         ("eGenPt", [25, 0 ,500]),
+#         ("mGenPt", [25, 0 ,500]),
+#         ("tGenPt", [50, 0 ,1000]),
+#         ("t1GenPt", [50, 0 ,1000]),
+#         ("t2GenPt", [50, 0 ,1000]),
+
+]
+
+for iFS in ['mt']:#["et", 'mt', 'tt', 'em']:
+    for iVarName, iBins in vars:
+        go(iFS, files, iVarName, iBins)

@@ -26,8 +26,9 @@ jet = lvClass()
 met = lvClass()
 
 
-lumi = 2153.0#2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
+lumi = 12891.5#5939.2#2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
 Lumi = lumi #3000.0
+signalScale = 5000
 
 def opts():
     parser = optparse.OptionParser()
@@ -75,40 +76,6 @@ def opts():
 if __name__ == "__main__":
     options = opts()
 
-def getNCSVLJets(tree, sys, isData, full = False):
-    n = 0
-    for i in range(1, 9):
-        CSVL = 0#getattr(tree, "jet%iCSVL" %i)
-        jetPt = getattr(tree, "jet%iPt" %i)
-        jetEta = getattr(tree, "jet%iEta" %i)
-        if getattr(tree, "jet%iCSVBtag" %i) > 0.605:
-            CSVL = 1
-        CSVL_old = CSVL
-        if not isData:
-            if sys == 'bScaleUp':
-                CSVL = getattr(tree, "jet%iCSVL_up" %i)
-            elif sys == 'bScaleDown':
-                CSVL = getattr(tree, "jet%iCSVL_down" %i)
-            elif sys == 'jetECUp':
-                jetPt = getattr(tree, "jet%iJES_Up" %i)
-            elif sys == 'jetECDown':
-                jetPt = getattr(tree, "jet%iJES_Down" %i)
-        if CSVL and  jetPt > 30 and abs(jetEta) < 2.4 and abs(getattr(tree, "jet%iPFJetIDLoose" %i)):
-            l_1.SetCoordinates(tree.pt_1, tree.eta_1, tree.phi_1, tree.m_1)
-            jet.SetCoordinates(jetPt, 
-                               jetEta, 
-                               getattr(tree, "jet%iPhi" %i), 
-                               0)
-            dR_1 = r.Math.VectorUtil.DeltaR(l_1, jet)
-            if dR_1 <= 0.4:
-                continue
-            l_2.SetCoordinates(tree.pt_2, tree.eta_2, tree.phi_2, tree.m_2)
-            dR_2 = r.Math.VectorUtil.DeltaR(l_2, jet)
-            if dR_2 > 0.4:
-                n += 1
-        if not full and n >= 1:
-            return 1
-    return n
 
 def getJets(tree):
     jets = []
@@ -141,26 +108,18 @@ defaultOrder = [("Diboson", r.TColor.GetColor(222, 90,106)),
                 ('h125#rightarrow#tau#tau', r.TColor.GetColor(106, 203,107)),
                 ]
 
-
-def pZetaCut(t1, t2, met):
-    zetaX = math.cos(t1.phi()) + math.cos(t2.phi())
-    zetaY = math.sin(t1.phi()) + math.sin(t2.phi())
-    zetaR = math.sqrt(zetaX*zetaX + zetaY*zetaY)
-    if zetaR > 0.0:
-        zetaX /= zetaR
-        zetaY /= zetaR
-    pZeta = zetaX*(t1.px() + t2.px() + met.px()) + zetaY*(t1.py() + t2.py() + met.py()) 
-    pZetaVis = zetaX*(t1.px() + t2.px()) + zetaY*(t1.py() + t2.py())
-    return pZeta - 3.1*pZetaVis
-
 def passBound(tree, FS, bound, side):
-    if FS == 'et':
-        if bound == 'Tight':
-            value = tree.tByTightCombinedIsolationDeltaBetaCorr3Hits
+    if FS == 'et' or FS == 'mt':
+        if bound == 'VTight':
+            value = tree.tByVTightIsolationMVArun2v1DBnewDMwLT
+        elif bound == 'Tight':
+            value = tree.tByTightIsolationMVArun2v1DBnewDMwLT
         elif bound == 'Medium':
-            value = tree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
+            value = tree.tByMediumIsolationMVArun2v1DBnewDMwLT
         elif bound == 'Loose':
-            value = tree.tByLooseCombinedIsolationDeltaBetaCorr3Hits
+            value = tree.tByLooseIsolationMVArun2v1DBnewDMwLT
+        elif bound == 'VLoose':
+            value = tree.tByVLooseIsolationMVArun2v1DBnewDMwLT
         else:
             value = True if tree.tByCombinedIsolationDeltaBetaCorrRaw3Hits < bound else False
     elif FS == 'em':
@@ -181,12 +140,20 @@ def regionSelection(tree, FS, region, lowerBound = 0, upperBound = 1):
         return False
          
     if FS == 'et':
-        if ('signal' in region) and (tree.tByTightCombinedIsolationDeltaBetaCorr3Hits > 0.5) and (tree.eRelIso < 0.15):
+        if ('signal' in region) and passBound(tree, FS, lowerBound, 'upper') and (tree.eRelIso < 0.15):
             return True
         elif ('control' in region) and (tree.eRelIso < 0.15) and passBound(tree, FS, lowerBound, 'lower') and passBound(tree, FS, upperBound, 'upper'):
             return True
         else:
             return False
+    if FS == 'mt':
+        if ('signal' in region) and passBound(tree, FS, lowerBound, 'upper') and (tree.mRelIso < 0.15):
+            return True
+        elif ('control' in region) and (tree.mRelIso < 0.15) and passBound(tree, FS, lowerBound, 'lower') and passBound(tree, FS, upperBound, 'upper'):
+            return True
+        else:
+            return False
+
     elif FS == 'em':
         if ('signal' in region) and (tree.eRelIso < 0.15) and (tree.mRelIso < 0.15):
             return True
@@ -196,14 +163,9 @@ def regionSelection(tree, FS, region, lowerBound = 0, upperBound = 1):
             return False
     return False
 
-def passCut(tree, FS, isData, l1, l2, met, sys):
-#     onlyMuLead = True if (not (tree.Mu8e23Pass and tree.mMu8El23 and tree.mMu8El23)) else False
-#     onlyEleLead = True if (not (tree.Mu23e12Pass and tree.mMu23El12 and tree.eMu23El12)) else False
-#     both = True if (tree.Mu23e12Pass and tree.mMu23El12 and tree.eMu23El12) and (tree.Mu8e23Pass and tree.mMu8El23 and tree.mMu8El23) else False
+def passCut(tree, FS, isData, sys):
     if __name__ == "__main__":
-        if tree.ePt <= 35:
-            return False
-        if FS == 'et':
+        if FS == 'et' or FS == 'mt':
             if options.prong2:
                 if tree.tDecayMode < 4 or tree.tDecayMode > 8:
                     return False
@@ -213,117 +175,67 @@ def passCut(tree, FS, isData, l1, l2, met, sys):
                     return False
             elif options.prong1_3 and 4 < tree.tDecayMode < 8:
                     return False
-    #         else:
-    #             if 4 < tree.tDecayMode < 8:
-    #                 return False
-#         if (l1+l2+met).mass() <= 200:
+# 
+#             if tree.mPt <=35:
+#                 return False
+
+            if options.getWJetsSF:
+                if not ( 0.7 < tree.cosDPhi_MEt_1 < 0.9):
+                    return False
+                if (tree.cosDPhi_MEt_2 > 0.9 and tree.mt_1 > 150):
+                    return False
+            else:
+                if not (tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9 and tree.mt_1 > 150)):
+                    return False
+
+#         if options.getWJetsSF:
+# #             if tree.ZetaCut >= -50:
+#             if math.cos(tree.phi_1 - tree.phi_2) < -0.95:
+#                 return False
+#         else:
+#             if 40 < tree.mt_1 < 160:# < 120):
+#                 return False
+#         if 40 < tree.mt_1 < 300:# < 160:# < 120):
 #             return False
+
         if options.highMETlowPZeta:
-            if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) >= -50:# and tree.pfMetEt >= 30:
+            if tree.ZetaCut >= -50:
                 return False
-            if met.pt() <= 30:
+            if tree.met <= 30:
                 return False
         if options.highMETlowPZeta0NB:
-#             if not (-0.6 < math.cos(tree.phi_1 - tree.phi_2) < 0):
-#                 return False
-            if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) >= -50:# and tree.pfMetEt >= 30:
+            if tree.ZetaCut >= -50:
                 return False
-            if met.pt()  <= 30:
+            if tree.met <= 30:
                 return False
-            if getNCSVLJets(tree, sys, isData) >= 1:
+            if tree.nCSVL >= 1:
                 return False
-        elif options.lowMET and met.pt()  >= 30:
+        elif options.lowMET and tree.met >= 30:
                 return False
         elif options.lowMET0NB:
-            if met.pt()  >= 30:
+            if tree.met >= 30:
                 return False
-            if getNCSVLJets(tree, sys, isData) >= 1:
-                return False
-        elif options.signalRegion:
-#             if not ( 300 < (l1 + l2 + met).mass()):
+#             if tree.nCSVL >= 1:
 #                 return False
-            if met.pt()  <= 30:
+#         elif options.lowMET0NB_highDPhi:
+#             if tree.met >= 30:
+#                 return False
+#             if tree.nCSVL >= 1:
+#                 return False
+#             if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
+#                 return False
+        elif options.signalRegion:
+            if tree.met >= 30:
                 return False
-            if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
+            if tree.ZetaCut >= -50:
                 return False
             if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
                 return False
-            if getNCSVLJets(tree, sys, isData) >= 1:
-                return False
-#             if (pZetaCut(l1, l2, met) > -50) and (math.cos(tree.phi_1 - tree.phi_2) < -0.95):
-#                 return False
-
-
-        elif options.signalRegionReverseCosPhi:
-            if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                return False
-            if met.pt()  <= 30:
-                return False
-            if math.cos(tree.phi_1 - tree.phi_2) < -0.95:
+            if tree.nCSVL >= 1:
                 return False
             if getNCSVLJets(tree, sys, isData) >= 1:
                 return False
-        elif options.signalRegionReverseNCSVJets:
-            if met.pt()  <= 30:
-                return False
-            if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                return False
-#             if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
-#                 return False
-            if getNCSVLJets(tree, sys, isData) == 0:
-                return False
-        elif options.signalRegionReversePZeta:
-            if (pZetaCut(l1, l2, met) >= -50) and (math.cos(tree.phi_1 - tree.phi_2) <= -0.95):
-                return False#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-            if met.pt()  <= 30:
-                return False
-            if getNCSVLJets(tree, sys, isData) >= 1:
-                return False
-        elif options.signalRegionLowMET:
-            if met.pt()  >= 30:
-                return False
-#             if (l1 + l2 + met).mass() > 125:
-#                 return False
-#             if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-#                 return False
-#             if math.cos(tree.phi_1 - tree.phi_2) >= -0.95:
-#                 return False
-            if getNCSVLJets(tree, sys, isData) >= 1:
-                return False
 
-
-
-    #         if getNCSVLJets(tree, sys, isData) >= 1:
-    #             return False
-    # #     if tree.pfMetNoHFEt >= 30:
-    # #         return False
-
-
-
-
-
-    #     if (tree.eRelIso > 0.15):# and tree.tByTightCombinedIsolationDeltaBetaCorr3Hits > 0.5):# and (tree.mRelIso < 0.15)):
-    #         return False
-
-    #     if tree.mPt < 28:
-    #         return False
-    # 
-    #     if FS == 'et':
-    # #         if not (tree.tDecayMode < 5):
-    # #         if not (4 < tree.tDecayMode < 10):
-    #         if not (9 < tree.tDecayMode < 15):
-    #             return False
-
-    #     if FS == 'et' and not isData:
-    #         if tree.singleEPass and tree.eSingleEle and tree.ePt > 33.0:
-    #             return True
-    #         else:
-    #             return False
-    #     if FS == 'et' and isData:
-    #         if tree.singleETightPass and tree.eSingleEleTight and tree.ePt > 33.0:
-    #             return True
-    #         else:
-    #             return False
         if FS == 'em':
             if abs(tree.eEta) >= 2.1 or abs(tree.mEta) >= 2.1:
                 return False
@@ -463,6 +375,10 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
     eventCount = file.Get('eventCount')
     eventCountWeighted = file.Get('eventCountWeighted')
 
+    sumPtWeights = -1
+    if "TT" in iSample and options.sys == 'topPt':
+        sumPtWeights = file.Get('eventCountPtWeighted').GetBinContent(1)
+
     nEntries = tree.GetEntries()
 #     if nEntries > 100:
 #         nEntries = 100
@@ -473,6 +389,16 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
     tmpHist_forROOTFile.Sumw2()
     isData = False
     isSignal = False
+
+    if eventCount:
+        initEvents = eventCount.GetBinContent(1)
+    else:    
+        initEvents = tree.initEvents
+    if eventCountWeighted:
+        sumWeights = eventCountWeighted.GetBinContent(1)
+    else:    
+        sumWeights = tree.initWeightedEvents
+
     if iCategory == 'Observed':
         isData = True
     for iEntry in range(nEntries):
@@ -481,56 +407,33 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
         weight = 1.0
         QCD_weight = 1.0
 
-        if options.sys == 'jetECUp' and not isData:
-            met.SetCoordinates(tree.pfMet_jesUp_Et, 0.0, tree.pfMet_jesUp_Phi, 0)
-        elif options.sys == 'jetECDown' and not isData:
-            met.SetCoordinates(tree.pfMet_jesDown_Et, 0.0, tree.pfMet_jesDown_Phi, 0)
-        elif options.sys == 'tauECUp' and not isData:
-            met.SetCoordinates(tree.pfMet_tesUp_Et, 0.0, tree.pfMet_tesUp_Phi, 0)
-        elif options.sys == 'tauECDown' and not isData:
-            met.SetCoordinates(tree.pfMet_tesDown_Et, 0.0, tree.pfMet_tesDown_Phi, 0)
-        else:
-            met.SetCoordinates(tree.pfMetEt, 0.0, tree.pfMetPhi, 0)
-
-        l1.SetCoordinates(tree.pt_1, tree.eta_1, tree.phi_1, tree.m_1)
-        l2.SetCoordinates(tree.pt_2, tree.eta_2, tree.phi_2, tree.m_2)
-
-        if eventCount:
-            initEvents = eventCount.GetBinContent(1)
-        else:    
-            initEvents = tree.initEvents
-        if eventCountWeighted:
-            sumWeights = eventCountWeighted.GetBinContent(1)
-        else:    
-            sumWeights = tree.initWeightedEvents
-        if not passCut(tree, FS, isData, l1, l2, met, options.sys):
+        if not passCut(tree, FS, isData, options.sys):
             continue
         if not isData:
             xs  = tree.xs
             if (80.94 < xs < 80.96) or (136.01 < xs < 136.03):
                 xs = xs*0.108*3
-            weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2/(sumWeights+0.0)
+            if options.sys == 'topPt' and sumPtWeights != -1.0:
+                sumWeights = sumPtWeights
+                weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2*tree.topPtWeight/(sumWeights+0.0)
+            else:
+                weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2/(sumWeights+0.0)
             if options.PUWeight:
                 weight = weight*cutSampleTools.getPUWeight(tree.nTruePU)
-        if options.diffQCD:
-            if tree.tDecayMode < 4:
-                QCD_weight = plots_cfg.SF_prong1[0]
-            elif tree.tDecayMode > 8:
-                QCD_weight = plots_cfg.SF_prong3[0]
 
         if 'WJets' in iSample:
-            weight = 0.8*weight
+            weight = 1.0*weight
         if 'ZPrime' in iSample:
-            weight = getZPrimeXS(iCategory[7:])*weight
+            weight = getZPrimeXS(iSample[iSample.rfind("/")+8:iSample.rfind("_all")])*weight
             isSignal =  True
         if varName == 'm_withMET':
-            value = (l1 + l2 + met).mass()
+            value = tree.m_eff
         elif varName == 'mVis':
-            value = (l1 + l2).mass()
+            value = tree.m_vis
         elif varName == 'pZeta - 3.1pZetaVis':
-            value = pZetaCut(l1, l2, met)
+            value = tree.ZetaCut
         elif varName == "nCSVL":
-            value = getNCSVLJets(tree, options.sys, isData, True)
+            value = tree.nCSVL
         elif varName == "cos_phi_tau1_tau2":
             value = math.cos(tree.phi_1 - tree.phi_2)
         elif varName == "j1Pt":
@@ -542,7 +445,6 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
         elif varName == 'm_gen':
             if tree.eGenTauMass < 0  or tree.tGenMass < 0:
                 continue
-
             l1.SetCoordinates(tree.eGenTauPt, tree.eGenTauEta, tree.eGenTauPhi, tree.eGenTauMass)
             l2.SetCoordinates(tree.tGenPt, tree.tGenEta, tree.tGenPhi, tree.tGenMass)
             value = (l1 + l2).mass()
@@ -604,14 +506,6 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
 
     del tmpHist
 
-    if options.saveHisto:
-        oFile = r.TFile('/user_data/zmao/ZPrimeHistos/%s/%s_%s.root' %(FS, iSample[iSample.rfind('/'): iSample.rfind('_SYNC')], varName),"recreate")
-        oFile.cd()
-        tmpHist_forROOTFile = fixNegativBins(tmpHist_forROOTFile)
-        tmpHist_forROOTFile.Write()
-        oFile.Close()
-    del tmpHist_forROOTFile
-
     print ''
 
 def getError(hist, startBin, endBins):
@@ -639,18 +533,8 @@ def getQCDScale(histDict, varBins, method):
             unc_CD = calcSysUnc(QCD_C/QCD_D, QCD_C, QCD_D, math.sqrt(QCD_C_err), math.sqrt(QCD_D_err))
             SStoOS = QCD_C/QCD_D
         else:
-            unc_CD = 0.05   
+            unc_CD = 0.03   
             SStoOS = 1.07
-#             unc_CD = 0.21
-#             SStoOS = 1.64
-            unc_CD = 0.14
-            SStoOS = 1.34
-#             SStoOS = 0.891   
-#             unc_CD = 0.111
-#             SStoOS = 1.002 
-#             unc_CD = 0.204
-#             SStoOS = 0.961
-#             unc_CD = 0.047
 
         unc_BD = calcSysUnc(QCD_B/QCD_D, QCD_B, QCD_D, math.sqrt(QCD_B_err), math.sqrt(QCD_D_err))
         unc = calcSysUnc((SStoOS*QCD_B)/QCD_D, SStoOS, QCD_B/QCD_D, unc_CD, unc_BD)
@@ -700,17 +584,20 @@ def buildStackFromDict(histDict, FS, option = 'width', sf = 0.1, sf_error= 0.1):
 
 def setQCD(hist, scale = 0.6, binned = False, j = 0): #force qcd to be non-negative
     iScale = scale[j][0]*Lumi/lumi
+    if iScale != 0:
+        iUnc = scale[j][1]/scale[j][0]
+    else:
+        iUnc = 0.0
     hist.Scale(iScale)
     for i in range(1, hist.GetNbinsX()+2):
         content = hist.GetBinContent(i)
 #             print 'uniScale', content
         error = hist.GetBinError(i)
+        error = math.sqrt(error**2 + (iUnc*content)**2)
         x = hist.GetBinCenter(i)
+        hist.SetBinError(i, error)
         if content < 0:
             hist.SetBinContent(i, 0)
-            hist.SetBinError(i, error)
-        else:
-            hist.SetBinError(i, math.sqrt(error*error + scale[j][1]*content*scale[j][1]*content))
     return hist
 
 def getWJetsSF(hist_signal, hist_control, varBins):
@@ -824,16 +711,12 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
             histDict_withUnc[ikey].SetLineColor(r.kBlue)
             histDict_withUnc[ikey].Add(addSysUnc(histDict[ikey], ikey, bins, fs))
 
-#     histDict['ZPrime_500'].Scale(100)
-
     for i in range(len(bins)-1):
         bkg_err.SetBinContent(i+1, 1.0)
         bkg_err2.SetBinContent(i+1, bkg.GetBinContent(i+1))
         bkg_err2.SetBinError(i+1, bkg.GetBinError(i+1))
         if bkg.GetBinContent(i+1) != 0:
             bkg_err.SetBinError(i+1, bkg.GetBinError(i+1)/bkg.GetBinContent(i+1))
-#         print i, bkg.GetBinError(i+1), bkg.GetBinContent(i+1)
-#         print i, histDict['ZPrime_500'].GetBinError(i+1), histDict['ZPrime_500'].GetBinContent(i+1)
 
 
     delta = ratioHistogram(num = histDict["Observed"], den = bkg, relErrMax=relErrMax)
@@ -841,8 +724,8 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
 
     result = 0
     delta.SetTitle('; %s %s; obs / bkg ' %(varName, unit))
-    delta.SetMaximum(2.5)
-    delta.SetMinimum(0.0)
+    delta.SetMaximum(1.49)
+    delta.SetMinimum(0.49)
 
     delta.GetXaxis().SetLabelSize(0.1)
     delta.GetXaxis().SetTitleSize(0.1)
@@ -896,7 +779,6 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
             if "ZPrime" in iCategory:
                 histDict[iCategory].SetLineStyle(2)
                 histDict[iCategory].SetLineColor(r.kBlue)
-#                 histDict[iCategory].Sumw2()
 
 
         loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoints)
@@ -929,6 +811,9 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     print "WJets_OScontrol with SF: %.2f" %(histDict['WJets_OScontrol'].Integral()*wjets_scale[0][0])
 
     fixNegativBins(histDict['WJets_OScontrol'])
+
+    if "ZPrime" in histDict.keys():
+        histDict["ZPrime"].Scale(signalScale)
 
     deltas = []
 
@@ -977,16 +862,21 @@ def setLegend(position, histDict, histDict2, bins, option = 'width'):
                         histList.append((histDict[ikey], '%s (%.2f)' %(name, histDict[ikey].Integral(0, nbins+1, option)), 'f'))
             else:
                 histList.append((histDict[ikey], '%s' %name, 'f'))
-    if not (options.antiIso or options.antiEIso or options.antiMIso or options.noIso):
-        signalSampleName = 'ZPrime_500'
+
+    if "ZPrime" in histDict.keys():
+        for iName, iSample, iCategory in plots_cfg.sampleList:    
+            if "Z'" in iName:
+                signalName = iName
+        if signalScale != 1:
+            signalName += "x%i" %signalScale
         if plots_cfg.addIntegrals:
             if plots_cfg.unc:
-                integral, unc = IntegralAndError(histDict2[signalSampleName], nbins, ikey, 'et')
-                histList.append((histDict2[signalSampleName], '%s (%.1f +/- %.1f)' %(signalSampleName, integral, unc), 'l'))
+                integral, unc = IntegralAndError(histDict2["ZPrime"], nbins)
+                histList.append((histDict2["ZPrime"], "%s (%.1f +/- %.1f)" %(signalName, integral, unc), 'l'))
             else:
-                histList.append((histDict[signalSampleName], '%s (%.2f)' %(signalSampleName, histDict[signalSampleName].Integral(0, nbins+1, option)), 'l'))
+                histList.append((histDict["ZPrime"], "%s (%.2f)" %(signalName, histDict['ZPrime'].Integral(0, nbins+1, option)), 'l'))
         else:
-            histList.append((histDict[signalSampleName], signalSampleName, 'l'))
+            histList.append((histDict["ZPrime"], signalName, 'l'))
 
     return tool.setMyLegend(position, histList)
 
@@ -1058,7 +948,7 @@ def multiPlots(FS, option):
             factor = 1.2#20
         iMax = factor*max(bkgStack.GetMaximum(), histDict["Observed"].GetMaximum())
         bkgStack.SetMaximum(iMax)
-        iMin = 0.001
+        iMin = 0.01
         bkgStack.SetMinimum(iMin)   
      
         bkgStack.Draw('hist H')
@@ -1073,7 +963,8 @@ def multiPlots(FS, option):
         histDict["Observed"].SetMarkerSize(0.9)
         if options.unblind or options.unblindPartial:
             histDict["Observed"].Draw('PE same')
-        histDict["ZPrime_500"].Draw('H same')
+        if "ZPrime" in histDict.keys():
+            histDict["ZPrime"].Draw('H same')        
         #final state    
         latex = r.TLatex()
         latex.SetTextSize(0.03)

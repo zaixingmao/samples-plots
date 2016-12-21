@@ -26,11 +26,11 @@ jet = lvClass()
 met = lvClass()
 
 
-lumi = 12891.5#5892.1#5939.2#3990.0#2093.30#1546.91#1263.89#552.67#654.39#209.2#16.86, 578.26
+lumi = 36460#12891.5
 # lumi = 4353.4#2646.0
 # lumi = 5892.1
 Lumi = lumi #3000.0
-signalScale = 10
+signalScale = 1
 
 def opts():
     parser = optparse.OptionParser()
@@ -79,6 +79,11 @@ def opts():
     parser.add_option("--getQCDFromE", dest="getQCDFromE", default=False, action="store_true", help="")
     parser.add_option("--saveSignalHist", dest="saveSignalHist", default='', help="")
     parser.add_option("--saveHist", dest="saveHist", default='', help="")
+    parser.add_option("--tauSF", dest="tauSF", default=False, action="store_true", help="")
+    parser.add_option("--againstLeptonSF", dest="againstLeptonSF", default=False, action="store_true", help="")
+    parser.add_option("--tauUncUp", dest="tauUncUp", default=False, action="store_true", help="")
+    parser.add_option("--tauUncDown", dest="tauUncDown", default=False, action="store_true", help="")
+    parser.add_option("--topPt", dest="topPt", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
     return options
@@ -114,8 +119,35 @@ defaultOrder = [("Diboson", r.TColor.GetColor(222, 90,106)),
                 ('t#bar{t}', r.TColor.GetColor(155,152,204)),
                 ('QCD', r.TColor.GetColor(250,202,255)),
                 ("Z#rightarrow#tau#tau", r.TColor.GetColor(248,206,104)),
+#                 ('Z#rightarrow l+#tau(from e)', 43),
+#                 ('Z#rightarrow l+#tau(from jet)', 42),
+#                 ('Z#rightarrow l+#tau(from #mu)', 41),
                 ('h125#rightarrow#tau#tau', r.TColor.GetColor(106, 203,107)),
                 ]
+
+def getAgainstLeptonSF(lepton, WP, abs_eta):
+    SF = 1.0
+    SF_dict = {'electron': {"VLoose": [2.0, 2.0],#[1.292, 1.536],
+                            "Tight": [2.0, 2.0]#[1.505, 1.994]
+                            },
+                'muon': {"Loose": [2, 2, 2],#[1.14, 1.2, 1.3],
+                         "Tight": [2, 2, 2],#[1.28, 2.6, 2.1]
+                        }
+                }
+
+    if lepton == 'electron':
+        if abs_eta < 1.46:
+            SF = SF_dict[lepton][WP][0]
+        elif abs_eta > 1.558:
+            SF = SF_dict[lepton][WP][1]
+    if lepton == 'muon':
+        if abs_eta < 1.2:
+            SF = SF_dict[lepton][WP][0]
+        elif 1.2 < abs_eta < 1.7:
+            SF = SF_dict[lepton][WP][1]
+        elif 1.7 < abs_eta < 2.3:
+            SF = SF_dict[lepton][WP][2]
+    return SF
 
 def passBound(tree, FS, bound, side):
     if FS == 'et' or FS == 'mt':
@@ -187,19 +219,27 @@ def passCut(tree, FS, isData, sys):
                 if tree.mRelIso > 0.15:
                     return False
 
-        if tree.met < 10:
-            return False
+#         if tree.nCSVL < 0.5:
+#             return False
 
-        if tree.nCSVL >= 1:
-            return False
+#         if tree.met > 30:
+#             return False
+# 
+# #         if math.cos(tree.phi_1 - tree.phi_2) < -0.95:
+# #             return False
+# # 
+#         if not (60 < tree.m_eff < 160):
+#             return False
 
         if options.getWJetsSF:
-            if not ( 0.5 < tree.cosDPhi_MEt_1 < 0.9 and 50 < tree.mt_1 < 120):
+#             if not ( 0.5 < tree.cosDPhi_MEt_1 < 0.9):
+            if not ( 0.5 < tree.cosDPhi_MEt_1 < 0.9 and 55 < tree.mt_1 < 120):
                 return False
             if (tree.cosDPhi_MEt_2 > 0.9):
                 return False
         else:
             if FS == 'mt' or FS == 'et':
+#                 if not (tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9)):
                 if not (tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9 and tree.mt_1 > 150)):
                     return False
             elif FS == 'em':
@@ -343,7 +383,7 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
     eventCountWeighted = file.Get('eventCountWeighted')
 
     sumPtWeights = -1
-    if "TT" in iSample and options.sys == 'topPt':
+    if "TT" in iSample and options.topPt:
         sumPtWeights = file.Get('eventCountPtWeighted').GetBinContent(1)
 
     nEntries = tree.GetEntries()
@@ -387,25 +427,55 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
             xs  = tree.xs
             if (80.94 < xs < 80.96) or (136.01 < xs < 136.03):
                 xs = xs*0.108*3
-
+            if (6025.1 < xs < 6025.3) or (6.55*6025.2/4895.0 < xs < 6.6*6025.2/4895.0):
+                xs = xs*5765.4/6025.2
 #             if "TT" in iSample:
 #                 if FS == 'mt' or FS == 'et':
 #                     if (not tree.tIsTauh) and (not tree.tIsPromptElectron) and (not tree.tIsPromptMuon) and (not tree.tIsTau2Electron) and (not tree.tIsTau2Muon):
 #                         continue
-            if options.sys == 'topPt' and sumPtWeights != -1.0:
+            if options.topPt and sumPtWeights != -1.0:
                 sumWeights = sumPtWeights
                 weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2*tree.topPtWeight/(sumWeights+0.0)
             else:
                 weight = Lumi*xs*tree.genEventWeight*tree.trigweight_1*tree.trigweight_2/(sumWeights+0.0)
             if options.PUWeight:
                 weight = weight*cutSampleTools.getPUWeight(tree.nTruePU)
-        if "TT" in iSample:
-            weight = 0.8*weight
+        uncWeight = 1.0
+        if (FS == 'et' or FS == 'mt') and (not isData):
+            if options.tauUncUp:
+                uncWeight += 0.2*tree.pt_2/1000.
+            if options.tauUncDown:
+                uncWeight -= 0.2*tree.pt_2/1000.
+            if options.tauSF:
+                weight = 0.9*weight
+#             if iCategory == "Z#rightarrow l+#tau(from e)" and (not (tree.tIsPromptElectron or tree.tIsTau2Electron)):
+#                 continue
+#             if iCategory == "Z#rightarrow l+#tau(from #mu)" and (not (tree.tIsPromptMuon or tree.tIsTau2Muon)):
+#                 continue
+#             if iCategory == "Z#rightarrow l+#tau(from jet)" and (tree.tIsPromptElectron or tree.tIsPromptMuon or tree.tIsTauh or tree.tIsTau2Electron or tree.tIsTau2Muon):
+#                 continue
+#             if iCategory == "Z#rightarrow#tau#tau" and (not tree.tIsTauh):
+#                 continue
+
+        if options.againstLeptonSF and (not isData):
+            if FS == 'et':
+                if (tree.tIsPromptElectron):
+                    weight = weight*getAgainstLeptonSF('electron', 'Tight', abs(tree.eta_2))
+                if (tree.tIsPromptMuon):
+                    weight = weight*getAgainstLeptonSF('muon', 'Loose', abs(tree.eta_2))
+            if FS == 'mt':
+                if (tree.tIsPromptElectron):
+                    weight = weight*getAgainstLeptonSF('electron', 'VLoose', abs(tree.eta_2))
+                if (tree.tIsPromptMuon):
+                    weight = weight*getAgainstLeptonSF('muon', 'Tight', abs(tree.eta_2))
+
         if 'WJets' in iSample:
             weight = 1.0*weight
         if 'ZPrime' in iSample:
             weight = getZPrimeXS(iSample[iSample.rfind("/")+8:iSample.rfind("_all")])*weight
             isSignal =  True
+
+        weight = weight*uncWeight
 #         if (not isData) and (FS == 'et' or FS == 'mt'):
 #             if tree.tIsTauh:
 #                 weight = weight*(0.8683 + 0.0001355*tree.tPt)
@@ -420,6 +490,15 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
             value = tree.nCSVL
         elif varName == "cos_phi_tau1_tau2":
             value = math.cos(tree.phi_1 - tree.phi_2)
+#         elif varName == 'met' and (not isData):
+#             if options.sys == 'metUESUp':
+#                 value = tree.pfMet_uesUp_Et
+#             elif options.sys == 'metUESDown':
+#                 value = tree.pfMet_uesDown_Et
+#             elif options.sys == 'metJESUp':
+#                 value = tree.pfMet_jesUp_Et
+#             elif options.sys == 'metJESDown':
+#                 value = tree.pfMet_jesDown_Et
         elif varName == "j1Pt":
             jets = getJets(tree)
             if len(jets)>0:
@@ -1063,7 +1142,7 @@ def multiPlots(FS, option):
         iMax = factor*max(bkgStack.GetMaximum(), histDict[Observed].GetMaximum())
         iMax = factor*max(iMax, histDict["ZPrime"].GetMaximum())
         bkgStack.SetMaximum(iMax)
-        iMin = 0.01#0.01
+        iMin = 0.001#0.001#0.01
 
         if options.plotRegionF:
             iMin = 0.001

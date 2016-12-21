@@ -7,7 +7,7 @@ import math
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
 
-bins = array('d', range(0, 400, 25))#plotTurnOn.bins
+bins = array('d', range(0, 800, 50))#plotTurnOn.bins
 labels = ["PromptElectron", "PromptMuon", "Tau2Electron", "Tau2Muon", "Tauh", "other"]
 m_labels = ["mIsPromptElectron", "mIsPromptMuon", "mIsTau2Electron", "mIsTau2Muon", "mIsTauh", "other"]
 t_labels = ["PromptElectron", "PromptMuon", "Tau2Electron", "Tau2Muon", "Tauh", "other"]
@@ -20,65 +20,70 @@ def loop(iSample, hist, t_hist):
     for iEntry in range(nEntries):
         tree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'Looping sample %s' %(iSample), iEntry-1)
-        if abs(tree.eEta) >= 2.1:
+
+        if not (tree.tByTightIsolationMVArun2v1DBnewDMwLT > 0.5):
             continue
-        if abs(tree.ePt) < 35:
-            continue
-#         if abs(tree.mEta) >= 2.1:
+#         if not ( 0. < tree.cosDPhi_MEt_1 < 0.9 and 70 < tree.mt_1):
 #             continue
-        if not ((tree.tByTightCombinedIsolationDeltaBetaCorr3Hits > 0.5) and (tree.eRelIso < 0.15)):
-            continue
-        if (tree.e_t_PZeta - 3.1*tree.e_t_PZetaVis >= -50) or (math.cos(tree.phi_1 - tree.phi_2) < -0.95):
+#         if (tree.cosDPhi_MEt_2 > 0.9):
+#             continue
+
+        if not ( tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9 and tree.mt_1 > 120)):
             continue
         if tree.q_1 == tree.q_2:
             continue
+
+        electronVar = 'm_eff'#'mPt'
         #electron
         if tree.eIsPromptElectron:
-            hist.Fill(tree.ePt, 0)
+            hist.Fill(getattr(tree, electronVar), 0)
         elif tree.eIsPromptMuon:
-            hist.Fill(tree.ePt, 1)
+            hist.Fill(getattr(tree, electronVar), 1)
         elif tree.eIsTau2Electron:
-            hist.Fill(tree.ePt, 2)               
+            hist.Fill(getattr(tree, electronVar), 2)               
         elif tree.eIsTau2Muon:
-            hist.Fill(tree.ePt, 3)
+            hist.Fill(getattr(tree, electronVar), 3)
         elif tree.eIsTauh:
-            hist.Fill(tree.ePt, 4)
+            hist.Fill(getattr(tree, electronVar), 4)
         else:
-            hist.Fill(tree.ePt, 5)
-#         if counter < 10:
+            hist.Fill(getattr(tree, electronVar), 5)
+#          if counter < 10:
 #             print ''
 #             print 'lumi: %i, event: %i' %(tree.lumi, tree.evt)
 #             print "ePt: %.3f, eEta: %.3f, ePhi: %.3f" %(tree.ePt, tree.eEta, tree.ePhi)
 #             print "tPt: %.3f, tEta: %.3f, tPhi: %.3f" %(tree.tPt, tree.tEta, tree.tPhi)
 #             print "********************************"
 #             counter += 1
+
+        muonVar = 'm_eff'#'mPt'
 #         muon
 #         if tree.mIsPromptElectron:
-#             t_hist.Fill(tree.mPt, 0)
+#             hist.Fill(getattr(tree, muonVar), 0)
 #         elif tree.mIsPromptMuon:
-#             t_hist.Fill(tree.mPt, 1)
+#             hist.Fill(getattr(tree, muonVar), 1)
 #         elif tree.mIsTau2Electron:
-#             t_hist.Fill(tree.mPt, 2)
+#             hist.Fill(getattr(tree, muonVar), 2)
 #         elif tree.mIsTau2Muon:
-#             t_hist.Fill(tree.mPt, 3)
+#             hist.Fill(getattr(tree, muonVar), 3)
 #         elif tree.mIsTauh:
-#             t_hist.Fill(tree.mPt, 4)
+#             hist.Fill(getattr(tree, muonVar), 4)
 #         else:
-#             t_hist.Fill(tree.mPt, 5)
+#             hist.Fill(getattr(tree, muonVar), 5)
 
+        tauVar = 'm_eff'#'tPt'
 #         tau
         if tree.tIsPromptElectron:
-            t_hist.Fill(tree.tPt, 0)
+            t_hist.Fill(getattr(tree, tauVar), 0)
         elif tree.tIsPromptMuon:
-            t_hist.Fill(tree.tPt, 1)
+            t_hist.Fill(getattr(tree, tauVar), 1)
         elif tree.tIsTau2Electron:
-            t_hist.Fill(tree.tPt, 2)
+            t_hist.Fill(getattr(tree, tauVar), 2)
         elif tree.tIsTau2Muon:
-            t_hist.Fill(tree.tPt, 3)
+            t_hist.Fill(getattr(tree, tauVar), 3)
         elif tree.tIsTauh:
-            t_hist.Fill(tree.tPt, 4)
+            t_hist.Fill(getattr(tree, tauVar), 4)
         else:
-            t_hist.Fill(tree.tPt, 5)
+            t_hist.Fill(getattr(tree, tauVar), 5)
 
     for i in range(len(labels)):
         hist.GetYaxis().SetBinLabel(i+1, labels[i])
@@ -87,20 +92,20 @@ def loop(iSample, hist, t_hist):
     return hist, t_hist#, hist_eIsTau2E, hist_eIsTauh, hist_eIsTau2E_withTrigger, hist_eIsTauh_withTrigger
 
 dir = "triggerStudy"
-eID = 'OS'
+eID = ''
 
 fileList = {}
 
 # for iMass in [2000]:#[500, 2000, 5000]:#range(500, 5500, 500):
 #    fileList["Zprime%s" %iMass] = "/nfs_scratch/zmao/%s/%s/ZPrime_%s_all_SYNC_em_BSM3G.root" %(dir, eID, iMass)
-dir = '/user_data/zmao/signalRegion_NoZetaNoCosPhi/'
-# dir = '/user_data/zmao/singalRegion_pdf/'
+dir = '/user_data/zmao/2016_signalRegionNoPZeta_Aug17/'
+dir = '/user_data/zmao/2016_signalRegionNoPZeta_looseAntiLepton/'
 
-fileList["WJets_HT-0to100"] = "%s/WJets_LO_HT-0to100_all_SYNC_et_noIso.root" %(dir)
-fileList["WJets_HT-100to200"] = "%s/WJets_LO_HT-100to200_all_SYNC_et_noIso.root" %(dir)
-fileList["WJets_HT-200to400"] = "%s/WJets_LO_HT-200to400_all_SYNC_et_noIso.root" %(dir)
-fileList["WJets_HT-400to600"] = "%s/WJets_LO_HT-400to600_all_SYNC_et_noIso.root" %(dir)
-fileList["WJets_HT-600toInf"] = "%s/WJets_LO_HT-600toInf_all_SYNC_et_noIso.root" %(dir)
+# fileList["WJets_HT-0to100"] = "%s/WJets_LO_HT-0to100_all_SYNC_et_noIso.root" %(dir)
+# fileList["WJets_HT-100to200"] = "%s/WJets_LO_HT-100to200_all_SYNC_et_noIso.root" %(dir)
+# fileList["WJets_HT-200to400"] = "%s/WJets_LO_HT-200to400_all_SYNC_et_noIso.root" %(dir)
+# fileList["WJets_HT-400to600"] = "%s/WJets_LO_HT-400to600_all_SYNC_et_noIso.root" %(dir)
+# fileList["WJets_HT-600toInf"] = "%s/WJets_LO_HT-600toInf_all_SYNC_et_noIso.root" %(dir)
 
 # fileList["DY-50to200"] = "%s/DY-50to200_all_SYNC_et_noIso.root" %(dir)
 # fileList["DY-200to400"] = "%s/DY-200to400_all_SYNC_et_noIso.root" %(dir)
@@ -112,14 +117,15 @@ fileList["WJets_HT-600toInf"] = "%s/WJets_LO_HT-600toInf_all_SYNC_et_noIso.root"
 
 
 
-# fileList = {"TTJets": "/nfs_scratch/zmao/%s/%s/TTJets_all_SYNC_em_BSM3G.root" %(dir, eID)}
+# fileList = {"TTJets": "%s/TT_all_SYNC_mt_noIso.root" %(dir)}
+fileList = {"DY-50": "%s/DY-50_LO_all_SYNC_et_noIso.root" %(dir)}
 
 for iName in fileList.keys():
 
     hist = r.TH2D("hist%s" %iName, "", len(bins)-1, bins, 6, 0, 6)
-    hist.SetTitle("%s; e pt; " %iName)
+    hist.SetTitle("%s; m_eff [GeV]; " %iName)
     t_hist = r.TH2D("t_hist%s" %iName, "", len(bins)-1, bins, 6, 0, 6)
-    t_hist.SetTitle("%s; #tau_{h} pt [GeV]; " %iName)
+    t_hist.SetTitle("%s; m_eff [GeV]; " %iName)
 
 
     hist, t_hist = loop(fileList[iName], hist, t_hist)
@@ -139,12 +145,18 @@ for iName in fileList.keys():
     hist.GetYaxis().SetTitleSize(0.08)
     hist.GetXaxis().SetLabelSize(0.05)
     hist.GetXaxis().SetTitleSize(0.05)
-
+    hist.SetMarkerSize(2)
     hist.Draw("COLZ TEXT0")
-    c.Print('%s' %psfile)
-
-#     c.Print('%s)' %psfile)
+    c.Print('%s(' %psfile)
     c.Clear()
+
+    t_hist.GetYaxis().SetLabelSize(0.08)
+    t_hist.GetYaxis().SetTitleSize(0.08)
+    t_hist.GetXaxis().SetLabelSize(0.05)
+    t_hist.GetXaxis().SetTitleSize(0.05)
+    t_hist.SetMarkerSize(2)
+    t_hist.Draw("COLZ TEXT0")
+    c.Print('%s)' %psfile)
 
 #     null = r.TH2F("null","", len(bins)-1, bins, 1, 0, 1.1)
 #     null.SetMaximum(1.2)
