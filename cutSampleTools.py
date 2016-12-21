@@ -8,6 +8,9 @@ import os
 from scipy.special import erf
 # from makeWholeTools2 import findRightPair
 r.gSystem.Load("libFWCoreFWLite.so")
+# r.gROOT.ProcessLine(".L mtt_package/method_xlg.h+");
+# r.gSystem.Load("mtt_package/method_xlg_h.so")
+# r.load_pdf_xlg()
 r.AutoLibraryLoader.enable()
 # r.gSystem.Load("libPhysicsToolsUtilities.so")
 
@@ -23,6 +26,8 @@ deltaTauES = lvClass()
 
 reWeight = 1.0
 
+tauECUpSF = 1.05
+tauECDownSF = 0.95
 
 loose_53X_WP = [
     (0, 2.5, -0.63),
@@ -44,17 +49,18 @@ def pZetaCut(t1, t2, met):
 def getNCSVLJets(tree, sys, isData, l1, l2):
     n = 0
     for i in range(1, 9):
-        CSVL = 0#getattr(tree, "jet%iCSVL" %i)
+        CSVL = getattr(tree, "jet%iCSVL" %i)
+#         CSVL = getattr(tree, "jet%iCSVL_withSF" %i)
         jetPt = getattr(tree, "jet%iPt" %i)
         jetEta = getattr(tree, "jet%iEta" %i)
-        if getattr(tree, "jet%iCSVBtag" %i) > 0.460:#0.605:
-            CSVL = 1
+#         if getattr(tree, "jet%iCSVBtag" %i) > 0.460:#0.605:
+#             CSVL = 1
         CSVL_old = CSVL
         if not isData:
             if sys == 'bScaleUp':
-                CSVL = getattr(tree, "jet%iCSVL_up" %i)
+                CSVL = getattr(tree, "jet%iCSVL_withSF_up" %i)
             elif sys == 'bScaleDown':
-                CSVL = getattr(tree, "jet%iCSVL_down" %i)
+                CSVL = getattr(tree, "jet%iCSVL_withSF_down" %i)
             elif sys == 'jetECUp':
                 if hasattr(tree, "jet%iJES_Up" %i):
                     jetPt = getattr(tree, "jet%iJES_Up" %i)
@@ -82,43 +88,85 @@ def getNCSVLJets(tree, sys, isData, l1, l2):
 def trigEff(FS, pt, eta, isData):
     if isData:
         return 1.0
-
     eta = abs(eta)
     if FS == 'et' or FS == 'em':
         if eta <= 1.479:
-            p = 0.938#0.930#0.942
-            h = 16.9#17.5#18.4
-            s = 0.044#0.049#0.045
+            p = 0.907 #G 0.897 #ABCD 0.912
+            h = 8.7 #G 6.9 #ABCD 18.1
+            s = 0.031 #G 0.029 #ABCD 0.043
         else:
-            p = 0.838#0.827#0.851
-            h = 16.8#18.4#17.1
-            s = 0.052#0.062#0.051
-    elif FS == 'mt':# or FS == 'em':
-#         if eta <= 1.2:
-#             p = 0.883#0.877
-#             h = 7.4#10.9
-#             s = 0.081#0.105
-#         else:
-#             p = 0.833#0.832
-#             h = 14#16.5
-#             s = 0.113#0.154
+            p = 0.783 #G 0.819 #ABCD 0.773
+            h = 21.2 #G 26.6 #ABCD 21.8
+            s = 0.043 #G 0.043 #ABCD 0.058
+    elif FS == 'mt':
         if eta < 0.8:
-            p = 0.901
-            h = 7.8
-            s = 0.083
+            p = 0.897 #G 0.905 #ABCD 0.901
+            h = 5.1 #G 12.6 #ABCD 7.8
+            s = 0.065 #G 0.1 #ABCD 0.083
         elif eta < 1.24:
-            p = 0.833
-            h = 19.9
-            s = 0.357
+            p = 0.862 #G 0.877 #ABCD 0.833
+            h = 12.6 #G 14.5 #ABCD 19.9
+            s = 0.09 #G 0.107 #ABCD 0.357
         else:
-            p = 0.835
-            h = 13.3
-            s = 0.107
+            p = 0.837 #G 0.847 #ABCD 0.835
+            h = 16.6 #G 17.4 #ABCD 13.3
+            s = 0.1 #G 0.116 #ABCD 0.107
 
     if FS == 'et' or FS == 'mt' or FS == 'em':
         return 0.5*p*(1+erf(s*(pt-h)/math.sqrt(2.)))    
     else:
         return 1.0
+
+
+def trigIDSF(FS, leg, pt, eta, isData):
+    muonTrigSF_fileLocation = "SFs/SingleMuonTrigger_Z_RunBCD_prompt80X_7p65.root"
+    muonIDSF_fileLocation = "SFs/MuonID_Z_RunBCD_prompt80X_7p65.root"
+    eleTrigIDSF_fileLocation = "SFs/egammaEffi.txt_SF2D.root"
+    SF = 1.0
+    if isData:
+        return SF
+    if FS == 'mt':
+        if leg == 't':
+            return SF
+        f_TrigSFMap = r.TFile(muonTrigSF_fileLocation,"READONLY");
+        h2_TrigSF = f_TrigSFMap.Get("IsoMu22_OR_IsoTkMu22_PtEtaBins_Run274094_to_276097/efficienciesDATA/pt_abseta_DATA");
+        if pt > 500:
+            pt = 499
+        SF = SF*h2_TrigSF.GetBinContent( h2_TrigSF.GetXaxis().FindBin(pt), h2_TrigSF.GetYaxis().FindBin(abs(eta)) )
+        f_IDSFMap = r.TFile(muonIDSF_fileLocation,"READONLY");
+        h2_IDSF = f_IDSFMap.Get("MC_NUM_MediumID_DEN_genTracks_PAR_pt_spliteta_bin1/pt_abseta_ratio");
+        if pt > 200:
+            pt = 199
+        SF = SF*h2_TrigSF.GetBinContent( h2_IDSF.GetXaxis().FindBin(pt), h2_IDSF.GetYaxis().FindBin(abs(eta)) )
+        return SF
+    if FS == 'et':
+        if leg == 't':
+            return SF
+        SF = trigEff(FS, pt, eta, isData)
+#         f_TrigIDSFMap = r.TFile(eleTrigIDSF_fileLocation,"READONLY");
+#         h2_TrigIDSF = f_TrigIDSFMap.Get("EGamma_SF2D");
+#         if pt > 200:
+#             pt = 199
+#         SF = SF*h2_TrigIDSF.GetBinContent(h2_TrigIDSF.GetXaxis().FindBin(eta), h2_TrigIDSF.GetYaxis().FindBin(pt))
+        return SF
+    if FS == 'em':
+        if leg == 'e':
+            SF = trigEff(FS, pt, eta, isData)
+#             f_TrigIDSFMap = r.TFile(eleTrigIDSF_fileLocation,"READONLY");
+#             h2_TrigIDSF = f_TrigIDSFMap.Get("EGamma_SF2D");
+#             if pt > 200:
+#                 pt = 199
+#             SF = SF*h2_TrigIDSF.GetBinContent(h2_TrigIDSF.GetXaxis().FindBin(eta), h2_TrigIDSF.GetYaxis().FindBin(pt))
+            return SF
+        elif leg == 'm':
+            f_IDSFMap = r.TFile(muonIDSF_fileLocation,"READONLY");
+            h2_IDSF = f_IDSFMap.Get("MC_NUM_MediumID_DEN_genTracks_PAR_pt_spliteta_bin1/pt_abseta_ratio");
+            if pt > 200:
+                pt = 199
+            if pt < 20:
+                pt = 21
+            SF = SF*h2_IDSF.GetBinContent( h2_IDSF.GetXaxis().FindBin(pt), h2_IDSF.GetYaxis().FindBin(abs(eta)) )
+            return SF
 
 def puJetId(jetEta, jetFullDiscriminant):
     wp = loose_53X_WP
@@ -495,15 +543,15 @@ def getRegVars(j1Name, j2Name, tChain):
 def triggerMatch(iTree, channel = 'tt', isData = False):
     HLTandFilter = {}
     HLTandFilter['tt'] = {'doubleTau': ['t1DiPFTau40', 't2DiPFTau40']}
-    HLTandFilter['et'] = {'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
+    HLTandFilter['et'] = {'singleE27_2p1_WPTight': ['eSingleEle27_2p1_WPTight'],
                          }
 
-    HLTandFilter['mt'] = {'singleMu22': ['mIsoMu22'],
+    HLTandFilter['mt'] = {'singleMu24': ['mIsoMu24'],
                          }
 
     HLTandFilter['em'] = {
-#                           'singleMu22': ['mIsoMu22'],
-                          'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
+#                           'singleMu24': ['mIsoMu24'],
+                          'singleE27_2p1_WPTight': ['eSingleEle27_2p1_WPTight'],
                           }
 #     HLTandFilter['em_data'] = {# 'singleMu18': ['mIsoMu18'],
 #                               'singleE27_2p1_WPLoose': ['eSingleEle27_2p1_WPLoose'],
@@ -562,21 +610,22 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
                         return True
 
     if passSingleTrigger: #if it only passed single lepton trigger
-        if 'mt' in channel:
-            return 1 if iTree.mPt > 24.0 else 0
-        if 'et' in channel:
-            return 1 if iTree.ePt > 35.0 else 0
-        if 'em' in channel:
-            return 1
+        return 1
+#         if 'mt' in channel:
+#             return 1 if iTree.mPt > 24.0 else 0
+#         if 'et' in channel:
 #             return 1 if iTree.ePt > 35.0 else 0
-        if 'ee' in channel:
-            if (iTree.e1SingleEle or iTree.e1SingleEleTight) and iTree.e1Pt > 33:
-                return 1
-            if (iTree.e2SingleEle or iTree.e2SingleEleTight) and iTree.e2Pt > 33:
-                return 1
-            return 0
-        if 'mm' in channel:
-            return 1
+#         if 'em' in channel:
+#             return 1
+# #             return 1 if iTree.ePt > 35.0 else 0
+#         if 'ee' in channel:
+#             if (iTree.e1SingleEle or iTree.e1SingleEleTight) and iTree.e1Pt > 33:
+#                 return 1
+#             if (iTree.e2SingleEle or iTree.e2SingleEleTight) and iTree.e2Pt > 33:
+#                 return 1
+#             return 0
+#         if 'mm' in channel:
+#             return 1
 
     return 0
 
@@ -585,8 +634,8 @@ def passCut(iTree, FS, isData = False, sys = ''):
     if FS == 'tt':
         if not (abs(iTree.t1dZ) < 0.2 and abs(iTree.t2dZ) < 0.2):
             return 0, 'dZ'
-        if not triggerMatch(iTree, FS, isData):
-            return 0, 'triggerMatch'
+#         if not triggerMatch(iTree, FS, isData):
+#             return 0, 'triggerMatch'
         if not (iTree.t1_t2_DR > 0.5):
             return 0, 'dR'
         if (abs(iTree.t1Charge) > 1 or abs(iTree.t2Charge) > 1):
@@ -602,34 +651,22 @@ def passCut(iTree, FS, isData = False, sys = ''):
             return 0, 'ePt'
         if not (iTree.tDecayModeFindingNewDMs > 0.5):
             return 0, 'decayModeFinding'
-#         if not (iTree.ePt > 24):
-#             return 0, 'ePt'
-#         if not (abs(iTree.eEta) < 2.1):
-#             return 0, 'eEta'
-#         if not (abs(iTree.tEta) < 2.3):
-#             return 0, 'tEta'
-#         if not (iTree.tDecayModeFinding > 0.5):
-#             return 0, 'decayModeFinding'
+        if (4 < iTree.tDecayMode < 8):
+            return 0, "prong 2"
         if sys == '' and iTree.tPt <= 20:
             return 0, 'tauPt'
-        if sys == 'tauECUp' and (iTree.tES_up <= 20) and iTree.tIsTauh:
-            return 0, 'tauPt'
-        if sys == 'tauECUp' and (iTree.tPt <= 20) and (not iTree.tIsTauh):
-            return 0, 'tauPt'
-        if sys == 'tauECDown' and (iTree.tES_down <= 20) and iTree.tIsTauh:
-            return 0, 'tauPt'
-        if sys == 'tauECDown' and (iTree.tPt <= 20) and (not iTree.tIsTauh):
-            return 0, 'tauPt'
-#         if not iTree.eMVANonTrigWP80:
-#             return 0, 'ID'
-#         if not iTree.eCBIDLoose:
-#             return 0, 'ID'
-#         if not iTree.eCBIDMedium:
-#             return 0, 'ID'
-#         if not iTree.eCBIDTight:
-#             return 0, 'ID'
-        if not iTree.eHEEPID:
-            return 0, 'HEEPID'
+        if not isData:
+            if sys == 'tauECUp' and (iTree.tPt*tauECUpSF <= 20) and iTree.tIsTauh:
+                return 0, 'tauPt'
+            if sys == 'tauECUp' and (iTree.tPt <= 20) and (not iTree.tIsTauh):
+                return 0, 'tauPt'
+            if sys == 'tauECDown' and (iTree.tPt*tauECDownSF <= 20) and iTree.tIsTauh:
+                return 0, 'tauPt'
+            if sys == 'tauECDown' and (iTree.tPt <= 20) and (not iTree.tIsTauh):
+                return 0, 'tauPt'
+        if not iTree.eMVANonTrigWP80:
+            return 0, 'ID'
+
         if isData:
             if not triggerMatch(iTree, FS, isData):
                 return 0, 'triggerMatch'
@@ -674,11 +711,14 @@ def passCut(iTree, FS, isData = False, sys = ''):
 
 ########et
     elif FS == 'em':
-        if not (iTree.ePt > 28):
+        if not (iTree.ePt > 35):
+#         if not (iTree.ePt > 28):
+#         if not (iTree.ePt > 13):
             return 0, 'ePt'
         if not (abs(iTree.eEta) < 2.1):
             return 0, 'eEta'
         if not (iTree.mPt > 10):
+#         if not (iTree.mPt > 24):
             return 0, 'mPt'
         if not (abs(iTree.mEta) < 2.1):
             return 0, 'mEta'
@@ -686,25 +726,11 @@ def passCut(iTree, FS, isData = False, sys = ''):
             return 0, 'muonID'
         if not (iTree.e_m_DR > 0.3):
             return 0, 'dR'
-#         if not iTree.eHEEPID:
-#             return 0, 'HEEPID'
         if not iTree.eMVANonTrigWP80:
             return 0, 'ID'
         if isData:
             if not triggerMatch(iTree, FS, isData):
                 return 0, 'triggerMatch'
-#         if not iTree.eMVANTrigWP80:
-#             return 0, 'ID'
-#         if not iTree.ePt > 31:
-#             return 0, 'ePt'
-#         if not iTree.mPt > 31:
-#             return 0, 'mPt'
-#         if not iTree.eCBIDLoose:
-#             return 0, 'ID'
-#         if not iTree.eCBIDMedium:
-#             return 0, 'ID'
-#         if not iTree.eCBIDTight:
-#             return 0, 'ID'
 
         if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
             return 0, 'dZ'
@@ -721,14 +747,27 @@ def passCut(iTree, FS, isData = False, sys = ''):
 
 ########mt
     elif FS == 'mt':
-        if not (iTree.tPt > 20):
-            return 0, 'tPt'
+        if sys == '' and iTree.tPt <= 20:
+            return 0, 'tauPt'
+        if not isData:
+            if sys == 'tauECUp' and (iTree.tPt*tauECUpSF <= 20) and iTree.tIsTauh:
+                return 0, 'tauPt'
+            if sys == 'tauECUp' and (iTree.tPt <= 20) and (not iTree.tIsTauh):
+                return 0, 'tauPt'
+            if sys == 'tauECDown' and (iTree.tPt*tauECDownSF <= 20) and iTree.tIsTauh:
+                return 0, 'tauPt'
+            if sys == 'tauECDown' and (iTree.tPt <= 20) and (not iTree.tIsTauh):
+                return 0, 'tauPt'
         if not (abs(iTree.tEta) < 2.1):
-            return 0, 'eEta'
-        if not (iTree.mPt > 24):
+            return 0, 'tEta'
+        if not (iTree.mPt > 35):
             return 0, 'mPt'
         if not (abs(iTree.mEta) < 2.1):
             return 0, 'mEta'
+        if not (iTree.tDecayModeFindingNewDMs > 0.5):
+            return 0, 'decayModeFinding'
+        if (4 < iTree.tDecayMode < 8):
+            return 0, "prong 2"
         if not iTree.mIsMediumMuon:
             return 0, 'muonID'
         if not (abs(iTree.tdZ) < 0.2 and abs(iTree.mdZ) < 0.2 and abs(iTree.mdXY) < 0.045):
@@ -774,548 +813,175 @@ def getCategory(iTree, FS):
             #catch remaining events
             return 'ZJ'
 
+def passCosDPhi_Met_lep_cut(l1, l2, met, FS, style = ''):
+    if FS == 'em':
+        if l1.pt() > l2.pt() and (math.cos(met.phi() - l1.phi())) > -0.9:
+            return 0
+        elif l1.pt() < l2.pt() and (math.cos(met.phi() - l2.phi())) > -0.9:
+            return 0
+    elif (FS == 'et' or FS == 'mt') and style == '':
+        if not ((math.cos(met.phi() - l1.phi()) > 0.) or (math.cos(met.phi() - l2.phi()) > 0.9)):
+            return 0
+    elif (FS == 'et' or FS == 'mt') and style == 'with mT cut':
+        if (l1.Et() + met.Et())**2 - ((l1+met).pt())**2 < 0:
+            return 0
+        mT = math.sqrt((l1.Et() + met.Et())**2 - ((l1+met).pt())**2)
+        if not ((math.cos(met.phi() - l1.phi()) > 0.) or (math.cos(met.phi() - l2.phi()) > 0.9 and mT > 150)):
+            return 0
+    return 1
+
+
 def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
-########tt
-    if FS == 'tt':
-        if type == 'inclusive':
-#             if (iTree.t1ByTightCombinedIsolationDeltaBetaCorr3Hits < 0.5 or iTree.t2ByTightCombinedIsolationDeltaBetaCorr3Hits < 0.5):
-            if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.0 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 1.0):
+    met = lvClass()
+    if sys == 'jetECUp' and not isData:
+        met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
+    elif sys == 'jetECDown' and not isData:
+        met.SetCoordinates(iTree.pfMet_jesDown_Et, 0.0, iTree.pfMet_jesDown_Phi, 0)   
+    elif sys == 'metUESUp' and not isData:
+        met.SetCoordinates(iTree.pfMet_uesUp_Et, 0.0, iTree.pfMet_uesUp_Phi, 0)
+    elif sys == 'metUESDown' and not isData:
+        met.SetCoordinates(iTree.pfMet_uesDown_Et, 0.0, iTree.pfMet_uesDown_Phi, 0)
+    else:
+        met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
 
-                return 0, 'iso'
-        if type == 'antiIso':
-            if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1):
-                return 0, 'antiIso'
 
-        if type != 'baseline':
-            if not (iTree.t1AgainstElectronTightMVA5 > 0.5 and iTree.t1AgainstMuonLoose3 > 0.5):
-                return 0, 'againstTau1'
-            if not (iTree.t2AgainstElectronTightMVA5 > 0.5 and iTree.t2AgainstMuonLoose3 > 0.5):
-                return 0, 'againstTau2'
-            if (iTree.extraelec_veto > 0 or iTree.extramuon_veto > 0):
-                return 0, '3rdLepton'
-
-        if type == 'BSM3G':
-            if (iTree.t1ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10 or iTree.t2ByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10):
-                return 0, 'iso'
 ########et
-    elif FS == 'et':
-        if type == 'inclusive':
-            if (iTree.tByVLooseIsolationMVArun2v1DBnewDMwLT < 0.5 or iTree.eRelIso >= 0.15):
-                return 0, 'iso'
-            if abs(iTree.eEta) >= 2.1 or abs(iTree.tEta) >= 2.1:
-                return 0, 'eta'# 
-            if iTree.ePt <= 35:
-                return 0, 'pt'
-            if iTree.tPt <= 20:
-                return 0, 'pt'
-        elif type == 'baseline':
+    if FS == 'mt':
+        if type == 'baseline':
             return 1, 'pass'
-        elif type == 'antiIso':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 2 or iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
-                return 0, 'antiIso'
-        elif type == 'notInclusive':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 and iTree.eRelIso <= 0.1):
-                return 0, 'notInclusive'
-        elif type == 'BSM3G':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 5 or iTree.eRelIso >= 0.15):
-                return 0, 'iso'
-            if abs(iTree.eEta) >= 2.1 or abs(iTree.tEta) >= 2.1:
-                return 0, 'eta'# 
-            if iTree.ePt <= 35:
-                return 0, 'pt'
-        else:
-            if (iTree.tByVLooseIsolationMVArun2v1DBnewDMwLT < 0.5 or iTree.eRelIso >= 1.0):#0.15):
-                return 0, 'iso'
-            if abs(iTree.eEta) >= 2.1 or abs(iTree.tEta) >= 2.1:
-                return 0, 'eta'# 
-            if iTree.ePt <= 35:
-                return 0, 'pt'
-            met = lvClass()
-            l1.SetCoordinates(iTree.ePt, iTree.eEta, iTree.ePhi, iTree.eMass)
-            l2.SetCoordinates(iTree.tPt, iTree.tEta, iTree.tPhi, iTree.tMass)
-
-            if sys == 'tauECUp' and iTree.tIsTauh:
-                l2.SetCoordinates(iTree.tES_up, iTree.tEta, iTree.tPhi, iTree.tMass)
-            elif sys == 'tauECDown' and iTree.tIsTauh:
-                l2.SetCoordinates(iTree.tES_down, iTree.tEta, iTree.tPhi, iTree.tMass)
-
-            if sys == 'jetECUp' and not isData:
-                met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
-            elif sys == 'jetECDown' and not isData:
-                met.SetCoordinates(iTree.pfMet_jesDown_Et, 0.0, iTree.pfMet_jesDown_Phi, 0)
-            elif (sys == 'tauECDown' or sys == 'tauECUp') and (not isData) and iTree.tIsTauh:
-                met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
-                if l2.pt() - iTree.tPt > 0:
-                    deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, -iTree.tPhi, 0)
-                else:
-                    deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, iTree.tPhi, 0)
-                met = met + deltaTauES        
-            else:
-                met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
-
-            if type == 'signalRegion':
-#                 if sys != '' and iTree.eCharge == iTree.tCharge:
-#                         return 0, 'charge'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'lowMET0B':
-                if met.pt()  >= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'signalRegionNoMET':
-#                 if met.pt()  <= 30:
-#                     return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'signalRegionNoZeta':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-#                 if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-#                     return 0, 'pZeta'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'signalRegionNoZetaNoCosPhi':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'signalRegionNoCosPhi':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-#                 if math.cos(l1.phi() - l2.phi()) >= -0.95:
-#                     return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'signalRegionNoBTag':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-#                 if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-#                     return 0, 'bTag'
-
-            elif type == 'highMETlowPZeta':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-            elif type == 'highMETlowPZeta0B':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'lowPZeta':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'highMET0BNotSignal':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-                if (pZetaCut(l1, l2, met) > -50) and (math.cos(l1.phi() - l2.phi()) < -0.95):#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-            elif type == 'bTagged':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
-                    return 0, 'bTag'
-            elif type == 'highDCosPhi0BhighMET':
-                if math.cos(l1.phi() - l2.phi()) < -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-            if type == 'signalRegionBTagged':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
-                    return 0, 'bTag'
-            if type == '0BTag':
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-
-            if type == 'signalRegionNoMETreversePZeta':
-                if iTree.eCharge == iTree.tCharge:
-                    return 0, 'charge'
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == '0B':
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'WJetsControlRegion':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if (pZetaCut(l1, l2, met) >= -50) and (math.cos(iTree.ePhi - iTree.tPhi) <= -0.95):
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-
-        if type != 'baseline' and type != 'notInclusive':
-            if not (iTree.tAgainstElectronTightMVA6 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
-                return 0, 'tauAgainst'
-#             if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10):
-#                 return 0, 'iso'
-            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
-                return 0, '3rdLepton'
-
-########em
-    elif FS == 'em':
-        if type == 'inclusive':
-            if (iTree.mRelIso >= 0.15 or iTree.eRelIso >= 0.15):
-                return 0, 'iso'
-        elif type == 'baseline':
-            return 1, 'pass'
-        elif type == 'antiIso':
-            if (iTree.mRelIso <= 0.2 or iTree.mRelIso >= 1 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
-                return 0, 'antiIso'
-        elif type == 'antiEIso':
-            if (iTree.mRelIso >= 0.15 or iTree.eRelIso <= 0.2 or iTree.eRelIso >= 1):
-                return 0, 'antiEIso'
-        elif type == 'antiMIso':
-            if (iTree.mRelIso <= 0.2 or iTree.mRelIso >= 1 or iTree.eRelIso >= 0.15):
-                return 0, 'antiMIso'
-        elif type == 'notInclusive':
-            if (iTree.mRelIso <= 0.15 and iTree.eRelIso <= 0.15):
-                return 0, 'antiMIso'
-        elif type == 'BSM3G':
-            if (iTree.eRelIso >= 0.15 or iTree.mRelIso >= 1.0):
-                return 0, 'iso'
-            if abs(iTree.eEta) >= 2.1 or abs(iTree.mEta) >= 2.1:
-                return 0, 'eta'
-        else:
-            if (iTree.eRelIso >= 0.15 or iTree.mRelIso >= 1.0):
-                return 0, 'iso'
-            if abs(iTree.eEta) >= 2.1 or abs(iTree.mEta) >= 2.1:
-                return 0, 'eta'
-            met = lvClass()
-            if sys == 'jetECUp' and not isData:
-                met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
-            elif sys == 'jetECDown' and not isData:
-                met.SetCoordinates(iTree.pfMet_jesDown_Et, 0.0, iTree.pfMet_jesDown_Phi, 0)   
-            else:
-                met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
-
-            l1.SetCoordinates(iTree.ePt, iTree.eEta, iTree.ePhi, iTree.eMass)
-            l2.SetCoordinates(iTree.mPt, iTree.mEta, iTree.mPhi, iTree.mMass)
-            if type == 'signalRegion':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'lowMET0B':
-                if met.pt()  >= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'highMET0B':
-                if met.pt()  < 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'signalRegionNoMET':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-#                 if met.pt()  <= 30:
-#                     return 0, 'met'
-                if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'signalRegionNoZeta':
-#                 if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-#                     return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'signalRegionNoZetaNoCosPhi':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'signalRegionNoCosPhi':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-#                 if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
-#                     return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'signalRegionNoBTag':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
-                    return 0, 'phi'
-#                 if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-#                     return 0, 'bTag'
-
-
-            elif type == 'highMETlowPZeta':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-            elif type == 'highMETlowPZeta0B':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'lowPZeta':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'lowMET':
-                if met.pt()  >= 30:
-                    return 0, 'met'
-            elif type == 'bTagged':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(iTree.mPhi - iTree.ePhi) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
-                    return 0, 'bTag'
-            elif type == 'cosPhi':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(iTree.mPhi - iTree.ePhi) < -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'signalRegionBTagged':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
-                    return 0, 'bTag'
-            elif type == 'highDCosPhi0BhighMET':
-                if math.cos(l1.phi() - l2.phi()) < -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-            if type == '0BTag':
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-        if type != 'baseline' and type != 'notInclusive':
-            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
-                return 0, '3rdLepton'
-
-########em
-    elif FS == 'ee':
-        if type == 'inclusive':
-            if (iTree.e1RelIso >= 0.10 or iTree.e2RelIso >= 0.1):
-                return 0, 'iso'
-            if (abs(iTree.e1Eta) >= 2.1 or abs(iTree.e2Eta) >= 2.1):
-                return 0, 'eta'
-        if type != 'baseline':
-            if iTree.extramuon_veto > 1:
-                return 0, '3rdLepton'
-
-########em
-    elif FS == 'mm':
-        if type == 'inclusive':
-            if (iTree.m1RelIso >= 0.15 or iTree.m1RelIso >= 0.15):
-                return 0, 'iso'
-        if type != 'baseline':
-            if iTree.extraelec_veto > 1:
-                return 0, '3rdLepton'
-
-########mt
-    elif FS == 'mt':
-        if type == 'inclusive':
-            if (iTree.tByVLooseIsolationMVArun2v1DBnewDMwLT < 0.5 or iTree.mRelIso >= 0.15):
-                return 0, 'iso'
-            if abs(iTree.mEta) >= 2.1 or abs(iTree.tEta) >= 2.1:
-                return 0, 'eta'# 
-            if iTree.mPt <= 24:
-                return 0, 'pt'
-            if iTree.tPt <= 20:
-                return 0, 'pt'
-        if type == 'antiIso':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso <= 0.1):
-                return 0, 'antiIso'
-        if type == 'antiTauIso':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits <= 1.5 or iTree.mRelIso >= 0.1):
-                return 0, 'antiTauIso'
         else:
             if iTree.mRelIso >= 1:#0.15):
                 return 0, "mu iso"
-            if 4 < iTree.tDecayMode < 8:
-                return 0, "tau decayMode"
-            if (iTree.tByVLooseIsolationMVArun2v1DBnewDMwLT < 0.5):
+            if (iTree.tByIsolationMVArun2v1DBnewDMwLTraw < -0.5):
                 return 0, 'iso'
-            if abs(iTree.mEta) >= 2.1 or abs(iTree.tEta) >= 2.1:
-                return 0, 'eta'# 
-            if iTree.mPt <= 24:
-                return 0, 'pt'
-            if iTree.tPt <= 20:
-                return 0, 'pt'
-            met = lvClass()
             l1.SetCoordinates(iTree.mPt, iTree.mEta, iTree.mPhi, iTree.mMass)
             l2.SetCoordinates(iTree.tPt, iTree.tEta, iTree.tPhi, iTree.tMass)
-
-            if sys == 'tauECUp' and iTree.tIsTauh:
-                l2.SetCoordinates(iTree.tES_up, iTree.tEta, iTree.tPhi, iTree.tMass)
-            elif sys == 'tauECDown' and iTree.tIsTauh:
-                l2.SetCoordinates(iTree.tES_down, iTree.tEta, iTree.tPhi, iTree.tMass)
-
-            if sys == 'jetECUp' and not isData:
-                met.SetCoordinates(iTree.pfMet_jesUp_Et, 0.0, iTree.pfMet_jesUp_Phi, 0)
-            elif sys == 'jetECDown' and not isData:
-                met.SetCoordinates(iTree.pfMet_jesDown_Et, 0.0, iTree.pfMet_jesDown_Phi, 0)
-            elif (sys == 'tauECDown' or sys == 'tauECUp') and (not isData) and iTree.tIsTauh:
-                met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
-                if l2.pt() - iTree.tPt > 0:
-                    deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, -iTree.tPhi, 0)
-                else:
-                    deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, iTree.tPhi, 0)
-                met = met + deltaTauES        
-            else:
-                met.SetCoordinates(iTree.pfMetEt, 0.0, iTree.pfMetPhi, 0)
-
-            if type == 'signalRegion':
-                if sys != '' and iTree.mCharge == iTree.tCharge:
-                        return 0, 'charge'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'lowMET0B':
-                if met.pt()  >= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == '0B':
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'highMETlowPZeta':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-            elif type == 'highMETlowPZeta0B':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'lowPZeta':
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            elif type == 'bTagged':
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if math.cos(l1.phi() - l2.phi()) >= -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
-                    return 0, 'bTag'
-            elif type == 'highDCosPhi0BhighMET':
-                if math.cos(l1.phi() - l2.phi()) < -0.95:
-                    return 0, 'phi'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-                if met.pt()  <= 30:
-                    return 0, 'met'
-            if type == 'signalRegionBTagged':
-                if met.pt()  <= 30:
-                    return 0, 'met'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) == 0:
-                    return 0, 'bTag'
-            if type == 'signalRegionNoMET':
-                if iTree.mCharge == iTree.tCharge:
-                    return 0, 'charge'
-                if pZetaCut(l1, l2, met) <= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
-            if type == 'signalRegionNoMETreversePZeta':
-                if iTree.mCharge == iTree.tCharge:
-                    return 0, 'charge'
-                if pZetaCut(l1, l2, met) >= -50:#getattr(tree, "%s_%s_PZeta" %(FS[0], FS[1])) - 3.1*getattr(tree, "%s_%s_PZetaVis" %(FS[0], FS[1])) <= -50:# and tree.pfMetEt >= 30:
-                    return 0, 'pZeta'
-                if getNCSVLJets(iTree, sys, isData, l1, l2) >= 1:
-                    return 0, 'bTag'
+            if not isData:
+                if sys == 'tauECUp' and iTree.tIsTauh:
+                    l2.SetCoordinates(iTree.tPt*tauECUpSF, iTree.tEta, iTree.tPhi, iTree.tMass)
+                elif sys == 'tauECDown' and iTree.tIsTauh:
+                    l2.SetCoordinates(iTree.tPt*tauECDownSF, iTree.tEta, iTree.tPhi, iTree.tMass)
+                if (sys == 'tauECDown' or sys == 'tauECUp') and iTree.tIsTauh:
+                    if l2.pt() - iTree.tPt > 0:
+                        deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, -iTree.tPhi, 0)
+                    else:
+                        deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, iTree.tPhi, 0)
+                    met = met + deltaTauES        
 
 
-        if type != 'baseline':
+########et
+    elif FS == 'et':
+        if type == 'baseline':
+            return 1, 'pass'
+        else:
+            if iTree.eRelIso >= 1:#0.15):
+                return 0, "e iso"
+            if (iTree.tByIsolationMVArun2v1DBnewDMwLTraw < -0.5):
+                return 0, 'iso'
+            l1.SetCoordinates(iTree.ePt, iTree.eEta, iTree.ePhi, iTree.eMass)
+            l2.SetCoordinates(iTree.tPt, iTree.tEta, iTree.tPhi, iTree.tMass)
+            if not isData:
+                if sys == 'tauECUp' and iTree.tIsTauh:
+                    l2.SetCoordinates(iTree.tPt*tauECUpSF, iTree.tEta, iTree.tPhi, iTree.tMass)
+                elif sys == 'tauECDown' and iTree.tIsTauh:
+                    l2.SetCoordinates(iTree.tPt*tauECDownSF, iTree.tEta, iTree.tPhi, iTree.tMass)
+                if (sys == 'tauECDown' or sys == 'tauECUp') and iTree.tIsTauh:
+                    if l2.pt() - iTree.tPt > 0:
+                        deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, -iTree.tPhi, 0)
+                    else:
+                        deltaTauES.SetCoordinates(abs(l2.pt() - iTree.tPt), 0.0, iTree.tPhi, 0)
+                    met = met + deltaTauES        
+
+########em
+    elif FS == 'em':
+        if type == 'baseline':
+            return 1, 'pass'
+        else:
+            if (iTree.eRelIso >= 0.15 or iTree.mRelIso >= 1.0):
+                return 0, 'iso'
+            if abs(iTree.eEta) >= 2.1 or abs(iTree.mEta) >= 2.1:
+                return 0, 'eta'
+            l1.SetCoordinates(iTree.ePt, iTree.eEta, iTree.ePhi, iTree.eMass)
+            l2.SetCoordinates(iTree.mPt, iTree.mEta, iTree.mPhi, iTree.mMass)
+
+#--------- region selections
+    if type == "inclusive":
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
+    if type == 'signalRegionLowMET':
+        if met.pt()  > 30:
+            return 0, 'met'
+        if math.cos(l1.phi() - l2.phi()) >= -0.95:
+            return 0, 'phi'
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
+        if not passCosDPhi_Met_lep_cut(l1, l2, met, FS):
+            return 0, 'cosDPhi cut'
+    if type == 'signalRegionNoMET':
+        if math.cos(l1.phi() - l2.phi()) >= -0.95:
+            return 0, 'phi'
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
+        if not passCosDPhi_Met_lep_cut(l1, l2, met, FS):
+            return 0, 'cosDPhi cut'
+    if type == 'signalRegionNoBTag':
+        if met.pt() <= 30:
+            return 0, 'met'
+        if math.cos(l1.phi() - l2.phi()) >= -0.95:
+            return 0, 'phi'
+        if not passCosDPhi_Met_lep_cut(l1, l2, met, FS, 'with mT cut'):
+            return 0, 'cosDPhi cut'
+    if type == 'signalRegion':
+        if met.pt()  <= 30:
+            return 0, 'met'
+        if math.cos(l1.phi() - l2.phi()) >= -0.95:
+            return 0, 'phi'
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
+        if not passCosDPhi_Met_lep_cut(l1, l2, met, FS, 'with mT cut'):
+            return 0, 'cosDPhi cut'
+    if type == 'signalRegionNoNewCut':
+        if met.pt()  <= 30:
+            return 0, 'met'
+        if math.cos(l1.phi() - l2.phi()) >= -0.95:
+            return 0, 'phi'
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
+    if type == 'signalRegionHighCosDPhi':
+        if met.pt()  <= 30:
+            return 0, 'met'
+        if math.cos(l1.phi() - l2.phi()) < -0.95:
+            return 0, 'phi'
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
+        if not passCosDPhi_Met_lep_cut(l1, l2, met, FS, 'with mT cut'):
+            return 0, 'cosDPhi cut'
+    if type == 'signalRegionNoCosDPhi':
+        if met.pt()  <= 30:
+            return 0, 'met'
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
+        if not passCosDPhi_Met_lep_cut(l1, l2, met, FS, 'with mT cut'):
+            return 0, 'cosDPhi cut'
+
+#--------- cross clean selections
+    if FS == 'et':  
+        if type != 'baseline' and type != 'notInclusive':
+            if not (iTree.tAgainstElectronTightMVA6 > 0.5 and iTree.tAgainstMuonLoose3 > 0.5):
+                return 0, 'tauAgainst'
+            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
+                return 0, '3rdLepton'
+    elif FS == 'em':
+        if type != 'baseline' and type != 'notInclusive':
+            if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
+                return 0, '3rdLepton'
+    elif FS == 'mt':
+        if type != 'baseline' and type != 'notInclusive':
             if (iTree.tAgainstElectronVLooseMVA6 == 0 or iTree.tAgainstMuonTight3 == 0):
                 return 0, 'tauAgainst'
             if ((iTree.extraelec_veto > 0) or (iTree.extramuon_veto > 1) or (iTree.diMuon_veto > 0)):
                 return 0, '3rdLepton'
-        if type == 'BSM3G':
-            if (iTree.tByCombinedIsolationDeltaBetaCorrRaw3Hits >= 10 or iTree.mRelIso >= 0.1):
-                return 0, 'iso'
+
     return 1,'passed'
 
 

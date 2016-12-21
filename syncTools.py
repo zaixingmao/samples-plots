@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 from operator import itemgetter
 import ROOT as r
+import math
 from cutSampleTools import *
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
+
 lep1 = lvClass()
 lep2 = lvClass()
 l1 = lvClass()
@@ -19,6 +21,9 @@ J8 = lvClass()
 
 emptyJets = lvClass()
 emptyJets.SetCoordinates(-9999, -9999, -9999, -9999)
+
+sumPt = lvClass()
+genTau = lvClass()
 
 def getNJetinGap(jets):
     njetingap = 0
@@ -154,10 +159,10 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
         for ikey in commonVarsDict.keys():
             if (ikey == 'pt_') and ('t' in FS) and ('tau' in sys):
                 syncVarsDict['%s1' %ikey][0] = getattr(iChain, '%s%s' %(object_1, commonVarsDict[ikey]))
-                if sys == 'tauECUp' and iChain.tIsTauh:
-                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, 'ES_up'))
-                elif sys == 'tauECDown' and iChain.tIsTauh:
-                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, 'ES_down'))
+                if sys == 'tauECUp' and iChain.tIsTauh and (not isData):
+                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))*tauECUpSF
+                elif sys == 'tauECDown' and iChain.tIsTauh and (not isData):
+                    syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))*tauECDownSF
                 else:
                     syncVarsDict['%s2' %ikey][0] = getattr(iChain, '%s%s' %(object_2, commonVarsDict[ikey]))
             else:
@@ -182,12 +187,12 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
 
         met = lvClass()
         met.SetCoordinates(iChain.pfMetEt, 0.0, iChain.pfMetPhi, 0)
-        if FS == 'et':
+        if (FS == 'et' or FS == 'mt') and (not isData) :
             if sys == 'tauECUp' and iChain.tIsTauh:
-                lep2.SetCoordinates(iChain.tES_up, iChain.tEta, iChain.tPhi, iChain.tMass)
+                lep2.SetCoordinates(iChain.tPt*tauECUpSF, iChain.tEta, iChain.tPhi, iChain.tMass)
             elif sys == 'tauECDown' and iChain.tIsTauh:
-                lep2.SetCoordinates(iChain.tES_down, iChain.tEta, iChain.tPhi, iChain.tMass)
-            if (sys == 'tauECDown' or sys == 'tauECUp') and (not isData) and iChain.tIsTauh:
+                lep2.SetCoordinates(iChain.tPt*tauECDownSF, iChain.tEta, iChain.tPhi, iChain.tMass)
+            if (sys == 'tauECDown' or sys == 'tauECUp') and iChain.tIsTauh:
                 if lep2.pt() - iChain.tPt > 0:
                     deltaTauES.SetCoordinates(abs(lep2.pt() - iChain.tPt), 0.0, -iChain.tPhi, 0)
                 else:
@@ -198,6 +203,10 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
             met.SetCoordinates(iChain.pfMet_jesUp_Et, 0.0, iChain.pfMet_jesUp_Phi, 0)
         elif sys == 'jetECDown' and not isData:
             met.SetCoordinates(iChain.pfMet_jesDown_Et, 0.0, iChain.pfMet_jesDown_Phi, 0)
+        elif sys == 'metUESUp' and not isData:
+            met.SetCoordinates(iChain.pfMet_uesUp_Et, 0.0, iChain.pfMet_uesUp_Phi, 0)
+        elif sys == 'metUESDown' and not isData:
+            met.SetCoordinates(iChain.pfMet_uesDown_Et, 0.0, iChain.pfMet_uesDown_Phi, 0)
 
         syncVarsDict['met'][0] = met.pt()
         syncVarsDict['metphi'][0] = met.phi()
@@ -226,8 +235,13 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
         syncVarsDict['jmva_2'][0] = goodJets[1][2]
 
         #trigger weight
-        syncVarsDict['trigweight_1'][0] = trigEff(FS, syncVarsDict['pt_1'][0], syncVarsDict['eta_1'][0], isData)
-        syncVarsDict['trigweight_2'][0] = 1.0#trigEff(FS, syncVarsDict['pt_2'][0], syncVarsDict['eta_2'][0], isData)
+#         syncVarsDict['trigweight_1'][0] = trigEff(FS, syncVarsDict['pt_1'][0], syncVarsDict['eta_1'][0], isData)
+#         syncVarsDict['trigweight_2'][0] = 1.0#trigEff(FS, syncVarsDict['pt_2'][0], syncVarsDict['eta_2'][0], isData)
+        if FS[0] == 'e':
+            syncVarsDict['trigweight_1'][0] = trigIDSF(FS, 'e', syncVarsDict['pt_1'][0], iChain.eSCEta, isData)
+        else:
+            syncVarsDict['trigweight_1'][0] = trigIDSF(FS, FS[0], syncVarsDict['pt_1'][0], syncVarsDict['eta_1'][0], isData)
+        syncVarsDict['trigweight_2'][0] = trigIDSF(FS, FS[1], syncVarsDict['pt_2'][0], syncVarsDict['eta_2'][0], isData)
 
         l1.SetCoordinates(syncVarsDict['pt_1'][0], syncVarsDict['eta_1'][0], syncVarsDict['phi_1'][0], syncVarsDict['m_1'][0])
         l2.SetCoordinates(syncVarsDict['pt_2'][0], syncVarsDict['eta_2'][0], syncVarsDict['phi_2'][0], syncVarsDict['m_2'][0])
@@ -235,5 +249,57 @@ def saveExtra(iChain, floatVarsDict, syncVarsDict, intVarsDict, sync, FS, sys, i
         floatVarsDict['m_eff'][0] = (l1 + l2 + met).mass()
         floatVarsDict['ZetaCut'][0] = pZetaCut(l1, l2, met)
         floatVarsDict['nCSVL'][0] = getNCSVLJets(iChain, sys, isData, l1, l2)
+        floatVarsDict['cosDPhi_MEt_1'][0] = math.cos(met.phi() - syncVarsDict['phi_1'][0])
+        floatVarsDict['cosDPhi_MEt_2'][0] = math.cos(met.phi() - syncVarsDict['phi_2'][0])
+        floatVarsDict['cosDPhi_sumPt_1'][0] = math.cos((l1+l2).phi() - syncVarsDict['phi_1'][0])
+        floatVarsDict['cosDPhi_sumPt_2'][0] = math.cos((l1+l2).phi() - syncVarsDict['phi_2'][0])
+        floatVarsDict['cosDPhi_MEt_deltaPt'][0] = math.cos(met.phi() - (l1+l2).phi())
+        if l1.pt() > l2.pt():
+            floatVarsDict['cosDPhi_MEt_lowerPtLep'][0] = math.cos(met.phi() - l2.phi())
+        if l1.pt() <= l2.pt():
+            floatVarsDict['cosDPhi_MEt_lowerPtLep'][0] = math.cos(met.phi() - l1.phi())
+        if math.cos(met.phi() - l2.phi()) != 0:
+            floatVarsDict['r'][0] = math.cos(met.phi() - l1.phi())/math.cos(met.phi() - l2.phi())
+        else:
+            floatVarsDict['r'][0] = 0
 
-#         syncVarsDict['puweight'][0] = getPUWeight(iChain.nTruePU)
+        if (l1.Et() + met.Et())**2 - ((l1+met).pt())**2 > 0:
+            syncVarsDict['mt_1'][0] = math.sqrt((l1.Et() + met.Et())**2 - ((l1+met).pt())**2)
+        if (l2.Et() + met.Et())**2 - ((l2+met).pt())**2 > 0:
+            syncVarsDict['mt_2'][0] = math.sqrt((l2.Et() + met.Et())**2 - ((l2+met).pt())**2)
+
+        sumPt.SetCoordinates((l1+l2).pt(), 0.0, -(l1+l2).phi(), 0)
+        floatVarsDict['m_eff_sumPt'][0] = (l1 + l2 + sumPt).mass()
+
+        m_ll = (l1 + l2).mass()
+        pT_ll = (l1 + l2).pt()
+        met_X_pT_ll = pT_ll*met.pt()*math.cos(met.phi() - (l1 + l2).phi())
+        floatVarsDict['true_mass'][0] = math.sqrt(m_ll**2 + 2*(met.pt()*math.sqrt(m_ll**2 + pT_ll**2) - met_X_pT_ll))
+        mT_12 = math.sqrt(2*l1.pt()*l2.pt()*(1 - math.cos(l1.phi() - l2.phi())))
+        floatVarsDict['total_transverse_mass'][0] = math.sqrt(mT_12**2 + syncVarsDict['mt_1'][0]**2 + syncVarsDict['mt_2'][0]**2)
+
+        vis_type_0 = -1
+        vis_type_1 = -1
+
+        #get p_perp and m_vis/m_invis
+        if 't' in object_1:
+            if iChain.tDecayMode < 4:
+                vis_type_0 = 1
+            elif iChain.tDecayMode > 8:
+                vis_type_0 = 3                
+
+        if 't' in object_2:
+            if iChain.tDecayMode < 4:
+                vis_type_0 = 1
+            elif iChain.tDecayMode > 8:
+                vis_type_0 = 3 
+        
+        tl1 = r.TLorentzVector()
+        tl2 = r.TLorentzVector()
+
+        tl1.SetPtEtaPhiM(l1.pt(), l1.eta(), l1.phi(), l1.mass())
+        tl2.SetPtEtaPhiM(l2.pt(), l2.eta(), l2.phi(), l2.mass())
+
+#         floatVarsDict['m_tt'][0] = r.cal_mtt_xlg(tl1, tl2, vis_type_0, vis_type_1, 
+#                                                  met.pt()*math.cos(met.phi()), met.pt()*math.sin(met.phi()), 
+#                                                  math.sqrt(iChain.pfmetCovariance_00), math.sqrt(iChain.pfmetCovariance_11), 7000, 5)

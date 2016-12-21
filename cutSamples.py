@@ -47,7 +47,8 @@ def setUpFloatVarsDict():
     names = ['genHMass', 'xs','fullMass', 'mJJ', 'ptJJ', 'etaJJ', 'phiJJ', 
             'bcsv_1','bpt_1','beta_1','bphi_1', 'bmass_1', 'brawf_1','bmva_1','bpfid_1', 'bpuid_1',
             'bcsv_2','bpt_2','beta_2','bphi_2', 'bmass_2', 'brawf_2','bmva_2','bpfid_2', 'bpuid_2','dRTauTau', 'dRJJ',
-            'ZetaCut', 'm_eff', 'cosDPhi', 'nCSVL']
+            'ZetaCut', 'm_eff', 'cosDPhi', 'nCSVL', 'cosDPhi_MEt_1', 'cosDPhi_MEt_2', 'cosDPhi_sumPt_1', 'cosDPhi_sumPt_2',
+            'cosDPhi_MEt_deltaPt', 'cosDPhi_MEt_lowerPtLep', 'r', 'm_eff_sumPt', 'true_mass', 'm_tt', 'total_transverse_mass']
 
     for iName in names:
         varDict[iName] = array('f', [0.])

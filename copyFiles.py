@@ -3,7 +3,7 @@ import os
 
 
 inputDir = '/uscms_data/d3/zmao/supy-output//slice/'
-outputDir = '/uscms/home/zmao/nobackup/2016_highMET0B_noIso_Jul18/'
+outputDir = '/uscms/home/zmao/nobackup/2016_signalRegion/'
 
 
 append_name = 'noIso'
@@ -23,55 +23,65 @@ append_name = 'noIso'
 #                #'mt': [('data_Muon_events.root', "data_all_SYNC_mt_%s.root" %append_name), ("DY_events.root", "DY_all_SYNC_mt_%s.root" %append_name)],
 #                }
 
-files = [# 'DY-50_events.root',
-#          'WJets_events.root',
-#          'WJets_MLM_events.root',
+files = [
+#          'data_ElectronBv3_events.root',
+#          'data_ElectronC_events.root',
+#          'data_ElectronD_events.root',
+#          'data_ElectronE_events.root',
+#          'data_ElectronF_events.root',
+#          'data_ElectronG_events.root',
+#          'data_ElectronHv3_events.root',
 
-#          'WW_events.root',
-#          'WZ_events.root',
-#          'ZZ_events.root',
-# # 
-         'data_Electron_events.root',
-         'data_Muon_events.root',
-         'ST_s_events.root',
-         'T_events.root',
-         'antiT_events.root',
-         'T_t-channel_events.root',
-         'antiT_t-channel_events.root',
+         'data_MuonBv3_events.root',
+#          'data_MuonC_events.root',
+#          'data_MuonD_events.root',
+#          'data_MuonE_events.root',
+#          'data_MuonF_events.root',
+#          'data_MuonG_events.root',
+         'data_MuonHv3_events.root',
 
+#          'ST_s_events.root',
+#          'T_events.root',
+#          'antiT_events.root',
+#          'T_t-channel_events.root',
+#          'antiT_t-channel_events.root',
+# 
         'TT_events.root',
-        'WJets_events.root',
-        'WJets_LO_HT-100to200_events.root',
-        'WJets_LO_HT-200to400_events.root',
-        'WJets_LO_HT-400to600_events.root',
-        'WJets_LO_HT-600to800_events.root',
-        'WJets_LO_HT-800to1200_events.root',
-        'WJets_LO_HT-1200to2500_events.root',
-        'WJets_LO_HT-2500toInf_events.root',
-        "WZTo1L3Nu_events.root",
-        "WWTo1L1Nu2Q_events.root",
-        "WZTo1L1Nu2Q_events.root",
-        "WZTo3LNu_events.root",
-        "ZZTo2L2Q_events.root",
-        "WZTo2L2Q_events.root",
-        "VVTo2L2Nu_events.root",
-        "ZZTo4L_events.root",
-
-        "DY-50_LO_events.root",
-
-
-# #          'ggH_events.root',
-# #          'vbfH_events.root',# 
+#         'WJets_events.root',
+#         'WJets_LO_HT-100to200_events.root',
+#         'WJets_LO_HT-200to400_events.root',
+#         'WJets_LO_HT-400to600_events.root',
+#         'WJets_LO_HT-600to800_events.root',
+#         'WJets_LO_HT-800to1200_events.root',
+#         'WJets_LO_HT-1200to2500_events.root',
+#         'WJets_LO_HT-2500toInf_events.root',
+# 
+#         "WZTo1L3Nu_events.root",
+#         "WWTo1L1Nu2Q_events.root",
+#         "WZTo1L1Nu2Q_events.root",
+#         "WZTo3LNu_events.root",
+#         "ZZTo2L2Q_events.root",
+#         "WZTo2L2Q_events.root",
+#         "VVTo2L2Nu_events.root",
+#         "ZZTo4L_events.root",
+# 
+#         "DY-50_LO_events.root",
+#         "DY-150_LO_events.root",
+#         "ggH_events.root",
+#         "VBFH_events.root",
+# 
+#         'DY-50_LO_HT-100to200_events.root',
+#         'DY-50_LO_HT-200to400_events.root',
+#         'DY-50_LO_HT-400to600_events.root',
+#         'DY-50_LO_HT-600toInf_events.root',
+# 
 # #          'ZPrime_500_events.root',
-# #          'ZPrime_1000_events.root',
-# #          'ZPrime_1500_events.root',
-# #          'ZPrime_2000_events.root',
+# #          'ZPrime_750_events.root',
+# #          'ZPrime_1750_events.root',
 # #          'ZPrime_2500_events.root',
-# #          'ZPrime_3000_events.root',
-# #          'ZPrime_3500_events.root',
-# #          'ZPrime_4000_events.root',
-# #          'ZPrime_4500_events.root',
-# #          'ZPrime_5000_events.root',
+#          'ZPrime_3000_events.root',
+#          'ZPrime_3500_events.root',
+#          'ZPrime_4000_events.root',
 # 
 # 
 
@@ -96,7 +106,7 @@ files = [# 'DY-50_events.root',
 #         print command
 #         os.system(command)
 
-for fs in ["mt"]:#['et', 'em']:#, 'et', 'mt', 'tt']:
+for fs in ['mt']:#, 'et', 'mt', 'tt']:
     for iFile in files:
         command = "cp %s/%s/%s %s/%s_all_SYNC_%s_%s.root" %(inputDir, fs, iFile, outputDir, iFile[:iFile.find("_events")], fs, append_name)
         os.system(command)
