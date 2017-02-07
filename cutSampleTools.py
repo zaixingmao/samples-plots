@@ -42,7 +42,7 @@ def setupLumiReWeight():
     location = "%s/pileUp/" %os.path.dirname(os.path.realpath(__file__))
 #     location = "/scratch/zmao/CMSSW_5_3_15/src/samples-plots/"
     global reWeight
-    reWeight = r.edm.LumiReWeighting("%sMC_50bins.root" %location,"%sdataBCDEFGH_69200.root" %location,"pileup","pileup")
+    reWeight = r.edm.LumiReWeighting("%sMC_75bins.root" %location,"%sdata_75bins_69200.root" %location,"pileup","pileup")
     
 def getPUWeight(npu = 0):
 #    if npu < 6:
