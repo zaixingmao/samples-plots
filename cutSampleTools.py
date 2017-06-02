@@ -49,12 +49,11 @@ def pZetaCut(t1, t2, met):
 def getNCSVLJets(tree, sys, isData, l1, l2):
     n = 0
     for i in range(1, 9):
-        CSVL = getattr(tree, "jet%iCSVL" %i)
-#         CSVL = getattr(tree, "jet%iCSVL_withSF" %i)
+#         CSVL = getattr(tree, "jet%iCSVL" %i)
+        CSVL = getattr(tree, "jet%iCSVL_withSF" %i)
         jetPt = getattr(tree, "jet%iPt" %i)
         jetEta = getattr(tree, "jet%iEta" %i)
-#         if getattr(tree, "jet%iCSVBtag" %i) > 0.460:#0.605:
-#             CSVL = 1
+
         CSVL_old = CSVL
         if not isData:
             if sys == 'bScaleUp':
@@ -71,6 +70,10 @@ def getNCSVLJets(tree, sys, isData, l1, l2):
                     jetPt = getattr(tree, "jet%iJES_Down" %i)
                 else:
                     jetPt = getattr(tree, "jet%iEC_down" %i)
+        else:
+            CSVL = 0
+            if getattr(tree, "jet%iCSVBtag" %i) > 0.5426:#:0.460:#0.605:
+                CSVL = 1
 
         if CSVL and  jetPt > 30 and abs(jetEta) < 2.4 and abs(getattr(tree, "jet%iPFJetIDLoose" %i)):
             jet.SetCoordinates(jetPt, 
@@ -91,23 +94,28 @@ def trigEff(FS, pt, eta, isData):
     eta = abs(eta)
     if FS == 'et' or FS == 'em':
         if eta <= 1.479:
-            p = 0.907 #G 0.897 #ABCD 0.912
-            h = 8.7 #G 6.9 #ABCD 18.1
-            s = 0.031 #G 0.029 #ABCD 0.043
+            return 1.0
+            p = 0.909 #0.929 #G 0.897 #ABCD 0.912
+            h = 10.8 #8.6 #G 6.9 #ABCD 18.1
+            s = 0.031 #0.033 #G 0.029 #ABCD 0.043
         else:
-            p = 0.783 #G 0.819 #ABCD 0.773
-            h = 21.2 #G 26.6 #ABCD 21.8
-            s = 0.043 #G 0.043 #ABCD 0.058
+            return 0.96
+            p = 0.782 #0.817 #G 0.819 #ABCD 0.773
+            h = 23.8 #21.3 #G 26.6 #ABCD 21.8
+            s = 0.047 #0.045 #G 0.043 #ABCD 0.058
     elif FS == 'mt':
         if eta < 0.8:
+            return 0.97
             p = 0.897 #G 0.905 #ABCD 0.901
             h = 5.1 #G 12.6 #ABCD 7.8
             s = 0.065 #G 0.1 #ABCD 0.083
         elif eta < 1.24:
+            return 0.96
             p = 0.862 #G 0.877 #ABCD 0.833
             h = 12.6 #G 14.5 #ABCD 19.9
             s = 0.09 #G 0.107 #ABCD 0.357
         else:
+            return 0.97
             p = 0.837 #G 0.847 #ABCD 0.835
             h = 16.6 #G 17.4 #ABCD 13.3
             s = 0.1 #G 0.116 #ABCD 0.107
@@ -119,54 +127,42 @@ def trigEff(FS, pt, eta, isData):
 
 
 def trigIDSF(FS, leg, pt, eta, isData):
-    muonTrigSF_fileLocation = "SFs/SingleMuonTrigger_Z_RunBCD_prompt80X_7p65.root"
-    muonIDSF_fileLocation = "SFs/MuonID_Z_RunBCD_prompt80X_7p65.root"
-    eleTrigIDSF_fileLocation = "SFs/egammaEffi.txt_SF2D.root"
-    SF = 1.0
+    muonIDSF_fileLocation = "SFs/EfficienciesAndSF_BCDEF.root"
+    eleTrigIDSF_fileLocation = "SFs/egammaEffi.txt_EGM2D.root"
+    idEff = 1.0
+    if leg == 'm':
+        f_IDSFMap = r.TFile(muonIDSF_fileLocation,"READONLY");
+        h2_SF = f_IDSFMap.Get("TightISO_MediumID_pt_eta/pt_abseta_ratio");
+        if pt > 115:
+            pt = 115
+        elif pt <= 20:
+            pt = 21
+        idEff = idEff*h2_SF.GetBinContent( h2_SF.GetXaxis().FindBin(pt), h2_SF.GetYaxis().FindBin(abs(eta)) )
+    if leg == 'e':
+        f_IDSFMap = r.TFile(eleTrigIDSF_fileLocation,"READONLY");
+        h2_SF = f_IDSFMap.Get("EGamma_SF2D");
+        if pt > 500:
+            pt = 500
+        idEff = idEff*h2_SF.GetBinContent(h2_SF.GetXaxis().FindBin(eta), h2_SF.GetYaxis().FindBin(pt))
+
+    SF = idEff
     if isData:
         return SF
     if FS == 'mt':
         if leg == 't':
             return SF
-        f_TrigSFMap = r.TFile(muonTrigSF_fileLocation,"READONLY");
-        h2_TrigSF = f_TrigSFMap.Get("IsoMu22_OR_IsoTkMu22_PtEtaBins_Run274094_to_276097/efficienciesDATA/pt_abseta_DATA");
-        if pt > 500:
-            pt = 499
-        SF = SF*h2_TrigSF.GetBinContent( h2_TrigSF.GetXaxis().FindBin(pt), h2_TrigSF.GetYaxis().FindBin(abs(eta)) )
-        f_IDSFMap = r.TFile(muonIDSF_fileLocation,"READONLY");
-        h2_IDSF = f_IDSFMap.Get("MC_NUM_MediumID_DEN_genTracks_PAR_pt_spliteta_bin1/pt_abseta_ratio");
-        if pt > 200:
-            pt = 199
-        SF = SF*h2_TrigSF.GetBinContent( h2_IDSF.GetXaxis().FindBin(pt), h2_IDSF.GetYaxis().FindBin(abs(eta)) )
+        SF = SF*trigEff(FS, pt, eta, isData)
         return SF
     if FS == 'et':
         if leg == 't':
             return SF
-        SF = trigEff(FS, pt, eta, isData)
-#         f_TrigIDSFMap = r.TFile(eleTrigIDSF_fileLocation,"READONLY");
-#         h2_TrigIDSF = f_TrigIDSFMap.Get("EGamma_SF2D");
-#         if pt > 200:
-#             pt = 199
-#         SF = SF*h2_TrigIDSF.GetBinContent(h2_TrigIDSF.GetXaxis().FindBin(eta), h2_TrigIDSF.GetYaxis().FindBin(pt))
+        SF = SF*trigEff(FS, pt, eta, isData)
         return SF
     if FS == 'em':
         if leg == 'e':
-            SF = trigEff(FS, pt, eta, isData)
-#             f_TrigIDSFMap = r.TFile(eleTrigIDSF_fileLocation,"READONLY");
-#             h2_TrigIDSF = f_TrigIDSFMap.Get("EGamma_SF2D");
-#             if pt > 200:
-#                 pt = 199
-#             SF = SF*h2_TrigIDSF.GetBinContent(h2_TrigIDSF.GetXaxis().FindBin(eta), h2_TrigIDSF.GetYaxis().FindBin(pt))
+            SF = SF*trigEff(FS, pt, eta, isData)
             return SF
-        elif leg == 'm':
-            f_IDSFMap = r.TFile(muonIDSF_fileLocation,"READONLY");
-            h2_IDSF = f_IDSFMap.Get("MC_NUM_MediumID_DEN_genTracks_PAR_pt_spliteta_bin1/pt_abseta_ratio");
-            if pt > 200:
-                pt = 199
-            if pt < 20:
-                pt = 21
-            SF = SF*h2_IDSF.GetBinContent( h2_IDSF.GetXaxis().FindBin(pt), h2_IDSF.GetYaxis().FindBin(abs(eta)) )
-            return SF
+        return SF
 
 def puJetId(jetEta, jetFullDiscriminant):
     wp = loose_53X_WP
@@ -611,22 +607,6 @@ def triggerMatch(iTree, channel = 'tt', isData = False):
 
     if passSingleTrigger: #if it only passed single lepton trigger
         return 1
-#         if 'mt' in channel:
-#             return 1 if iTree.mPt > 24.0 else 0
-#         if 'et' in channel:
-#             return 1 if iTree.ePt > 35.0 else 0
-#         if 'em' in channel:
-#             return 1
-# #             return 1 if iTree.ePt > 35.0 else 0
-#         if 'ee' in channel:
-#             if (iTree.e1SingleEle or iTree.e1SingleEleTight) and iTree.e1Pt > 33:
-#                 return 1
-#             if (iTree.e2SingleEle or iTree.e2SingleEleTight) and iTree.e2Pt > 33:
-#                 return 1
-#             return 0
-#         if 'mm' in channel:
-#             return 1
-
     return 0
 
 def passCut(iTree, FS, isData = False, sys = ''):
@@ -664,12 +644,12 @@ def passCut(iTree, FS, isData = False, sys = ''):
                 return 0, 'tauPt'
             if sys == 'tauECDown' and (iTree.tPt <= 20) and (not iTree.tIsTauh):
                 return 0, 'tauPt'
-        if not iTree.eMVANonTrigWP80:
+#         if not iTree.eMVANonTrigWP80:
+        if not iTree.eMVA_WP90:
             return 0, 'ID'
 
-        if isData:
-            if not triggerMatch(iTree, FS, isData):
-                return 0, 'triggerMatch'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
         if iTree.ePassNumberOfHits == 0:
             return 0, 'eNHits'
         if hasattr(iTree, 'e_passConversionVeto'):
@@ -726,11 +706,12 @@ def passCut(iTree, FS, isData = False, sys = ''):
             return 0, 'muonID'
         if not (iTree.e_m_DR > 0.3):
             return 0, 'dR'
-        if not iTree.eMVANonTrigWP80:
+#         if not iTree.eMVANonTrigWP80:
+        if not iTree.eMVA_WP90:
             return 0, 'ID'
-        if isData:
-            if not triggerMatch(iTree, FS, isData):
-                return 0, 'triggerMatch'
+#         if isData:
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
 
         if not (abs(iTree.mdZ) < 0.2 and abs(iTree.edZ) < 0.2 and abs(iTree.edXY) < 0.045 and abs(iTree.mdXY) < 0.045):
             return 0, 'dZ'
@@ -772,9 +753,8 @@ def passCut(iTree, FS, isData = False, sys = ''):
             return 0, 'muonID'
         if not (abs(iTree.tdZ) < 0.2 and abs(iTree.mdZ) < 0.2 and abs(iTree.mdXY) < 0.045):
             return 0, 'dZ'
-        if isData:
-            if not triggerMatch(iTree, FS, isData):
-                return 0, 'triggerMatch'
+        if not triggerMatch(iTree, FS, isData):
+            return 0, 'triggerMatch'
         if not (iTree.m_t_DR > 0.5):
             return 0, 'dR'
         if abs(iTree.tCharge) > 1:
@@ -852,7 +832,7 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
         else:
             if iTree.mRelIso >= 1:#0.15):
                 return 0, "mu iso"
-            if (iTree.tByIsolationMVArun2v1DBnewDMwLTraw < -0.5):
+            if (iTree.tByIsolationMVArun2v1DBnewDMwLTraw < -0.5 and iTree.tByIsolationMVA2016v1DBnewDMwLTraw < -0.5):
                 return 0, 'iso'
             l1.SetCoordinates(iTree.mPt, iTree.mEta, iTree.mPhi, iTree.mMass)
             l2.SetCoordinates(iTree.tPt, iTree.tEta, iTree.tPhi, iTree.tMass)
@@ -876,7 +856,7 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
         else:
             if iTree.eRelIso >= 1:#0.15):
                 return 0, "e iso"
-            if (iTree.tByIsolationMVArun2v1DBnewDMwLTraw < -0.5):
+            if (iTree.tByIsolationMVArun2v1DBnewDMwLTraw < -0.5 and iTree.tByIsolationMVA2016v1DBnewDMwLTraw < -0.5):
                 return 0, 'iso'
             l1.SetCoordinates(iTree.ePt, iTree.eEta, iTree.ePhi, iTree.eMass)
             l2.SetCoordinates(iTree.tPt, iTree.tEta, iTree.tPhi, iTree.tMass)
@@ -906,8 +886,7 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
 
 #--------- region selections
     if type == "inclusive":
-        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
-            return 0, 'bTag'
+        return 1, 'pass'
     if type == 'signalRegionLowMET':
         if met.pt()  > 30:
             return 0, 'met'
@@ -963,6 +942,11 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
             return 0, 'bTag'
         if not passCosDPhi_Met_lep_cut(l1, l2, met, FS, 'with mT cut'):
             return 0, 'cosDPhi cut'
+    if type == 'diBoson':
+        if met.pt()  <= 30:
+            return 0, 'met'
+        if getNCSVLJets(iTree, sys, isData, l1, l2) > 0:
+            return 0, 'bTag'
 
 #--------- cross clean selections
     if FS == 'et':  
@@ -972,8 +956,11 @@ def passAdditionalCuts(iTree, FS, type = 'baseline', isData = False, sys = ''):
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 0 or iTree.diElectron_veto > 0):
                 return 0, '3rdLepton'
     elif FS == 'em':
-        if type != 'baseline' and type != 'notInclusive':
+        if type != 'baseline' and type != 'notInclusive' and type != 'diBoson':
             if (iTree.extraelec_veto > 1 or iTree.extramuon_veto > 1):
+                return 0, '3rdLepton'
+        if type == 'diBoson':
+            if (iTree.extraelec_veto <= 1 and iTree.extramuon_veto <= 1):
                 return 0, '3rdLepton'
     elif FS == 'mt':
         if type != 'baseline' and type != 'notInclusive':
