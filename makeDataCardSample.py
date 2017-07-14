@@ -95,7 +95,7 @@ def printYield(yieldDict, WJets_SF, QCD_SF, QCD_D_F_SF, iFS):
     cats = {"VV": ("ZZTo2L2Q", "VVTo2L2Nu", "WZTo1L1Nu2Q", "WZTo1L3Nu", "ZZTo4L", "WWTo1L1Nu2Q", "WZTo2L2Q", "WZTo3LNu"),
             "TT": ("ST_antiTop_tW", "ST_top_tW", "ST_s-channel", "ST_t-channel_antiTop_tW", "ST_t-channel_top_tW", "TTJets"),
             "WJets": ("WJetsLoose",),
-            "DYJets": ("DY_M-50to150", "DY_M-150"),
+            "DYJets": ("DY_M-50to200", "DY_M-200to400", "DY_M-400to500", "DY_M-500to700", "DY_M-700to800", "DY_M-800to1000", "DY_M-1000to1500", "DY_M-1500to2000", "DY_M-2000to3000"),
             "QCD": ("QCDLoose",),
             "Observed": ("dataTight",),
             }
@@ -136,8 +136,9 @@ def opts():
     parser.add_option("--method", dest="method", default='Loose', help="")
     parser.add_option("--sys", dest="sys", default='', help="")
     parser.add_option("--pdf", dest="pdf", default=False, action="store_true", help="")
+    parser.add_option("--topPt", dest="topPt", default=False, action="store_true", help="")
     parser.add_option("--trainnedMass", dest="trainnedMass", default="", help="")
-    parser.add_option("--dataDrivenWJets", dest="dataDrivenWJets", default=False, action="store_true", help="")
+    parser.add_option("--againstLeptonSF", dest="againstLeptonSF", default=False, action="store_true", help="")
 
     options, args = parser.parse_args()
 
@@ -211,8 +212,8 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
     eventCountWeighted = iFile.Get('eventCountWeighted')
 
     sumPtWeights = -1.0
-#     if "TTJets" in iSample:
-#         sumPtWeights = iFile.Get('eventCountPtWeighted').GetBinContent(1)
+    if "TTJets" in iSample:
+        sumPtWeights = iFile.Get('eventCountPtWeighted').GetBinContent(1)
 
     yieldEstimator_OS = 0.0
     yieldEstimator_SS = 0.0
@@ -256,6 +257,7 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
             else: #D region
                 charVarsDict['sampleName'][:31] = 'QCD_in_D'
                 region = 'D'
+
         elif iFS != 'em' and plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "control_anti_iso", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
             if isSignal:
                 continue
@@ -290,12 +292,6 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
 
         floatVarsDict['xs'][0] = iTree.xs
 
-        if (80.94 < iTree.xs < 80.96) or (136.01 < iTree.xs < 136.03):
-            floatVarsDict['xs'][0] = iTree.xs*0.108*3
-
-        if 'TT' in iSample:
-            floatVarsDict['xs'][0] = iTree.xs*0.8
-
         if 'WJets' in iSample:
             floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*plots_cfg.WJetsScanRange[0]
         if "Zprime" in iSample:
@@ -310,10 +306,10 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
         else:    
             intVarsDict['initSumWeights'][0] = int(iTree.initWeightedEvents)
 
-        floatVarsDict['m_svfit'][0] = iTree.pfmet_svmc_mass
+#         floatVarsDict['m_svfit'][0] = iTree.pfmet_svmc_mass
         floatVarsDict['m_effective'][0] = (l1 + l2 + met).mass()
         floatVarsDict['m_vis'][0] = (l1 + l2).mass()
-        floatVarsDict['m_tt'][0] = iTree.m_tt
+#         floatVarsDict['m_tt'][0] = iTree.m_tt
 
         if (options.sys == 'up' or options.sys == 'down') and (not isData):
             floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*getPDFWeight(iFS, iSample, iCat, options.sys, floatVarsDict['m_effective'][0])
@@ -325,9 +321,9 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
             floatVarsDict['tauMediumIso'][0] = iTree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
             floatVarsDict['tauLooseIso'][0] = iTree.tByLooseCombinedIsolationDeltaBetaCorr3Hits
             if options.sys == 'tauUncUp':
-                uncWeight += 0.2*iTree.pt_2/1000.
+                uncWeight += 0.05*iTree.pt_2/1000.
             if options.sys == 'tauUncDown':
-                uncWeight -= 0.2*iTree.pt_2/1000.
+                uncWeight -= 0.35*iTree.pt_2/1000.
         floatVarsDict['cosDPhi'][0] =  math.cos(iTree.phi_1 - iTree.phi_2)
         floatVarsDict['pZetaCut'][0] =  getattr(iTree, "%s_%s_PZeta" %(iFS[0], iFS[1])) - 3.1*getattr(iTree, "%s_%s_PZetaVis" %(iFS[0], iFS[1]))
 
@@ -349,9 +345,25 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
             floatVarsDict['triggerEff'][0] = 1.0
         else:
             floatVarsDict['genEventWeight'][0] = uncWeight*iTree.genEventWeight
-            if options.sys == 'topPt' and sumPtWeights != -1.0:
+            if options.topPt and sumPtWeights != -1.0:
                 intVarsDict['initSumWeights'][0] = int(sumPtWeights)
                 floatVarsDict['genEventWeight'][0] = iTree.topPtWeight*floatVarsDict['genEventWeight'][0]
+            if (iFS == 'et' or iFS == 'mt') and not isData:
+                floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*0.95 #tauID
+
+            if options.againstLeptonSF:
+                if iFS == 'et':
+                    if (iTree.tIsPromptElectron):
+                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('electron', 'Tight', abs(iTree.eta_2))
+                    if (iTree.tIsPromptMuon):
+                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('muon', 'Loose', abs(iTree.eta_2))
+                if iFS == 'mt':
+                    if (iTree.tIsPromptElectron):
+                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('electron', 'VLoose', abs(iTree.eta_2))
+                    if (iTree.tIsPromptMuon):
+                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('muon', 'Tight', abs(iTree.eta_2))
+
+
 
         if region == 'none':
             print "ERROR!!!!!"
