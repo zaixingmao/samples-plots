@@ -3,17 +3,18 @@
 import ROOT as r
 import math
 from array import array
+from plots_dataDrivenQCDandWJ import getZPrimeXS
 
 
-lumi = 36220
+lumi = 35867
 
 def getCat(sampleName):
     cats = {"VV": ("ZZTo2L2Q", "VVTo2L2Nu", "WZTo1L1Nu2Q", "WZTo1L3Nu", "ZZTo4L", "WWTo1L1Nu2Q", "WZTo2L2Q", "WZTo3LNu"),
             "TT": ("ST_antiTop_tW", "ST_top_tW", "ST_s-channel", "ST_t-channel_antiTop_tW", "ST_t-channel_top_tW", "TTJets"),
             "WJets": ("WJetsLoose",),
-            "DYJets": ("DY_M-50to150", "DY_M-150"),
+            "DYJets": ("DY_M-50to200", "DY_M-200to400", "DY_M-400to500", "DY_M-500to700", "DY_M-700to800", "DY_M-800to1000", "DY_M-1000to1500", "DY_M-1500to2000", "DY_M-2000to3000"),
             "QCD": ("QCDLoose",),
-            "SMHiggs": ("vbfH","ggH"),
+#             "SMHiggs": ("vbfH","ggH"),
             "Observed": ("dataTight",),
             }
     for iKey in cats.keys():
@@ -40,7 +41,7 @@ def scaleHist(hist, SF, SF_unc):
         hist.SetBinError(i, math.sqrt(bin_unc**2 + add_unc**2))
 
 def setUpHistDict(bins):
-    cats = ["VV", "TT", "WJets", "DYJets", "QCD", "Observed", "SMHiggs"]
+    cats = ["VV", "TT", "WJets", "DYJets", "QCD", "Observed"]#, "SMHiggs"]
     histDict = {}
     for i in cats:
         histDict[i] = r.TH1F(i, "", len(bins)-1, bins)
@@ -70,7 +71,7 @@ def run(inputFile, FS, sys, varName):
 
     histDict = setUpHistDict(bins)
     totalBKG = r.TH1F('total_bkg', "", len(bins)-1, bins)
-    oFile = r.TFile("/user_data/zmao/datacard_histo_2016/datacard_2016_%s_%s%s.root" %(varName, FS, sys), 'recreate')
+    oFile = r.TFile("/user_data/zmao/datacard_histo_2016/%s/datacard_2016_%s_%s%s.root" %(FS, varName, FS, sys), 'recreate')
 
     for i in range(nEntries):
         tree.GetEntry(i)
@@ -84,6 +85,8 @@ def run(inputFile, FS, sys, varName):
         if sampleName != '':
             histDict[sampleName].Fill(value, weight)
         elif "Zprime" in tree.sampleName:
+            mass = (tree.sampleName)[tree.sampleName.find("_")+1:tree.sampleName.rfind("0")+1]
+            weight = weight*getZPrimeXS(mass)
             sampleName = (tree.sampleName)[:tree.sampleName.rfind("0")+1]
             if sampleName not in histDict.keys():
                 histDict[sampleName] = r.TH1F(sampleName, "", len(bins)-1, bins)
@@ -102,10 +105,10 @@ def run(inputFile, FS, sys, varName):
     totalBKG.Write()
     oFile.Close()    
 
-sys = '_jetECUp'
+sys = '_tauECDown'
 
-FS = ['et', 'mt', 'em']
-vars = ['m_svfit','m_effective', 'm_tt']
+FS = ['mt', 'et']
+vars = ['m_effective']
 for iFS in FS:
     for iVar in vars:
-        run("/user_data/zmao/datacard_2016/Lumi36p22_noBTagSF/combined_%s_withPUWeight%s.root" %(iFS,sys), iFS, sys, iVar) 
+        run("/user_data/zmao/datacard_2016/Lumi36p8_reMiniAOD_new/combined_%s_withPUWeight%s.root" %(iFS,sys), iFS, sys, iVar) 

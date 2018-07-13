@@ -26,11 +26,11 @@ jet = lvClass()
 met = lvClass()
 
 
-lumi = 36460#12891.5
+lumi = 35867#36814#36460#12891.5
 # lumi = 4353.4#2646.0
 # lumi = 5892.1
 Lumi = lumi #3000.0
-signalScale = 1
+signalScale = 1000
 
 def opts():
     parser = optparse.OptionParser()
@@ -90,6 +90,27 @@ def opts():
 if __name__ == "__main__":
     options = opts()
 
+def getVariableLatexName(varName, FS):
+    dict = {}
+    dict['m_eff'] = "m(%s, %s, #slash{E}_{T}) [GeV]" %(getLatex(FS[0]), getLatex(FS[1]))
+    dict['m_vis'] = "m(%s, %s) [GeV]" %(getLatex(FS[0]), getLatex(FS[1]))
+    dict['met'] = "#slash{E}_{T} [GeV]"
+    dict['cos_phi_tau1_tau2'] = "cos#Delta#phi(%s, %s)" %(getLatex(FS[0]), getLatex(FS[1]))
+    dict['ePt'] = "e p_{T} [GeV]"
+    dict['mPt'] = "#mu p_{T} [GeV]"
+    dict['tPt'] = "#tau_{h} p_{T} [GeV]"
+    dict['eEta'] = "e #eta"
+    dict['mEta'] = "#mu #eta"
+    dict['tEta'] = "#tau_{h} #eta"
+    dict['mt_1'] = "m_{T}(%s, #slash{E}_{T} [GeV]" %getLatex(FS[0])
+    dict['cosDPhi_MEt_1'] = "cos#Delta#phi(%s, #slash{E}_{T})" %getLatex(FS[0])
+    dict['cosDPhi_MEt_2'] = "cos#Delta#phi(%s, #slash{E}_{T})" %getLatex(FS[1])
+    dict['iso_2'] = "%s relative isolation" %getLatex(FS[1])
+
+    if varName in dict.keys():
+        return dict[varName]
+    else:
+        return varName
 
 def getJets(tree):
     jets = []
@@ -118,7 +139,7 @@ defaultOrder = [("Diboson", r.TColor.GetColor(222, 90,106)),
                 ("WJets",  r.TColor.GetColor(100,182,232)),
                 ('t#bar{t}', r.TColor.GetColor(155,152,204)),
                 ('QCD', r.TColor.GetColor(250,202,255)),
-                ("Z#rightarrow#tau#tau", r.TColor.GetColor(248,206,104)),
+                ("Z #rightarrow ll", r.TColor.GetColor(248,206,104)),
 #                 ('Z#rightarrow l+#tau(from e)', 43),
 #                 ('Z#rightarrow l+#tau(from jet)', 42),
 #                 ('Z#rightarrow l+#tau(from #mu)', 41),
@@ -127,11 +148,11 @@ defaultOrder = [("Diboson", r.TColor.GetColor(222, 90,106)),
 
 def getAgainstLeptonSF(lepton, WP, abs_eta):
     SF = 1.0
-    SF_dict = {'electron': {"VLoose": [2.0, 2.0],#[1.292, 1.536],
-                            "Tight": [2.0, 2.0]#[1.505, 1.994]
+    SF_dict = {'electron': {"VLoose": [1.02, 1.11],#[1.292, 1.536],
+                            "Tight": [1.80, 1.3]#[1.505, 1.994]
                             },
-                'muon': {"Loose": [2, 2, 2],#[1.14, 1.2, 1.3],
-                         "Tight": [2, 2, 2],#[1.28, 2.6, 2.1]
+                'muon': {"Loose": [1.15, 1.15, 1.18, 1.2, 1.3],#[1.14, 1.2, 1.3],
+                         "Tight": [1.5,  1.4,  1.21, 2.6, 2.1],#[2, 2, 2],#
                         }
                 }
 
@@ -141,12 +162,16 @@ def getAgainstLeptonSF(lepton, WP, abs_eta):
         elif abs_eta > 1.558:
             SF = SF_dict[lepton][WP][1]
     if lepton == 'muon':
-        if abs_eta < 1.2:
+        if abs_eta < 0.4:
             SF = SF_dict[lepton][WP][0]
-        elif 1.2 < abs_eta < 1.7:
+        elif 0.4 < abs_eta < 0.8:
             SF = SF_dict[lepton][WP][1]
-        elif 1.7 < abs_eta < 2.3:
+        elif 0.8 < abs_eta < 1.2:
             SF = SF_dict[lepton][WP][2]
+        elif 1.2 < abs_eta < 1.7:
+            SF = SF_dict[lepton][WP][3]
+        elif 1.7 < abs_eta < 2.3:
+            SF = SF_dict[lepton][WP][3]
     return SF
 
 def passBound(tree, FS, bound, side):
@@ -155,12 +180,14 @@ def passBound(tree, FS, bound, side):
             value = tree.tByVTightIsolationMVArun2v1DBnewDMwLT
         elif bound == 'Tight':
             value = tree.tByTightIsolationMVArun2v1DBnewDMwLT
+#             value = tree.tByTightIsolationMVA2016v1DBnewDMwLT
         elif bound == 'Medium':
             value = tree.tByMediumIsolationMVArun2v1DBnewDMwLT
         elif bound == 'Loose':
             value = tree.tByLooseIsolationMVArun2v1DBnewDMwLT
         elif bound == 'VLoose':
             value = tree.tByVLooseIsolationMVArun2v1DBnewDMwLT
+#             value = tree.tByVLooseIsolationMVA2016v1DBnewDMwLT
         else:
             value = True if tree.tByIsolationMVArun2v1DBnewDMwLTraw < bound else False
     elif FS == 'em':
@@ -181,11 +208,11 @@ def regionSelection(tree, FS, region, lowerBound = 0, upperBound = 1):
         return False
          
     if FS == 'et':
-        if ('signal' in region) and passBound(tree, FS, lowerBound, 'upper') and (tree.eRelIso < 0.15):
+        if ('signal' in region) and passBound(tree, FS, lowerBound, 'upper') and (tree.eRelIso < 0.15) and (tree.eMVA_WP90):
             return True
-        elif ('control_iso' in region) and (tree.eRelIso < 0.15) and passBound(tree, FS, lowerBound, 'lower') and passBound(tree, FS, upperBound, 'upper'):
+        elif ('control_iso' in region) and (tree.eRelIso < 0.15) and passBound(tree, FS, lowerBound, 'lower') and passBound(tree, FS, upperBound, 'upper') and (tree.eMVA_WP90):
             return True
-        elif ('control_anti_iso' in region) and (tree.eRelIso > 0.15) and passBound(tree, FS, lowerBound, 'lower'):
+        elif ('control_anti_iso' in region) and (tree.eRelIso > 0.15) and passBound(tree, FS, lowerBound, 'lower') and (tree.eMVA_WP90):
             return True
         else:
             return False
@@ -219,16 +246,23 @@ def passCut(tree, FS, isData, sys):
                 if tree.mRelIso > 0.15:
                     return False
 
+#         if FS[0] == 'e':
+#             if tree.ePt < 40:
+#                 return False
 #         if tree.nCSVL < 0.5:
 #             return False
 
-#         if tree.met > 30:
+#         if tree.met > 30 or not (60 < tree.m_eff < 150):
 #             return False
-# 
-# #         if math.cos(tree.phi_1 - tree.phi_2) < -0.95:
-# #             return False
+
+#         if math.cos(tree.phi_1 - tree.phi_2) > 0:
+#             return False
+#         if math.cos(tree.phi_1 - tree.phi_2) < -0.95:
+#             return False
 # # 
-#         if not (60 < tree.m_eff < 160):
+#         if tree.m_eff < 600:
+#         if not (400 < tree.m_eff < 600):# and tree.met < 30):
+# #         if tree.m_eff < 600:
 #             return False
 
         if options.getWJetsSF:
@@ -272,16 +306,17 @@ def passUnblindPartial(varname, var):
 
 def getZPrimeXS(mass):
     xs = {'500': 9.33,
-          '750': 1.0,
+          '750': 1.236,
           '1000': 0.468,
-          '1500': 0.0723*10,
-          '1750': 1.0,
+          '1250': 0.149,
+          '1500': 0.0723,
+          '1750': 0.03104,
           '2000': 0.0173,
           '2500': 0.00554,
-          '3000': 0.00129,
-          '3500': 0.00049,
-          '4000': 0.000255, 
-          '4500': 0.000108,
+          '3000': 0.00159,
+          '3500': 0.000597,
+          '4000': 0.000245, 
+          '4500': 0.000170,
           '5000': 0.0000559
         }
     return xs[mass]
@@ -306,7 +341,7 @@ def fixNegativeWJetsFromQCD(hist, region):
 
 def getLatex(name):
     if name == 't':
-        return '#tau'
+        return '#tau_{h}'
     elif name == 'm':
         return '#mu'
     elif name == 'e':
@@ -425,10 +460,6 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
             continue
         if not isData:
             xs  = tree.xs
-            if (80.94 < xs < 80.96) or (136.01 < xs < 136.03):
-                xs = xs*0.108*3
-            if (6025.1 < xs < 6025.3) or (6.55*6025.2/4895.0 < xs < 6.6*6025.2/4895.0):
-                xs = xs*5765.4/6025.2
 #             if "TT" in iSample:
 #                 if FS == 'mt' or FS == 'et':
 #                     if (not tree.tIsTauh) and (not tree.tIsPromptElectron) and (not tree.tIsPromptMuon) and (not tree.tIsTau2Electron) and (not tree.tIsTau2Muon):
@@ -443,19 +474,20 @@ def loop_one_sample(iSample, iCategory, histDict, varName, varBins, FS, scanPoin
         uncWeight = 1.0
         if (FS == 'et' or FS == 'mt') and (not isData):
             if options.tauUncUp:
-                uncWeight += 0.2*tree.pt_2/1000.
+                uncWeight += 0.05*tree.pt_2/1000.
             if options.tauUncDown:
-                uncWeight -= 0.2*tree.pt_2/1000.
-            if options.tauSF:
-                weight = 0.9*weight
+                uncWeight -= 0.35*tree.pt_2/1000.
+
 #             if iCategory == "Z#rightarrow l+#tau(from e)" and (not (tree.tIsPromptElectron or tree.tIsTau2Electron)):
 #                 continue
 #             if iCategory == "Z#rightarrow l+#tau(from #mu)" and (not (tree.tIsPromptMuon or tree.tIsTau2Muon)):
 #                 continue
 #             if iCategory == "Z#rightarrow l+#tau(from jet)" and (tree.tIsPromptElectron or tree.tIsPromptMuon or tree.tIsTauh or tree.tIsTau2Electron or tree.tIsTau2Muon):
 #                 continue
-#             if iCategory == "Z#rightarrow#tau#tau" and (not tree.tIsTauh):
+#             if iCategory == "Z #rightarrow ll" and (not tree.tIsTauh):
 #                 continue
+        if not isData:
+            weight = weight*0.95
 
         if options.againstLeptonSF and (not isData):
             if FS == 'et':
@@ -634,21 +666,32 @@ def getQCDScale(histDict, varBins, method):
         if options.getQCDFromE:
             SStoOS = 1.0
             unc_EF = 0.0000000000001
-
-        unc_DF = calcSysUnc(QCD_D/QCD_F, QCD_D, QCD_F, math.sqrt(QCD_D_err), math.sqrt(QCD_F_err))
-        unc_CF = calcSysUnc((SStoOS*QCD_D)/QCD_F, SStoOS, QCD_D/QCD_F, unc_EF, unc_DF)
-        unc_BF = calcSysUnc(QCD_B/QCD_F, QCD_B, QCD_F, math.sqrt(QCD_B_err), math.sqrt(QCD_F_err))
-        unc_AF = calcSysUnc((SStoOS*QCD_B)/QCD_F, SStoOS, QCD_B/QCD_F, unc_EF, unc_BF)
-
+        if QCD_F != 0:
+            unc_DF = calcSysUnc(QCD_D/QCD_F, QCD_D, QCD_F, math.sqrt(QCD_D_err), math.sqrt(QCD_F_err))
+            unc_CF = calcSysUnc((SStoOS*QCD_D)/QCD_F, SStoOS, QCD_D/QCD_F, unc_EF, unc_DF)
+            unc_BF = calcSysUnc(QCD_B/QCD_F, QCD_B, QCD_F, math.sqrt(QCD_B_err), math.sqrt(QCD_F_err))
+            unc_AF = calcSysUnc((SStoOS*QCD_B)/QCD_F, SStoOS, QCD_B/QCD_F, unc_EF, unc_BF)
+        else:
+            unc_DF = 0
+            unc_CF = 0
+            unc_BF = 0
+            unc_AF = 0
         if method == 'SStoOS':
             result.append((SStoOS, unc_EF))
             print 'QCD SStoOS                (%.3f, %.3f),' %(SStoOS, unc_EF)
         elif method == "FtoC":
-            result.append(((SStoOS*QCD_D)/QCD_F, unc_CF))
-            print 'QCD FtoC                  (%.3f, %.3f),' %((SStoOS*QCD_D)/QCD_F, unc_CF)
-        else:            
-            result.append(((SStoOS*QCD_B)/QCD_F, unc_AF))
-            print 'QCD SR                    (%.3f, %.3f),' %((SStoOS*QCD_B)/QCD_F, unc_AF)
+            if QCD_F != 0:
+                result.append(((SStoOS*QCD_D)/QCD_F, unc_CF))
+                print 'QCD FtoC                  (%.3f, %.3f),' %((SStoOS*QCD_D)/QCD_F, unc_CF)
+            else:
+                result.append((0, unc_CF))
+        else:         
+            if QCD_F != 0:
+                result.append(((SStoOS*QCD_B)/QCD_F, unc_AF))
+                print 'QCD SR                    (%.3f, %.3f),' %((SStoOS*QCD_B)/QCD_F, unc_AF)
+            else:
+                result.append((0, unc_AF))
+
     else:
         print 'QCD %s                    (0, 0),' %method
         result.append((0, 0))
@@ -700,6 +743,7 @@ def buildStackFromDict(histDict, FS, option = 'width', sf = 0.1, sf_error= 0.1):
         print 'Observed in region F with %.2f events' %(histDict["Observed_F"].Integral(0, histDict["Observed_F"].GetNbinsX()+2, option))
 
     if option == 'width':
+#         stack.SetTitle('CMS Preliminary %.1f fb^{-1} (13 TeV); ; events / bin width' %(lumi/1000.))
         stack.SetTitle('CMS Preliminary %.1f fb^{-1} (13 TeV); ; events / GeV' %(lumi/1000.))
     else:
         stack.SetTitle('CMS Preliminary %.1f fb^{-1} (13 TeV); ; events' %(lumi/1000.))
@@ -759,7 +803,7 @@ def addSysUnc(hist, sampleName, bins, fs):
     tmpHist = hist.Clone()
     tmpHist.Sumw2()
     unc = 0.0
-    if sampleName == 'Z#rightarrow#tau#tau' or sampleName == 't#bar{t}' or sampleName == 'WJets' or sampleName == 'Diboson':
+    if sampleName == 'Z #rightarrow ll' or sampleName == 't#bar{t}' or sampleName == 'WJets' or sampleName == 'Diboson':
         unc = plots_cfg.sysUnc[fs][sampleName]
     for i in range(1, len(bins)):
         error = tmpHist.GetBinError(i)
@@ -778,7 +822,7 @@ def IntegralAndError(hist, nbins, sampleName, fs):
     if options.addRateUnc:
         unc += content
     unc_addition = 0.0
-#     if sampleName == 'Z#rightarrow#tau#tau' or sampleName == 't#bar{t}' or sampleName == 'WJets' or sampleName == 'Diboson':
+#     if sampleName == 'Z #rightarrow ll' or sampleName == 't#bar{t}' or sampleName == 'WJets' or sampleName == 'Diboson':
 #         unc_addition = plots_cfg.sysUnc[fs][sampleName]
     unc += (unc_addition*content)**2
     unc = math.sqrt(unc)
@@ -875,7 +919,7 @@ def buildDelta(deltaName, histDict, bins, varName, unit, relErrMax, min = 0.5, m
 
 
     result = 0
-    delta.SetTitle('; %s %s; obs / bkg ' %(varName, unit))
+    delta.SetTitle('; %s; obs / bkg ' %getVariableLatexName(varName, fs))
     delta.SetMaximum(1.49)
     delta.SetMinimum(0.49)
 
@@ -1046,7 +1090,7 @@ def setLegend(position, histDict, histDict2, bins, option = 'width', Observed = 
             signalName += "x%i" %signalScale
         if plots_cfg.addIntegrals:
             if plots_cfg.unc:
-                integral, unc = IntegralAndError(histDict2["ZPrime"], nbins)
+                integral, unc = IntegralAndError(histDict2["ZPrime"], nbins, "ZPrime",'et')
                 histList.append((histDict2["ZPrime"], "%s (%.1f +/- %.1f)" %(signalName, integral, unc), 'l'))
             else:
                 histList.append((histDict["ZPrime"], "%s (%.2f)" %(signalName, histDict['ZPrime'].Integral(0, nbins+1, option)), 'l'))

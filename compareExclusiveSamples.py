@@ -81,6 +81,8 @@ def compareSamples(fs):
                       'nTruePU': 'nTruePU',
                       'genHT': 'gen HT [GeV]',
                       'X_to_ll': 'gen Mass [GeV]',
+                      'met': 'met [GeV]',
+
                     }
     varNameDict_em = {'m_eff': 'm(#tau_{e}, #tau_{#mu}, #slash{E}_{T}) [GeV]',
                       'ePt': 'Electron Pt [GeV]',
@@ -93,12 +95,17 @@ def compareSamples(fs):
                       'genHT': 'gen HT [GeV]',
                       'nTruePU': 'nTruePU',
                       'X_to_ll': 'gen Mass [GeV]',
+                      'met': 'met [GeV]',
                     }
 
-    varName = 'X_to_ll'
+    varName = 'met'
     varBins = 0
     if varName == 'm_eff':
         varBins = array.array('d', [0,100,110,120,130,140,150,160,170,180,190,200,225,250,275,300,400,600,900,1200, 1700])
+    elif varName == "X_to_ll":
+        varBins = array.array('d', range(0, 525, 25)+range(500, 1050, 50))
+    elif varName == 'met':
+        varBins = array.array('d', range(0, 110, 10) + range(125, 275, 25) + [300])
     else:
         varBins = array.array('d', range(0, 1000, 10))
     hist1 = r.TH1F("hist_1", "", len(varBins)-1, varBins)
@@ -107,8 +114,12 @@ def compareSamples(fs):
     hist4 = r.TH1F("hist_4", "", len(varBins)-1, varBins)
     hist5 = r.TH1F("hist_5", "", len(varBins)-1, varBins)
     hist6 = r.TH1F("hist_6", "", len(varBins)-1, varBins)
+    hist7 = r.TH1F("hist_7", "", len(varBins)-1, varBins)
+    hist8 = r.TH1F("hist_8", "", len(varBins)-1, varBins)
+    hist9 = r.TH1F("hist_9", "", len(varBins)-1, varBins)
+    hist10 = r.TH1F("hist_10", "", len(varBins)-1, varBins)
 
-    dir = "/user_data/zmao/2016_signalRegionNoPZeta_fixMuon/"
+    dir = "/user_data/zmao/moriond_signalRegionNoMET_WP90_noBTagSF/"
 #     dir = "/user_data/zmao/inclusive/"
 
     loopOneFile(iSample = '%s/DY-50_LO_all_SYNC_%s_noIso.root' %(dir, fs),
@@ -116,14 +127,49 @@ def compareSamples(fs):
                 hist = hist1,
                 fs = fs,
                 varBins = varBins)
-    loopOneFile(iSample = '%s/DY-50to150_LO_all_SYNC_%s_noIso.root' %(dir, fs),
+    loopOneFile(iSample = '%s/DY-50to400_LO_all_SYNC_%s_noIso.root' %(dir, fs),
                 varName = varName,
                 hist = hist2,
                 fs = fs,
                 varBins = varBins)
-    loopOneFile(iSample = '%s/DY-150_LO_all_SYNC_%s_noIso.root' %(dir, fs),
+#     loopOneFile(iSample = '%s/DYJetsToLL_M-200to400_all_SYNC_%s_noIso.root' %(dir, fs),
+#                 varName = varName,
+#                 hist = hist3,
+#                 fs = fs,
+#                 varBins = varBins)
+    loopOneFile(iSample = '%s/DYJetsToLL_M-400to500_all_SYNC_%s_noIso.root' %(dir, fs),
                 varName = varName,
-                hist = hist3,
+                hist = hist4,
+                fs = fs,
+                varBins = varBins)
+    loopOneFile(iSample = '%s/DYJetsToLL_M-500to700_all_SYNC_%s_noIso.root' %(dir, fs),
+                varName = varName,
+                hist = hist5,
+                fs = fs,
+                varBins = varBins)
+    loopOneFile(iSample = '%s/DYJetsToLL_M-700to800_all_SYNC_%s_noIso.root' %(dir, fs),
+                varName = varName,
+                hist = hist6,
+                fs = fs,
+                varBins = varBins)
+    loopOneFile(iSample = '%s/DYJetsToLL_M-800to1000_all_SYNC_%s_noIso.root' %(dir, fs),
+                varName = varName,
+                hist = hist7,
+                fs = fs,
+                varBins = varBins)
+    loopOneFile(iSample = '%s/DYJetsToLL_M-1000to1500_all_SYNC_%s_noIso.root' %(dir, fs),
+                varName = varName,
+                hist = hist8,
+                fs = fs,
+                varBins = varBins)
+    loopOneFile(iSample = '%s/DYJetsToLL_M-1500to2000_all_SYNC_%s_noIso.root' %(dir, fs),
+                varName = varName,
+                hist = hist9,
+                fs = fs,
+                varBins = varBins)
+    loopOneFile(iSample = '%s/DYJetsToLL_M-2000to3000_all_SYNC_%s_noIso.root' %(dir, fs),
+                varName = varName,
+                hist = hist10,
                 fs = fs,
                 varBins = varBins)
 #     loopOneFile(iSample = '%s/DY-50_LO_HT-200to400_all_SYNC_%s_noIso.root' %(dir, fs),
@@ -145,8 +191,16 @@ def compareSamples(fs):
     histList = []
 
     histList.append((hist1, 'Inclusive', 'lp'))
-    histList.append((hist2, 'M-50to150', 'f'))
-    histList.append((hist3, 'M-150', 'f'))
+    histList.append((hist2, 'M-50to400', 'f'))
+#     histList.append((hist3, 'M-200to400', 'f'))
+    histList.append((hist4, 'M-400to500', 'f'))
+    histList.append((hist5, 'M-500to700', 'f'))
+    histList.append((hist6, 'M-700to800', 'f'))
+    histList.append((hist7, 'M-800to1000', 'f'))
+    histList.append((hist8, 'M-1000to1500', 'f'))
+    histList.append((hist9, 'M-1500to2000', 'f'))
+    histList.append((hist10,'M-2000to3000', 'f'))
+
 #     histList.append((hist4, 'HT-200to400', 'f'))
 #     histList.append((hist5, 'HT-400to600', 'f'))
 #     histList.append((hist6, 'HT-600toInf', 'f'))
@@ -161,7 +215,7 @@ def compareSamples(fs):
     elif fs == 'mt':
         title = varNameDict_mt[varName]
 
-    colorList = [r.kBlack, 46, 41, 47, 30, 38]
+    colorList = [r.kBlack, 46, 41, 47, 30, 38, 40, 11, 0, 36]
 
     c = r.TCanvas("c","Test", 800, 600)
     hist1.SetMarkerSize(0.5)
@@ -192,26 +246,56 @@ def compareSamples(fs):
     hist6.SetLineColor(r.kBlack)
     hist6.SetFillColor(colorList[5])
     hist6.SetMarkerColor(colorList[5])
-    if varName == 'm_eff':
+
+    hist7.SetMarkerSize(0.5)
+    hist7.SetLineColor(r.kBlack)
+    hist7.SetFillColor(colorList[6])
+    hist7.SetMarkerColor(colorList[6])
+
+    hist8.SetMarkerSize(0.5)
+    hist8.SetLineColor(r.kBlack)
+    hist8.SetFillColor(colorList[7])
+    hist8.SetMarkerColor(colorList[7])
+
+    hist9.SetMarkerSize(0.5)
+    hist9.SetLineColor(r.kBlack)
+    hist9.SetFillColor(colorList[8])
+    hist9.SetMarkerColor(colorList[8])
+
+    hist10.SetMarkerSize(0.5)
+    hist10.SetLineColor(r.kBlack)
+    hist10.SetFillColor(colorList[9])
+    hist10.SetMarkerColor(colorList[9])
+
+    if varName == 'm_eff' or varName == 'met':
         hist1.Scale(1, 'width')
         hist2.Scale(1, 'width')
         hist3.Scale(1, 'width')
         hist4.Scale(1, 'width')
         hist5.Scale(1, 'width')
         hist6.Scale(1, 'width')
+        hist7.Scale(1, 'width')
+        hist8.Scale(1, 'width')
+        hist9.Scale(1, 'width')
+        hist10.Scale(1, 'width')
+
         hist1.SetTitle("DY Inclusive/Exclusive Comparison; %s; Events/GeV" %title)
     else:
         hist1.SetTitle("DY Inclusive/Exclusive Comparison; %s; Events" %title)
 
 
     stack = r.THStack()
-#     stack.Add(hist6)
-#     stack.Add(hist5)
-#     stack.Add(hist4)
-    stack.Add(hist3)
+    stack.Add(hist10)
+    stack.Add(hist9)
+    stack.Add(hist8)
+    stack.Add(hist7)
+    stack.Add(hist6)
+    stack.Add(hist5)
+    stack.Add(hist4)
+#     stack.Add(hist3)
     stack.Add(hist2)
 
-    uncBand = buildUncBand(varBins, [hist2, hist3])
+    uncBand = buildUncBand(varBins, [hist2, hist3, hist4, hist5, hist6, hist7, hist8, hist9, hist10])
 
     hist1.SetMinimum(0.0001)
 
@@ -238,7 +322,7 @@ def compareSamples(fs):
     c.Print('sampleCheck_%s_%s.pdf' %(fs, varName))
 
 cutSampleTools.setupLumiReWeight()
-compareSamples('mt')
+# compareSamples('mt')
 compareSamples('et')
 # compareSamples('em')
 cutSampleTools.freeLumiReWeight()

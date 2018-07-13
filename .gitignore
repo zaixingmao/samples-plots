@@ -2,6 +2,7 @@
 *.d
 *.pyc
 *.txt
+*.root
 *~
 HHKinFit
 *.pdf
