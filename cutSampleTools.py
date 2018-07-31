@@ -6,8 +6,8 @@ import FWCore.ParameterSet.Config as cms
 import math
 import os
 # from makeWholeTools2 import findRightPair
-r.gSystem.Load("libFWCoreFWLite.so")
-r.AutoLibraryLoader.enable()
+# r.gSystem.Load("libFWCoreFWLite.so")
+# r.AutoLibraryLoader.enable()
 # r.gSystem.Load("libPhysicsToolsUtilities.so")
 
 lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
