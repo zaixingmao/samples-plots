@@ -3,13 +3,16 @@ from array import array
 import math
 
 
-dir = "/user_data/zmao/2016_highDPhi0B_noIso/"
-dir = "/user_data/zmao/2016_signalRegionNoPZeta_Aug17/"
-dir = "/user_data/zmao/2016_HighCosDPhi_Aug22/"
+# dir = "/user_data/zmao/2016_highDPhi0B_noIso/"
+# dir = "/user_data/zmao/2016_signalRegionNoPZeta_Aug17/"
+# dir = "/user_data/zmao/2016_HighCosDPhi_Aug22/"
 # dir = "/user_data/zmao/2016_HighCosDPhi_looseAntiElectron/"
 # dir = "/user_data/zmao/2016_signalRegion_noBTagSF_withSVFit_tauECUp/"
 dir_data = "/user_data/zmao/moriond_signalRegion_reMiniAOD/"
-dir = "/user_data/zmao/moriond_signalRegion_WP90_noBTagSF/"
+# dir = "/user_data/zmao/2016_signalRegionNoCosDPhi_WP90_noBTagSF_NewJEC/" # Feb. 5 / take11j / wrong DY mass binning
+# dir = "/user_data/zmao/moriond_signalRegionHighCosDPhi_WP90_noBTagSF" # Mar. 1  / take11i
+dir = "/user_data/zmao/moriond_signalRegion_WP90_noBTagSF" # Mar. 7 / take11k
+# dir = "/user_data/zmao/moriond_signalRegionNoNewCut" # Mar. 7 / take11l
 
 # _bSysUp
 sampleList = [
@@ -64,17 +67,17 @@ sampleList = [
 # 
 #     ('ggH', '%s/ggH_all_SYNC_' %dir, 'h125#rightarrow#tau#tau'),
 #     ('vbfH', '%s/VBFH_all_SYNC_' %dir, 'h125#rightarrow#tau#tau'),
-# #     ]
-    ] + [
+ #     ]
+#     ] + [
 #     ("Z'(500)", '%s/ZPrime_500_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(750)", '%s/ZPrime_750_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(1000)", '%s/ZPrime_1000_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(1250)", '%s/ZPrime_1250_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(1500)", '%s/ZPrime_1500_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(1750)", '%s/ZPrime_1750_all_SYNC_' %dir, 'ZPrime'),
-    ("Z'(2000)", '%s/ZPrime_2000_all_SYNC_' %dir, 'ZPrime'),
+#     ("Z'(2000)", '%s/ZPrime_2000_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(2500)", '%s/ZPrime_2500_all_SYNC_' %dir, 'ZPrime'),    
-#     ("Z'(3000)", '%s/ZPrime_3000_all_SYNC_' %dir, 'ZPrime'),
+     ("Z'(3000)", '%s/ZPrime_3000_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(3500)", '%s/ZPrime_3500_all_SYNC_' %dir, 'ZPrime'),
 #     ("Z'(4000)", '%s/ZPrime_4000_all_SYNC_' %dir, 'ZPrime'),
     ]
@@ -232,9 +235,10 @@ SF_WJets_endcap = [0.10440, 0.00969]
 SF_WJets_barrel = [0.13722, 0.01482]
 
 WJetsScanRange = [1.0]#, 1.0, 1.1]#, 1.0, 1.15]#, 1.0, 2.0]
-# WJetsLoose2Tight = [0.205, 0.068] #e-mu signal region
-# WJetsLoose2Tight = [0.192, 0.021] #mu-tau signal region _ new
-# WJetsLoose2Tight = [0.245, 0.043] #e-tau signal region _ new
+WJetsLoose2Tight = {"em": [0.205, 0.068], #e-mu signal region
+                    "mt": [0.192, 0.021], #mu-tau signal region _ new
+                    "et": [0.245, 0.043], #e-tau signal region _ new
+                    }
 
 #WJetsLoose2Tight = [0.249, 0.020] #mu-tau signal region _ old
 #WJetsLoose2Tight = [0.198, 0.033] #e-tau signal region _ old
