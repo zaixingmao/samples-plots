@@ -1,31 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
+import array, cProfile, math, optparse, os
 
 import ROOT as r
-import tool
-import os
-import cProfile
-from array import array
-import optparse
-import plots_cfg
-import cutSampleTools
-import plots
-import plots_dataDrivenQCDandWJ
-import math
+r.PyConfig.IgnoreCommandLineOptions = True
 
-
-r.gROOT.SetBatch(True)
-r.gErrorIgnoreLevel = 2000
-r.gStyle.SetOptStat("e")
-vec = r.vector('double')()
-
-lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
-
-l1 = lvClass()
-l2 = lvClass()
-met = lvClass()
-deltaTauES = lvClass()
-
-list = plots_cfg.list
+import tool                      # progress
+import plots_cfg                 # sample list; fake rates
+import cutSampleTools            # PU
+import plots                     # lumi; Z' xs
+import plots_dataDrivenQCDandWJ  # analysis
 
 def expandFinalStates(FS):
     finalStates = [x.strip() for x in FS.split(',')]
@@ -37,16 +21,17 @@ def expandFinalStates(FS):
  
 def setUpFloatVarsDict():
     varDict = {}
-    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'eta_1', 'eta_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'tauTightIso', 'eleRelIso', 'tauMediumIso', 'tauLooseIso', 'mt_1', 'genMass', 'npv', 'BDT', 'm_tt']
+    names = ['m_vis', 'm_svfit', 'm_effective', 'xs', 'pt_1', 'pt_2', 'eta_1', 'eta_2', 'genEventWeight', 'triggerEff', 'PUWeight', 'cosDPhi', 'pZetaCut', 'pfMEt', 'tauTightIso', 'eleRelIso', 'muRelIso', 'tauMediumIso', 'tauLooseIso', 'mt_1', 'genMass', 'npv', 'BDT', 'm_tt']
     for iName in names:
-        varDict[iName] = array('f', [0.])
+        varDict[iName] = array.array('f', [0.])
     return varDict
 
 def setUpIntVarsDict():
     varDict = {}
     names = ['initEvents', 'initSumWeights', 'nCSVL', 'tauDecayMode']
+    names += ['evt', 'lumi', 'run']
     for iName in names:
-        varDict[iName] = array('l', [0])
+        varDict[iName] = array.array('l', [0])
     return varDict
 
 def setUpCharVarsDict():
@@ -68,7 +53,7 @@ def setUpYieldDict():
 
 def combineTree(inputFile, SF):
     sampleName = bytearray(30)
-    genEventWeight = array('f', [0.])
+    genEventWeight = array.array('f', [0.])
     file = r.TFile(inputFile)
     oFileName_tmp = inputFile[:inputFile.find("_tmp")]+"_tmp3.root"
     oFileName_final = inputFile[:inputFile.find("_tmp")]+".root"
@@ -137,6 +122,7 @@ def opts():
     parser.add_option("--sys", dest="sys", default='', help="")
     parser.add_option("--pdf", dest="pdf", default=False, action="store_true", help="")
     parser.add_option("--topPt", dest="topPt", default=False, action="store_true", help="")
+    parser.add_option("--top8", dest="top8", default=False, action="store_true", help="")
     parser.add_option("--trainnedMass", dest="trainnedMass", default="", help="")
     parser.add_option("--againstLeptonSF", dest="againstLeptonSF", default=False, action="store_true", help="")
 
@@ -144,14 +130,14 @@ def opts():
 
     return options
 
-def getBin(value, list):
-    for i in range(1, len(list)):
-        if list[i] > value:
+def getBin(value, lst):
+    for i in range(1, len(lst)):
+        if lst[i] > value:
             return i
-    return len(list)-1
+    return len(lst)-1
 
 def getPDFWeight(fs, iSample, iCat, variation, m_eff):
-    bin = getBin(m_eff, list)
+    bin = getBin(m_eff, plots_cfg.list)
     pdfCats = ["WJets", "Z#rightarrow#tau#tau", "t#bar{t}"]
 #     pdfCats = ["WJets", "Z#rightarrow#tau#tau"]
     weight = 1.0
@@ -171,24 +157,11 @@ def getPDFWeight(fs, iSample, iCat, variation, m_eff):
             weight = LUT_em_withPUWeight.luts["%s_%s" %(iSample, variation)][bin-1]
     return weight
 
-options = opts()
-
-r.gStyle.SetOptStat(0)
-
-controlRegionName = 'SS'
-signalRegionName = 'OS'
-
-QCD_SStoOS = 1.34
-
-
-if options.method == 'Loose':
-    controlRegionName = 'Loose'
-    signalRegionName = 'Tight'
 
 def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp, 
                     floatVarsDict, intVarsDict, charVarsDict, 
                     iFS, yieldDict, histDict):
-    print 'combininig sample [%s] for datacard' %(iSample)
+    print '\ncombining sample [%s] for datacard' %(iSample)
     if 'data' in iSample:
         isData = True
     else:
@@ -218,19 +191,38 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
     yieldEstimator_OS = 0.0
     yieldEstimator_SS = 0.0
     fillcounter=0
+    l1 = lvClass()
+    l2 = lvClass()
     met = lvClass()
     for iEntry in range(nEntries):
         iTree.GetEntry(iEntry)
         tool.printProcessStatus(iEntry, nEntries, 'looping over file %s' %(iSample), iEntry-1)
-        uncWeight = 1.0
-        region = 'none'
-        met.SetCoordinates(iTree.met, 0.0, iTree.metphi, 0)
-
-        l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
-        l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
-
         if not plots_dataDrivenQCDandWJ.passCut(iTree, iFS, isData, options.sys):
             continue
+
+        region = one_event(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
+                           intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted,
+                           yieldDict, histDict, oTree)
+
+        if region is None:
+            continue
+
+        one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
+                             intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, uncWeight, region,
+                             yieldDict, histDict, oTree)
+
+    return yieldDict, histDict
+
+
+def one_event(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
+              intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted,
+              yieldDict, histDict, oTree):
+    if True:
+        uncWeight = 1.0
+        region = None
+        met.SetCoordinates(iTree.met, 0.0, iTree.metphi, 0)
+        l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
+        l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 
         if plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "signal", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
             if isData:
@@ -243,16 +235,16 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
                 region = 'A'
             else:
                 if isSignal:
-                    continue
+                    return
                 region = 'B'
 
         elif plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "control_iso", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
             if isSignal:
-                continue
+                return
             if iTree.q_1 == -iTree.q_2: #C region
                 if iFS != "em":
                     if "WJets" in iSample:
-                        continue
+                        return
                 region = 'C'
             else: #D region
                 charVarsDict['sampleName'][:31] = 'QCD_in_D'
@@ -260,9 +252,9 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
 
         elif iFS != 'em' and plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "control_anti_iso", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
             if isSignal:
-                continue
+                return
             if not isData:
-                continue
+                return
             if iTree.q_1 == -iTree.q_2: #E region
                 charVarsDict['sampleName'][:31] = 'QCDLoose'
                 region = 'E'
@@ -270,7 +262,18 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
                 charVarsDict['sampleName'][:31] = 'QCD_in_F'
                 region = 'F'
         else:
-            continue
+            return
+
+        return region
+
+
+def one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
+                         intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, uncWeight, region,
+                         yieldDict, histDict, oTree):
+    if True:
+        intVarsDict['evt'][0] = iTree.evt
+        intVarsDict['lumi'][0] = iTree.lumi
+        intVarsDict['run'][0] = iTree.run
 
         floatVarsDict['pt_1'][0] = iTree.pt_1
         floatVarsDict['pt_2'][0] = iTree.pt_2
@@ -291,6 +294,9 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
         charVarsDict['Category'][:31] = iFS
 
         floatVarsDict['xs'][0] = iTree.xs
+
+        if options.top8 and 'TT' in iSample:
+            floatVarsDict['xs'][0] = iTree.xs*0.8
 
         if 'WJets' in iSample:
             floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*plots_cfg.WJetsScanRange[0]
@@ -328,7 +334,10 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
         floatVarsDict['pZetaCut'][0] =  getattr(iTree, "%s_%s_PZeta" %(iFS[0], iFS[1])) - 3.1*getattr(iTree, "%s_%s_PZetaVis" %(iFS[0], iFS[1]))
 
         floatVarsDict['pfMEt'][0] = iTree.met
-#         floatVarsDict['eleRelIso'][0] = iTree.eRelIso
+        if iFS == "et":
+            floatVarsDict['eleRelIso'][0] = iTree.eRelIso
+        if iFS == "mt":
+            floatVarsDict['muRelIso'][0] = iTree.mRelIso
 
         if options.PUWeight and not isData:
             floatVarsDict['PUWeight'][0] = cutSampleTools.getPUWeight(iTree.nTruePU)
@@ -425,7 +434,6 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
             yieldDict["QCD_in_F"] += 1
             histDict["QCD_in_F"].Fill(1, 1)
 
-    return yieldDict, histDict
 
 def go():
     finalStates = expandFinalStates(options.FS)
@@ -516,8 +524,8 @@ def go():
 
         WJetsLoose2Tight = r.TH1F('WJets_%s_to_%s_%s' %(controlRegionName, signalRegionName, tailName), '', 1, 0, 1)
 
-        WJetsL2T = plots_cfg.WJetsLoose2Tight[0]
-        WJetsL2T_unc = plots_cfg.WJetsLoose2Tight[1]
+        WJetsL2T = plots_cfg.WJetsLoose2Tight[iFS][0]
+        WJetsL2T_unc = plots_cfg.WJetsLoose2Tight[iFS][1]
         print histDict["WJetsOSTight_MC"].GetEntries()
         if iFS == "em":
             WJetsL2T = histDict["WJetsOSTight_MC"].GetBinContent(1)/histDict["WJetsOSLoose_MC"].GetBinContent(1)
@@ -542,6 +550,23 @@ def go():
             combineTree(oFileName, QCD_D_F_SF)
 
 if __name__ == "__main__":
+    options = opts()
+    lvClass = r.Math.LorentzVector(r.Math.PtEtaPhiM4D('double'))
+
+    r.gROOT.SetBatch(True)
+    r.gErrorIgnoreLevel = 2000
+    r.gStyle.SetOptStat("e")
+    r.gStyle.SetOptStat(0)
+
+    QCD_SStoOS = 1.34
+
+    if options.method == 'Loose':
+        controlRegionName = 'Loose'
+        signalRegionName = 'Tight'
+    else:
+        controlRegionName = 'SS'
+        signalRegionName = 'OS'
+
     if options.PUWeight:
         cutSampleTools.setupLumiReWeight()
     if options.profile:
