@@ -208,7 +208,7 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
             continue
 
         one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
-                             intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, uncWeight, region,
+                             intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, region,
                              yieldDict, histDict, oTree)
 
     return yieldDict, histDict
@@ -217,222 +217,218 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
 def one_event(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
               intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted,
               yieldDict, histDict, oTree):
-    if True:
-        uncWeight = 1.0
-        region = None
-        met.SetCoordinates(iTree.met, 0.0, iTree.metphi, 0)
-        l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
-        l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 
-        if plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "signal", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
-            if isData:
-                charVarsDict['sampleName'][:31] = 'data' + signalRegionName
-            else:
-                charVarsDict['sampleName'][:31] = iSample
-                if isSignal:
-                    charVarsDict['sampleName'][:31] = "Zprime_%s" %iSample[iSample.find("(")+1: iSample.find(")")]
-            if iTree.q_1 != iTree.q_2:
-                region = 'A'
-            else:
-                if isSignal:
-                    return
-                region = 'B'
+    region = None
+    met.SetCoordinates(iTree.met, 0.0, iTree.metphi, 0)
+    l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
+    l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 
-        elif plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "control_iso", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
-            if isSignal:
-                return
-            if iTree.q_1 == -iTree.q_2: #C region
-                if iFS != "em":
-                    if "WJets" in iSample:
-                        return
-                region = 'C'
-            else: #D region
-                charVarsDict['sampleName'][:31] = 'QCD_in_D'
-                region = 'D'
-
-        elif iFS != 'em' and plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "control_anti_iso", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
-            if isSignal:
-                return
-            if not isData:
-                return
-            if iTree.q_1 == -iTree.q_2: #E region
-                charVarsDict['sampleName'][:31] = 'QCDLoose'
-                region = 'E'
-            else:
-                charVarsDict['sampleName'][:31] = 'QCD_in_F'
-                region = 'F'
+    if plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "signal", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
+        if isData:
+            charVarsDict['sampleName'][:31] = 'data' + signalRegionName
         else:
-            return
+            charVarsDict['sampleName'][:31] = iSample
+            if isSignal:
+                charVarsDict['sampleName'][:31] = "Zprime_%s" %iSample[iSample.find("(")+1: iSample.find(")")]
+        if iTree.q_1 != iTree.q_2:
+            region = 'A'
+        else:
+            if isSignal:
+                return
+            region = 'B'
 
-        return region
+    elif plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "control_iso", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
+        if isSignal:
+            return
+        if iTree.q_1 == -iTree.q_2: #C region
+            if iFS != "em":
+                if "WJets" in iSample:
+                    return
+            region = 'C'
+        else: #D region
+            charVarsDict['sampleName'][:31] = 'QCD_in_D'
+            region = 'D'
+
+    elif iFS != 'em' and plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "control_anti_iso", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
+        if isSignal:
+            return
+        if not isData:
+            return
+        if iTree.q_1 == -iTree.q_2: #E region
+            charVarsDict['sampleName'][:31] = 'QCDLoose'
+            region = 'E'
+        else:
+            charVarsDict['sampleName'][:31] = 'QCD_in_F'
+            region = 'F'
+    else:
+        return
+
+    return region
 
 
 def one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
-                         intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, uncWeight, region,
+                         intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, region,
                          yieldDict, histDict, oTree):
-    if True:
-        intVarsDict['evt'][0] = iTree.evt
-        intVarsDict['lumi'][0] = iTree.lumi
-        intVarsDict['run'][0] = iTree.run
 
-        floatVarsDict['pt_1'][0] = iTree.pt_1
-        floatVarsDict['pt_2'][0] = iTree.pt_2
-        floatVarsDict['eta_1'][0] = iTree.eta_1
-        floatVarsDict['eta_2'][0] = iTree.eta_2
-        floatVarsDict['mt_1'][0] = iTree.mt_1
+    uncWeight = 1.0
+    intVarsDict['evt'][0] = iTree.evt
+    intVarsDict['lumi'][0] = iTree.lumi
+    intVarsDict['run'][0] = iTree.run
 
-        floatVarsDict['genMass'][0] = 0.0
-        if hasattr(iTree, 'X_to_ll'):
-            floatVarsDict['genMass'][0] = iTree.X_to_ll
+    floatVarsDict['pt_1'][0] = iTree.pt_1
+    floatVarsDict['pt_2'][0] = iTree.pt_2
+    floatVarsDict['eta_1'][0] = iTree.eta_1
+    floatVarsDict['eta_2'][0] = iTree.eta_2
+    floatVarsDict['mt_1'][0] = iTree.mt_1
 
-        if hasattr(iTree, 'BDT_both'):
-            floatVarsDict['BDT'][0] = iTree.BDT_both
+    floatVarsDict['genMass'][0] = 0.0
+    if hasattr(iTree, 'X_to_ll'):
+        floatVarsDict['genMass'][0] = iTree.X_to_ll
+
+    if hasattr(iTree, 'BDT_both'):
+        floatVarsDict['BDT'][0] = iTree.BDT_both
+    else:
+        floatVarsDict['BDT'][0] = -999
+
+    floatVarsDict['triggerEff'][0] = iTree.trigweight_1*iTree.trigweight_2
+    charVarsDict['Category'][:31] = iFS
+
+    floatVarsDict['xs'][0] = iTree.xs
+
+    if options.top8 and 'TT' in iSample:
+        floatVarsDict['xs'][0] = iTree.xs*0.8
+
+    if 'WJets' in iSample:
+        floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*plots_cfg.WJetsScanRange[0]
+    if "Zprime" in iSample:
+        floatVarsDict['xs'][0] = plots.getZPrimeXS(iSample[7:])
+
+    if eventCount:
+        intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
+    else:    
+        intVarsDict['initEvents'][0] = int(iTree.initEvents)
+    if eventCountWeighted:
+        intVarsDict['initSumWeights'][0] = int(eventCountWeighted.GetBinContent(1))
+    else:    
+        intVarsDict['initSumWeights'][0] = int(iTree.initWeightedEvents)
+
+    # floatVarsDict['m_svfit'][0] = iTree.pfmet_svmc_mass
+    floatVarsDict['m_effective'][0] = (l1 + l2 + met).mass()
+    floatVarsDict['m_vis'][0] = (l1 + l2).mass()
+    # floatVarsDict['m_tt'][0] = iTree.m_tt
+
+    if (options.sys == 'up' or options.sys == 'down') and (not isData):
+        floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*getPDFWeight(iFS, iSample, iCat, options.sys, floatVarsDict['m_effective'][0])
+
+    intVarsDict['nCSVL'][0] = int(iTree.nCSVL)
+    if iFS == 'et' or iFS == "mt":
+        intVarsDict['tauDecayMode'][0] = int(iTree.tDecayMode)
+        floatVarsDict['tauTightIso'][0] = iTree.tByTightCombinedIsolationDeltaBetaCorr3Hits
+        floatVarsDict['tauMediumIso'][0] = iTree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
+        floatVarsDict['tauLooseIso'][0] = iTree.tByLooseCombinedIsolationDeltaBetaCorr3Hits
+        if options.sys == 'tauUncUp':
+            uncWeight += 0.05*iTree.pt_2/1000.
+        if options.sys == 'tauUncDown':
+            uncWeight -= 0.35*iTree.pt_2/1000.
+    floatVarsDict['cosDPhi'][0] =  math.cos(iTree.phi_1 - iTree.phi_2)
+    floatVarsDict['pZetaCut'][0] =  getattr(iTree, "%s_%s_PZeta" %(iFS[0], iFS[1])) - 3.1*getattr(iTree, "%s_%s_PZetaVis" %(iFS[0], iFS[1]))
+
+    floatVarsDict['pfMEt'][0] = iTree.met
+    if iFS == "et":
+        floatVarsDict['eleRelIso'][0] = iTree.eRelIso
+    if iFS == "mt":
+        floatVarsDict['muRelIso'][0] = iTree.mRelIso
+
+    if options.PUWeight and not isData:
+        floatVarsDict['PUWeight'][0] = cutSampleTools.getPUWeight(iTree.nTruePU)
+        floatVarsDict['npv'][0] = iTree.nTruePU
+
+    else:
+        floatVarsDict['PUWeight'][0] = 1.0
+        floatVarsDict['npv'][0] = 0
+
+    if isData:
+        floatVarsDict['genEventWeight'][0] = 1.0
+        intVarsDict['initSumWeights'][0] = 1
+        floatVarsDict['xs'][0] = 1.0/plots.lumi
+        floatVarsDict['triggerEff'][0] = 1.0
+    else:
+        floatVarsDict['genEventWeight'][0] = uncWeight*iTree.genEventWeight
+        if options.topPt and sumPtWeights != -1.0:
+            intVarsDict['initSumWeights'][0] = int(sumPtWeights)
+            floatVarsDict['genEventWeight'][0] = iTree.topPtWeight*floatVarsDict['genEventWeight'][0]
+        if (iFS == 'et' or iFS == 'mt') and not isData:
+            floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*0.95 #tauID
+
+        if options.againstLeptonSF:
+            if iFS == 'et':
+                if (iTree.tIsPromptElectron):
+                    floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('electron', 'Tight', abs(iTree.eta_2))
+                if (iTree.tIsPromptMuon):
+                    floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('muon', 'Loose', abs(iTree.eta_2))
+            if iFS == 'mt':
+                if (iTree.tIsPromptElectron):
+                    floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('electron', 'VLoose', abs(iTree.eta_2))
+                if (iTree.tIsPromptMuon):
+                    floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('muon', 'Tight', abs(iTree.eta_2))
+
+
+    if region == "A":
+        if charVarsDict['sampleName'][:31] in yieldDict.keys():
+            yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
         else:
-            floatVarsDict['BDT'][0] = -999
+            yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+        if "WJets" in iSample:
+            histDict["WJetsOSTight_MC"].Fill(1, floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0))
+            yieldDict["WJetsOSTight_MC"] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+        oTree.Fill()
 
-        floatVarsDict['triggerEff'][0] = iTree.trigweight_1*iTree.trigweight_2
-        charVarsDict['Category'][:31] = iFS
+    elif region == "B":
+        weight = 1
+        if not isData:
+            weight = -floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+        yieldDict["QCD_in_B"] += weight
+        histDict["QCD_in_B"].Fill(1, weight)
 
-        floatVarsDict['xs'][0] = iTree.xs
-
-        if options.top8 and 'TT' in iSample:
-            floatVarsDict['xs'][0] = iTree.xs*0.8
-
-        if 'WJets' in iSample:
-            floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*plots_cfg.WJetsScanRange[0]
-        if "Zprime" in iSample:
-            floatVarsDict['xs'][0] = plots.getZPrimeXS(iSample[7:])
-
-        if eventCount:
-            intVarsDict['initEvents'][0] = int(eventCount.GetBinContent(1))
-        else:    
-            intVarsDict['initEvents'][0] = int(iTree.initEvents)
-        if eventCountWeighted:
-            intVarsDict['initSumWeights'][0] = int(eventCountWeighted.GetBinContent(1))
-        else:    
-            intVarsDict['initSumWeights'][0] = int(iTree.initWeightedEvents)
-
-#         floatVarsDict['m_svfit'][0] = iTree.pfmet_svmc_mass
-        floatVarsDict['m_effective'][0] = (l1 + l2 + met).mass()
-        floatVarsDict['m_vis'][0] = (l1 + l2).mass()
-#         floatVarsDict['m_tt'][0] = iTree.m_tt
-
-        if (options.sys == 'up' or options.sys == 'down') and (not isData):
-            floatVarsDict['xs'][0] = floatVarsDict['xs'][0]*getPDFWeight(iFS, iSample, iCat, options.sys, floatVarsDict['m_effective'][0])
-
-        intVarsDict['nCSVL'][0] = int(iTree.nCSVL)
-        if iFS == 'et' or iFS == "mt":
-            intVarsDict['tauDecayMode'][0] = int(iTree.tDecayMode)
-            floatVarsDict['tauTightIso'][0] = iTree.tByTightCombinedIsolationDeltaBetaCorr3Hits
-            floatVarsDict['tauMediumIso'][0] = iTree.tByMediumCombinedIsolationDeltaBetaCorr3Hits
-            floatVarsDict['tauLooseIso'][0] = iTree.tByLooseCombinedIsolationDeltaBetaCorr3Hits
-            if options.sys == 'tauUncUp':
-                uncWeight += 0.05*iTree.pt_2/1000.
-            if options.sys == 'tauUncDown':
-                uncWeight -= 0.35*iTree.pt_2/1000.
-        floatVarsDict['cosDPhi'][0] =  math.cos(iTree.phi_1 - iTree.phi_2)
-        floatVarsDict['pZetaCut'][0] =  getattr(iTree, "%s_%s_PZeta" %(iFS[0], iFS[1])) - 3.1*getattr(iTree, "%s_%s_PZetaVis" %(iFS[0], iFS[1]))
-
-        floatVarsDict['pfMEt'][0] = iTree.met
-        if iFS == "et":
-            floatVarsDict['eleRelIso'][0] = iTree.eRelIso
-        if iFS == "mt":
-            floatVarsDict['muRelIso'][0] = iTree.mRelIso
-
-        if options.PUWeight and not isData:
-            floatVarsDict['PUWeight'][0] = cutSampleTools.getPUWeight(iTree.nTruePU)
-            floatVarsDict['npv'][0] = iTree.nTruePU
-
-        else:
-            floatVarsDict['PUWeight'][0] = 1.0
-            floatVarsDict['npv'][0] = 0
-
-        if isData:
-            floatVarsDict['genEventWeight'][0] = 1.0
-            intVarsDict['initSumWeights'][0] = 1
-            floatVarsDict['xs'][0] = 1.0/plots.lumi
-            floatVarsDict['triggerEff'][0] = 1.0
-        else:
-            floatVarsDict['genEventWeight'][0] = uncWeight*iTree.genEventWeight
-            if options.topPt and sumPtWeights != -1.0:
-                intVarsDict['initSumWeights'][0] = int(sumPtWeights)
-                floatVarsDict['genEventWeight'][0] = iTree.topPtWeight*floatVarsDict['genEventWeight'][0]
-            if (iFS == 'et' or iFS == 'mt') and not isData:
-                floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*0.95 #tauID
-
-            if options.againstLeptonSF:
-                if iFS == 'et':
-                    if (iTree.tIsPromptElectron):
-                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('electron', 'Tight', abs(iTree.eta_2))
-                    if (iTree.tIsPromptMuon):
-                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('muon', 'Loose', abs(iTree.eta_2))
-                if iFS == 'mt':
-                    if (iTree.tIsPromptElectron):
-                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('electron', 'VLoose', abs(iTree.eta_2))
-                    if (iTree.tIsPromptMuon):
-                        floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('muon', 'Tight', abs(iTree.eta_2))
-
-
-
-        if region == 'none':
-            print "ERROR!!!!!"
-
-        if region == "A":
-            if charVarsDict['sampleName'][:31] in yieldDict.keys():
-                yieldDict[str(charVarsDict['sampleName'][:31])] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+    elif region == "C":
+        if iFS == "em":
+            charVarsDict['sampleName'][:31] = 'QCDLoose'
+            if isData:
+                yieldDict["QCDLoose"] += 1
             else:
-                yieldDict[str(charVarsDict['sampleName'][:31])] = floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+                yieldDict["QCDLoose"] -= floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+                floatVarsDict['genEventWeight'][0] = -1.0*floatVarsDict['genEventWeight'][0]
+            oTree.Fill()
             if "WJets" in iSample:
-                histDict["WJetsOSTight_MC"].Fill(1, floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0))
-                yieldDict["WJetsOSTight_MC"] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
-            oTree.Fill()
-
-        elif region == "B":
-            weight = 1
-            if not isData:
-                weight = -floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
-            yieldDict["QCD_in_B"] += weight
-            histDict["QCD_in_B"].Fill(1, weight)
-
-        elif region == "C":
-            if iFS == "em":
-                charVarsDict['sampleName'][:31] = 'QCDLoose'
-                if isData:
-                    yieldDict["QCDLoose"] += 1
-                else:
-                    yieldDict["QCDLoose"] -= floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
-                    floatVarsDict['genEventWeight'][0] = -1.0*floatVarsDict['genEventWeight'][0]
+                floatVarsDict['genEventWeight'][0] = -1.0*floatVarsDict['genEventWeight'][0]
+                yieldDict['WJets' + controlRegionName] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+                histDict["WJetsOSLoose_MC"].Fill(1, floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0))
+                charVarsDict['sampleName'][:31] = 'WJets' + controlRegionName
                 oTree.Fill()
-                if "WJets" in iSample:
-                    floatVarsDict['genEventWeight'][0] = -1.0*floatVarsDict['genEventWeight'][0]
-                    yieldDict['WJets' + controlRegionName] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
-                    histDict["WJetsOSLoose_MC"].Fill(1, floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0))
-                    charVarsDict['sampleName'][:31] = 'WJets' + controlRegionName
-                    oTree.Fill()
+        else:
+            charVarsDict['sampleName'][:31] = 'WJetsLoose'
+            if isData:
+                yieldDict['WJetsLoose'] += 1
             else:
-                charVarsDict['sampleName'][:31] = 'WJetsLoose'
-                if isData:
-                    yieldDict['WJetsLoose'] += 1
-                else:
-                    floatVarsDict['genEventWeight'][0] = -1.0*floatVarsDict['genEventWeight'][0]
-                    yieldDict['WJetsLoose'] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
-                oTree.Fill()
-
-        elif region == "D":
-            weight = 1
-            if not isData:
-                weight = -floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
-            yieldDict["QCD_in_D"] += weight
-            histDict["QCD_in_D"].Fill(1, weight)
-
-        elif region == "E" and iFS != 'em' and isData:
-            yieldDict["QCDLoose"] += 1
-            oTree_tmp.Fill()
+                floatVarsDict['genEventWeight'][0] = -1.0*floatVarsDict['genEventWeight'][0]
+                yieldDict['WJetsLoose'] += floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
             oTree.Fill()
 
-        elif region == "F" and iFS != 'em' and isData:
-            yieldDict["QCD_in_F"] += 1
-            histDict["QCD_in_F"].Fill(1, 1)
+    elif region == "D":
+        weight = 1
+        if not isData:
+            weight = -floatVarsDict['triggerEff'][0]*floatVarsDict['PUWeight'][0]*floatVarsDict['genEventWeight'][0]*floatVarsDict['xs'][0]*plots.lumi/(intVarsDict['initSumWeights'][0]+ 0.0)
+        yieldDict["QCD_in_D"] += weight
+        histDict["QCD_in_D"].Fill(1, weight)
+
+    elif region == "E" and iFS != 'em' and isData:
+        yieldDict["QCDLoose"] += 1
+        oTree_tmp.Fill()
+        oTree.Fill()
+
+    elif region == "F" and iFS != 'em' and isData:
+        yieldDict["QCD_in_F"] += 1
+        histDict["QCD_in_F"].Fill(1, 1)
 
 
 def go():
