@@ -807,7 +807,7 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     if options.getWJetsSF:
          wjets_scale = getWJetsSF(histDict['WJets_OSsignal'], histDict['WJets_OScontrol'], varBins)
     else:
-        wjets_scale = [(plots_cfg.WJetsLoose2Tight[0], plots_cfg.WJetsLoose2Tight[1])]
+        wjets_scale = [(plots_cfg.WJetsLoose2Tight[FS][0], plots_cfg.WJetsLoose2Tight[FS][1])]
     print "WJets_OScontrol with SF: %.2f" %(histDict['WJets_OScontrol'].Integral()*wjets_scale[0][0])
 
     fixNegativBins(histDict['WJets_OScontrol'])
