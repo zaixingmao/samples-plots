@@ -162,18 +162,9 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
                     floatVarsDict, intVarsDict, charVarsDict, 
                     iFS, yieldDict, histDict):
     print '\ncombining sample [%s] for datacard' %(iSample)
-    if 'data' in iSample:
-        isData = True
-    else:
-        isData = False
-    if 'emb' in iSample:
-        isEmbedded = True
-    else:
-        isEmbedded = False
-    if ("Z'" in iSample):
-        isSignal = True
-    else:
-        isSignal = False
+
+    isData = 'data' in iSample
+    isSignal = "Z'" in iSample
 
     iFile = r.TFile(iLocation)
     iTree = iFile.Get("Ntuple")
@@ -183,14 +174,8 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
 
     eventCount = iFile.Get('eventCount')
     eventCountWeighted = iFile.Get('eventCountWeighted')
+    eventCountPtWeighted = iFile.Get('eventCountPtWeighted')
 
-    sumPtWeights = -1.0
-    if "TTJets" in iSample:
-        sumPtWeights = iFile.Get('eventCountPtWeighted').GetBinContent(1)
-
-    yieldEstimator_OS = 0.0
-    yieldEstimator_SS = 0.0
-    fillcounter=0
     l1 = lvClass()
     l2 = lvClass()
     met = lvClass()
@@ -200,28 +185,27 @@ def loop_one_sample(iSample, iLocation, iCat, oTree, oTree_tmp,
         if not plots_dataDrivenQCDandWJ.passCut(iTree, iFS, isData, options.sys):
             continue
 
-        region = one_event(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
-                           intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted,
-                           yieldDict, histDict, oTree)
+        met.SetCoordinates(iTree.met, 0.0, iTree.metphi, 0)
+        l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
+        l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
+
+        region = one_event(iTree, iFS, iSample, isData, isSignal, intVarsDict, floatVarsDict, charVarsDict)
 
         if region is None:
             continue
 
-        one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
-                             intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, region,
-                             yieldDict, histDict, oTree)
+        one_event_fill_stuff1(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
+                              intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, eventCountPtWeighted)
+
+        one_event_fill_stuff2(iTree, iFS, iSample, isData, isSignal,
+                              intVarsDict, floatVarsDict, charVarsDict, region,
+                              yieldDict, histDict, oTree, oTree_tmp)
 
     return yieldDict, histDict
 
 
-def one_event(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
-              intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted,
-              yieldDict, histDict, oTree):
-
+def one_event(iTree, iFS, iSample, isData, isSignal, intVarsDict, floatVarsDict, charVarsDict):
     region = None
-    met.SetCoordinates(iTree.met, 0.0, iTree.metphi, 0)
-    l1.SetCoordinates(iTree.pt_1, iTree.eta_1, iTree.phi_1, iTree.m_1)
-    l2.SetCoordinates(iTree.pt_2, iTree.eta_2, iTree.phi_2, iTree.m_2)
 
     if plots_dataDrivenQCDandWJ.regionSelection(iTree, iFS, "signal", plots_cfg.scanRange[0], plots_cfg.scanRange[1]):
         if isData:
@@ -266,9 +250,9 @@ def one_event(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
     return region
 
 
-def one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
-                         intVarsDict, floatVarsDict, charVarsDict, eventCount, eventCountWeighted, region,
-                         yieldDict, histDict, oTree):
+def one_event_fill_stuff1(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
+                         intVarsDict, floatVarsDict, charVarsDict,
+                          eventCount, eventCountWeighted, eventCountPtWeighted):
 
     uncWeight = 1.0
     intVarsDict['evt'][0] = iTree.evt
@@ -354,8 +338,8 @@ def one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
         floatVarsDict['triggerEff'][0] = 1.0
     else:
         floatVarsDict['genEventWeight'][0] = uncWeight*iTree.genEventWeight
-        if options.topPt and sumPtWeights != -1.0:
-            intVarsDict['initSumWeights'][0] = int(sumPtWeights)
+        if options.topPt and ("TTJets" in iSample):
+            intVarsDict['initSumWeights'][0] = int(eventCountPtWeighted.GetBinContent(1))
             floatVarsDict['genEventWeight'][0] = iTree.topPtWeight*floatVarsDict['genEventWeight'][0]
         if (iFS == 'et' or iFS == 'mt') and not isData:
             floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*0.95 #tauID
@@ -372,6 +356,10 @@ def one_event_fill_stuff(iTree, iFS, iSample, met, l1, l2, isData, isSignal,
                 if (iTree.tIsPromptMuon):
                     floatVarsDict['genEventWeight'][0] = floatVarsDict['genEventWeight'][0]*plots_dataDrivenQCDandWJ.getAgainstLeptonSF('muon', 'Tight', abs(iTree.eta_2))
 
+
+def one_event_fill_stuff2(iTree, iFS, iSample, isData, isSignal,
+                          intVarsDict, floatVarsDict, charVarsDict, region,
+                          yieldDict, histDict, oTree, oTree_tmp):
 
     if region == "A":
         if charVarsDict['sampleName'][:31] in yieldDict.keys():
