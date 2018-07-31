@@ -1,17 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
+import array, cProfile, math, optparse
 
 import ROOT as r
-import plots_cfg
-import tool
-import optparse
-import array
-import math
-import cutSampleTools
-import numpy as np
-from scipy.optimize import fsolve
+import plots_cfg       # aux
+import tool            # progress/legend
+import cutSampleTools  # PU/lumi
 from makeWholeTools2 import calcSysUnc
-from array import array
-import cProfile
 
 r.gStyle.SetOptStat(0)
 r.gROOT.SetBatch(True)  # to suppress canvas pop-outs
@@ -87,8 +82,6 @@ def opts():
 
     options, args = parser.parse_args()
     return options
-if __name__ == "__main__":
-    options = opts()
 
 def getVariableLatexName(varName, FS):
     dict = {}
@@ -235,63 +228,39 @@ def regionSelection(tree, FS, region, lowerBound = 0, upperBound = 1):
             return False
     return False
 
+
+def el_pass_sr(tree, FS):
+    if FS == 'mt' or FS == 'et':
+        if not (tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9 and tree.mt_1 > 150)):
+            return False
+    elif FS == 'em':
+        if tree.pt_1 > tree.pt_2 and tree.cosDPhi_MEt_1 > -0.9:
+            return False
+        if tree.pt_1 < tree.pt_2 and tree.cosDPhi_MEt_2 > -0.9:
+            return False
+    return True
+
+
 def passCut(tree, FS, isData, sys):
+    if __name__ != "__main__": # options not defined
+        return el_pass_sr(tree, FS)
 
-    if __name__ == "__main__":
-        if not isData and options.ignoreMCinEF:
-            if FS == 'et':
-                if tree.eRelIso > 0.15:
-                    return False
-            if FS == 'mt':
-                if tree.mRelIso > 0.15:
-                    return False
-
-#         if FS[0] == 'e':
-#             if tree.ePt < 40:
-#                 return False
-#         if tree.nCSVL < 0.5:
-#             return False
-
-#         if tree.met > 30 or not (60 < tree.m_eff < 150):
-#             return False
-
-#         if math.cos(tree.phi_1 - tree.phi_2) > 0:
-#             return False
-#         if math.cos(tree.phi_1 - tree.phi_2) < -0.95:
-#             return False
-# # 
-#         if tree.m_eff < 600:
-#         if not (400 < tree.m_eff < 600):# and tree.met < 30):
-# #         if tree.m_eff < 600:
-#             return False
-
-        if options.getWJetsSF:
-#             if not ( 0.5 < tree.cosDPhi_MEt_1 < 0.9):
-            if not ( 0.5 < tree.cosDPhi_MEt_1 < 0.9 and 55 < tree.mt_1 < 120):
+    if not isData and options.ignoreMCinEF:
+        if FS == 'et' and tree.eRelIso > 0.15:
                 return False
-            if (tree.cosDPhi_MEt_2 > 0.9):
+        if FS == 'mt' and tree.mRelIso > 0.15:
                 return False
-        else:
-            if FS == 'mt' or FS == 'et':
-#                 if not (tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9)):
-                if not (tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9 and tree.mt_1 > 150)):
-                    return False
-            elif FS == 'em':
-                if tree.pt_1 > tree.pt_2 and tree.cosDPhi_MEt_1 > -0.9:
-                    return False
-                if tree.pt_1 < tree.pt_2 and tree.cosDPhi_MEt_2 > -0.9:
-                    return False
+
+    if options.getWJetsSF:
+        if not ( 0.5 < tree.cosDPhi_MEt_1 < 0.9 and 55 < tree.mt_1 < 120):
+            return False
+        if (tree.cosDPhi_MEt_2 > 0.9):
+            return False
     else:
-        if FS == 'mt' or FS == 'et':
-            if not (tree.cosDPhi_MEt_1 > 0.9 or (tree.cosDPhi_MEt_2 > 0.9 and tree.mt_1 > 150)):
-                return False
-        elif FS == 'em':
-            if tree.pt_1 > tree.pt_2 and tree.cosDPhi_MEt_1 > -0.9:
-                return False
-            if tree.pt_1 < tree.pt_2 and tree.cosDPhi_MEt_2 > -0.9:
-                return False
+        return el_pass_sr(tree, FS)
 
     return True
+
 
 def passUnblindPartial(varname, var):
     if varname == 'm_vis' and var <= 100:
@@ -393,7 +362,7 @@ def ratioHistogram( num, den, relErrMax=0.25) :
     except :
         print 'Ratio failed:', num.GetName()
         groups = [(i,) for i in range(1,1+num.GetNbinsX()) ]
-    ratio = r.TH1D("ratio"+num.GetName()+den.GetName(),"",len(groups), array('d', [num.GetBinLowEdge(min(g)) for g in groups ] + [num.GetXaxis().GetBinUpEdge(num.GetNbinsX())]) )
+    ratio = r.TH1D("ratio"+num.GetName()+den.GetName(),"",len(groups), array.array('d', [num.GetBinLowEdge(min(g)) for g in groups ] + [num.GetXaxis().GetBinUpEdge(num.GetNbinsX())]) )
     for i,g in enumerate(groups) :
         ratio.SetBinContent(i+1,groupR(g))
         ratio.SetBinError(i+1,groupErr(g))
@@ -1010,7 +979,7 @@ def buildHists(varName, varBins, unit, FS, option, relErrMax):
     if options.getWJetsSF:
          wjets_scale = getWJetsSF(histDict['WJets_OSsignal'], histDict['WJets_OScontrol_iso'], varBins)
     else:
-        wjets_scale = [(plots_cfg.WJetsLoose2Tight[0], plots_cfg.WJetsLoose2Tight[1])]
+        wjets_scale = [(plots_cfg.WJetsLoose2Tight[FS][0], plots_cfg.WJetsLoose2Tight[FS][1])]
 
     print "MC WJets **********************"
     wjets_MC_scale = getWJetsSF(histDict['WJets'], histDict['WJets_C'], varBins)
@@ -1275,6 +1244,8 @@ def go():
         multiPlots(iFS, options.option)
 
 if __name__ == "__main__":
+    options = opts()
+
     finalStates = expandFinalStates(options.FS)
     if options.PUWeight:
         cutSampleTools.setupLumiReWeight()
